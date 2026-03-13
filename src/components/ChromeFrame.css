@@ -19,19 +19,16 @@
   pointer-events: none;
 }
 
-.chrome-frame__left {
+.chrome-frame__right-controls {
   display: flex;
   align-items: center;
   gap: 4px;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 1;
+  margin-right: 4px;
 }
 
 .chrome-frame__window-btns {
   display: flex;
   align-items: center;
-  margin-left: 4px;
 }
 
 .chrome-frame__win-btn {

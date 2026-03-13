@@ -18,24 +18,13 @@ export default function ChromeFrame({
   currentDomain,
   onGoHome,
   activeTabType,
+  onMinimize,
+  onMaximize,
+  onWindowClose,
 }) {
   return (
     <header className="chrome-frame">
       <div className="chrome-frame__drag" />
-      <div className="chrome-frame__left">
-        <VoiceAIDropdown />
-        <div className="chrome-frame__window-btns">
-          <button type="button" className="chrome-frame__win-btn" aria-label="Minimize">
-            <Minus size={14} strokeWidth={2.5} />
-          </button>
-          <button type="button" className="chrome-frame__win-btn" aria-label="Maximize">
-            <Square size={12} strokeWidth={2.5} />
-          </button>
-          <button type="button" className="chrome-frame__win-btn chrome-frame__win-btn--close" aria-label="Close">
-            <X size={14} strokeWidth={2.5} />
-          </button>
-        </div>
-      </div>
       <div className="chrome-frame__center">
         <ChromeTabs
           tabs={tabs}
@@ -49,6 +38,20 @@ export default function ChromeFrame({
         />
       </div>
       <div className="chrome-frame__right">
+        <div className="chrome-frame__right-controls">
+          <VoiceAIDropdown />
+          <div className="chrome-frame__window-btns">
+            <button type="button" className="chrome-frame__win-btn" aria-label="Minimize" onClick={onMinimize}>
+              <Minus size={14} strokeWidth={2.5} />
+            </button>
+            <button type="button" className="chrome-frame__win-btn" aria-label="Maximize" onClick={onMaximize}>
+              <Square size={12} strokeWidth={2.5} />
+            </button>
+            <button type="button" className="chrome-frame__win-btn chrome-frame__win-btn--close" aria-label="Close" onClick={onWindowClose}>
+              <X size={14} strokeWidth={2.5} />
+            </button>
+          </div>
+        </div>
         <div className="chrome-frame__profile" aria-label="Profile">
           {/* Pathway: set src or background-image when you have a custom profile image */}
         </div>

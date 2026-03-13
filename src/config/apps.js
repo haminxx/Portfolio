@@ -1,27 +1,41 @@
 /**
- * Taskbar app icons and domain display strings.
- * Add real URLs later for opening in new window or iframe.
+ * Dock app icons and URLs. Add real URLs later for opening in new window or iframe.
  */
 export const APPS = {
-  youtube: {
-    label: 'YouTube Music',
-    domain: 'music.youtube.com',
-    icon: 'youtube',
+  chrome: {
+    label: 'Chrome',
+    domain: 'portfolio.local',
+    icon: 'chrome',
   },
   instagram: {
     label: 'Instagram',
     domain: 'instagram.com/85liez',
     icon: 'instagram',
   },
-  linkedin: {
-    label: 'LinkedIn',
-    domain: 'linkedin.com/in/85liez',
-    icon: 'linkedin',
-  },
   netflix: {
     label: 'Netflix',
     domain: 'netflix.com',
     icon: 'netflix',
+  },
+  gallery: {
+    label: 'Gallery',
+    domain: 'gallery.local',
+    icon: 'gallery',
+  },
+  appStore: {
+    label: 'App Store',
+    domain: 'appstore.local',
+    icon: 'appStore',
+  },
+  settings: {
+    label: 'Settings',
+    domain: 'settings.local',
+    icon: 'settings',
+  },
+  map: {
+    label: 'Map',
+    domain: 'map.local',
+    icon: 'map',
   },
 }
 

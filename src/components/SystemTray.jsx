@@ -9,22 +9,32 @@ import {
 } from 'lucide-react'
 import './SystemTray.css'
 
+const LANGUAGES = [
+  { id: 'en', label: 'English', short: 'Eng' },
+  { id: 'ko', label: '한국어', short: '한' },
+]
+
 export default function SystemTray() {
   const [trayOpen, setTrayOpen] = useState(false)
   const [clockOpen, setClockOpen] = useState(false)
+  const [langOpen, setLangOpen] = useState(false)
+  const [language, setLanguage] = useState('en')
   const trayRef = useRef(null)
 
+  const currentLang = LANGUAGES.find((l) => l.id === language) ?? LANGUAGES[0]
+
   useEffect(() => {
-    if (!trayOpen && !clockOpen) return
+    if (!trayOpen && !clockOpen && !langOpen) return
     const handleClickOutside = (e) => {
       if (trayRef.current && !trayRef.current.contains(e.target)) {
         setTrayOpen(false)
         setClockOpen(false)
+        setLangOpen(false)
       }
     }
     document.addEventListener('click', handleClickOutside)
     return () => document.removeEventListener('click', handleClickOutside)
-  }, [trayOpen, clockOpen])
+  }, [trayOpen, clockOpen, langOpen])
 
   const now = new Date()
   const timeStr = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
@@ -32,19 +42,37 @@ export default function SystemTray() {
 
   return (
     <div className="system-tray" ref={trayRef}>
-      <button
-        type="button"
-        className="system-tray__lang"
-        aria-label="Language"
-      >
-        <Globe size={14} />
-        <span>ENG</span>
-      </button>
+      <div className="system-tray__lang-wrap">
+        <button
+          type="button"
+          className="system-tray__lang"
+          onClick={() => { setTrayOpen(false); setClockOpen(false); setLangOpen((o) => !o); }}
+          aria-expanded={langOpen}
+          aria-label="Language"
+        >
+          <Globe size={14} />
+          <span>{currentLang.short}</span>
+        </button>
+        {langOpen && (
+          <div className="system-tray__lang-flyout">
+            {LANGUAGES.map((lang) => (
+              <button
+                key={lang.id}
+                type="button"
+                className={`system-tray__lang-opt ${language === lang.id ? 'system-tray__lang-opt--active' : ''}`}
+                onClick={() => { setLanguage(lang.id); setLangOpen(false); }}
+              >
+                {lang.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       <div className="system-tray__icons-wrap">
         <button
           type="button"
           className="system-tray__trigger"
-          onClick={() => { setClockOpen(false); setTrayOpen((o) => !o); }}
+          onClick={() => { setClockOpen(false); setLangOpen(false); setTrayOpen((o) => !o); }}
           aria-expanded={trayOpen}
           aria-label="Quick settings"
         >
@@ -72,7 +100,7 @@ export default function SystemTray() {
       <button
         type="button"
         className="system-tray__clock"
-        onClick={() => { setTrayOpen(false); setClockOpen((o) => !o); }}
+        onClick={() => { setTrayOpen(false); setLangOpen(false); setClockOpen((o) => !o); }}
         aria-expanded={clockOpen}
         aria-label="Date and time"
       >

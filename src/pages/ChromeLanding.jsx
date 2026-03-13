@@ -1,17 +1,35 @@
 import { useState, useCallback } from 'react'
 import ChromeFrame from '../components/ChromeFrame'
-import Taskbar from '../components/Taskbar'
+import ChromeWindow from '../components/ChromeWindow'
+import ChromeHome from '../components/ChromeHome'
+import DesktopIcons from '../components/DesktopIcons'
+import MenuBar from '../components/MenuBar'
+import Dock from '../components/Dock'
 import { APPS, getDomainForApp } from '../config/apps'
+import { SHORTCUTS } from '../config/shortcuts'
 import './ChromeLanding.css'
 
 const HOME_TAB = { id: 'home', title: 'Home', type: 'home' }
 
+function getDomainForTab(tab) {
+  if (tab.type === 'home') return 'portfolio.local'
+  const shortcut = SHORTCUTS.find((s) => s.type === tab.type)
+  if (shortcut) {
+    if (tab.type === 'linkedin') return 'linkedin.com/in/85liez'
+    if (tab.type === 'github') return 'github.com/85liez'
+    return `${tab.type}.local`
+  }
+  return getDomainForApp(tab.type)
+}
+
 export default function ChromeLanding() {
   const [tabs, setTabs] = useState([HOME_TAB])
   const [activeTabId, setActiveTabId] = useState('home')
+  const [chromeMaximized, setChromeMaximized] = useState(false)
+  const [chromeMinimized, setChromeMinimized] = useState(false)
 
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0]
-  const currentDomain = activeTab.type === 'home' ? 'portfolio.local' : getDomainForApp(activeTab.type)
+  const currentDomain = getDomainForTab(activeTab)
 
   const openAppTab = useCallback((appKey) => {
     const app = APPS[appKey]
@@ -20,6 +38,17 @@ export default function ChromeLanding() {
     const newTab = { id, title: app.label, type: appKey }
     setTabs((prev) => [...prev, newTab])
     setActiveTabId(id)
+    setChromeMinimized(false)
+  }, [])
+
+  const openShortcutTab = useCallback((shortcutType) => {
+    const shortcut = SHORTCUTS.find((s) => s.type === shortcutType)
+    if (!shortcut) return
+    const id = `${shortcutType}-${Date.now()}`
+    const newTab = { id, title: shortcut.label, type: shortcutType }
+    setTabs((prev) => [...prev, newTab])
+    setActiveTabId(id)
+    setChromeMinimized(false)
   }, [])
 
   const setActiveTab = useCallback((id) => setActiveTabId(id), [])
@@ -32,31 +61,46 @@ export default function ChromeLanding() {
     })
   }, [activeTabId])
 
-  const goHome = useCallback(() => {
-    setActiveTabId('home')
-  }, [])
+  const goHome = useCallback(() => setActiveTabId('home'), [])
+  const toggleMaximize = useCallback(() => setChromeMaximized((m) => !m), [])
+  const setMinimized = useCallback(() => setChromeMinimized(true), [])
 
   return (
     <div className="chrome-landing">
-      <ChromeFrame
-        tabs={tabs}
-        activeTabId={activeTabId}
-        onSelectTab={setActiveTab}
-        onCloseTab={closeTab}
-        currentDomain={currentDomain}
-        onGoHome={goHome}
-        activeTabType={activeTab.type}
-      />
-      <div className="chrome-landing__content">
-        {activeTab.type === 'home' ? (
-          <div className="chrome-landing__bg" />
-        ) : (
-          <div className="chrome-landing__empty">
-            <span>Opened: {activeTab.title}</span>
-          </div>
-        )}
+      <div className="daedalos-desktop" aria-hidden="true">
+        <DesktopIcons onOpenApp={openAppTab} />
       </div>
-      <Taskbar onOpenApp={openAppTab} />
+      {!chromeMinimized && (
+        <ChromeWindow isMaximized={chromeMaximized} onMaximize={toggleMaximize}>
+          <ChromeFrame
+            tabs={tabs}
+            activeTabId={activeTabId}
+            onSelectTab={setActiveTab}
+            onCloseTab={closeTab}
+            currentDomain={currentDomain}
+            onGoHome={goHome}
+            activeTabType={activeTab.type}
+            onMaximize={toggleMaximize}
+            onMinimize={setMinimized}
+            onWindowClose={setMinimized}
+          />
+        <div className="chrome-landing__content">
+          {activeTab.type === 'home' ? (
+            <ChromeHome onShortcut={openShortcutTab} />
+          ) : (
+            <div className="chrome-landing__empty">
+              <span>Opened: {activeTab.title}</span>
+            </div>
+          )}
+        </div>
+        </ChromeWindow>
+      )}
+      <MenuBar />
+      <Dock
+        onOpenApp={openAppTab}
+        isChromeMinimized={chromeMinimized}
+        onRestoreChrome={() => setChromeMinimized(false)}
+      />
     </div>
   )
 }

@@ -4,13 +4,21 @@ import './PreLanding.css'
 
 export default function PreLanding() {
   const navigate = useNavigate()
+  const [phase, setPhase] = useState('booting') // 'booting' | 'ready'
   const [showMobileButton, setShowMobileButton] = useState(false)
 
+  // Boot sequence: 4 seconds, then switch to gate
   useEffect(() => {
+    const t = setTimeout(() => setPhase('ready'), 4000)
+    return () => clearTimeout(t)
+  }, [])
+
+  useEffect(() => {
+    if (phase !== 'ready') return
     setShowMobileButton(false)
     const t = setTimeout(() => setShowMobileButton(true), 1200)
     return () => clearTimeout(t)
-  }, [])
+  }, [phase])
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -31,6 +39,20 @@ export default function PreLanding() {
 
   const handleMobileEnter = () => {
     navigate('/home')
+  }
+
+  if (phase === 'booting') {
+    return (
+      <div className="pre-landing pre-landing--boot">
+        <div className="pre-landing__boot">
+          <div className="pre-landing__boot-logo">Portfolio OS</div>
+          <div className="pre-landing__boot-bar">
+            <div className="pre-landing__boot-progress" />
+          </div>
+          <p className="pre-landing__boot-text">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

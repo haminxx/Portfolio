@@ -3,6 +3,18 @@
   display: flex;
   flex-direction: column;
   background: #202124;
+  position: relative;
+}
+
+/* daedalOS-style desktop layer: full viewport background behind Chrome window */
+.daedalos-desktop {
+  position: fixed;
+  inset: 0;
+  background: #1a1a1e;
+  background-image: url('/autumn-song.png');
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
 }
 
 .chrome-landing__content {
@@ -11,14 +23,9 @@
   min-height: 0;
 }
 
-/* Pathway: add your chrome window background image at public/background.jpg (or src/assets/chrome-window-background.jpg and import). Image can be missing until you add it. */
-.chrome-landing__bg {
-  position: absolute;
-  inset: 0;
-  background: #2d2d2d;
-  background-image: url('/background.jpg');
-  background-size: cover;
-  background-position: center;
+/* Chrome content area - no gradient */
+.chrome-landing__content {
+  background: #f8f9fa;
 }
 
 .chrome-landing__empty {

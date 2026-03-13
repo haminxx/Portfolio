@@ -9,6 +9,65 @@
   color: #fff;
 }
 
+/* Booting animation */
+.pre-landing--boot {
+  justify-content: center;
+}
+
+.pre-landing__boot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  animation: pre-landing-boot-fade 0.5s ease-out;
+}
+
+@keyframes pre-landing-boot-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.pre-landing__boot-logo {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  letter-spacing: 0.1em;
+  color: #00ff00;
+  text-shadow: 0 0 8px rgba(0, 255, 0, 0.4);
+}
+
+.pre-landing__boot-bar {
+  width: 200px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.pre-landing__boot-progress {
+  height: 100%;
+  width: 0%;
+  background: #00ff00;
+  border-radius: 2px;
+  animation: pre-landing-boot-progress 3.5s ease-out forwards;
+}
+
+@keyframes pre-landing-boot-progress {
+  to { width: 100%; }
+}
+
+.pre-landing__boot-text {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  animation: pre-landing-boot-blink 1s steps(2) infinite;
+}
+
+@keyframes pre-landing-boot-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 .pre-landing__flash {
   font-size: clamp(1.25rem, 4vw, 1.75rem);
   margin: 0;
