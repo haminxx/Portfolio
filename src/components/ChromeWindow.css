@@ -18,11 +18,11 @@
 }
 
 .chrome-window--maximized {
-  top: 0;
+  top: 32px;
   left: 0;
   transform: none;
   width: 100vw;
-  height: 100vh;
+  height: calc(100vh - 32px - 72px);
   max-width: none;
   max-height: none;
   min-width: 0;

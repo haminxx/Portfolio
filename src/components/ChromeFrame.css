@@ -3,9 +3,71 @@
   align-items: center;
   min-height: 48px;
   padding: 0 8px;
+  position: relative;
+}
+
+.chrome-frame__traffic-lights {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px 0 8px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.chrome-frame__traffic {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.chrome-frame__traffic:hover {
+  filter: brightness(1.1);
+}
+
+.chrome-frame__traffic--close {
+  background: #ff5f57;
+}
+
+.chrome-frame__traffic--minimize {
+  background: #febc2e;
+}
+
+.chrome-frame__traffic--maximize {
+  background: #28c840;
+}
+
+.chrome-frame {
   background: #e8e8ed;
   border-bottom: 1px solid #d2d2d7;
-  flex-shrink: 0;
+}
+
+.chrome-frame__traffic--close {
+  background: #ff5f57;
+}
+
+.chrome-frame__traffic--close:hover {
+  background: #ff3b30;
+}
+
+.chrome-frame__traffic--minimize {
+  background: #febc2e;
+}
+
+.chrome-frame__traffic--minimize:hover {
+  background: #ff9500;
+}
+
+.chrome-frame__traffic--maximize {
+  background: #28c840;
+}
+
+.chrome-frame__traffic--maximize:hover {
+  background: #34c759;
 }
 
 .chrome-frame__drag {
@@ -17,6 +79,10 @@
   -webkit-app-region: drag;
   app-region: drag;
   pointer-events: none;
+}
+
+.chrome-frame__drag {
+  left: 52px;
 }
 
 .chrome-frame__right-controls {

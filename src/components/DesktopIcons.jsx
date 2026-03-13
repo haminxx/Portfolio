@@ -21,7 +21,7 @@ const APP_ICONS = {
   map: Map,
 }
 
-const DRAG_THRESHOLD = 5
+const DRAG_THRESHOLD = 10
 const ICON_WIDTH = 80
 const ICON_HEIGHT = 72
 
@@ -60,6 +60,7 @@ export default function DesktopIcons({
     (e, appKey) => {
       if (e.button !== 0) return
       e.preventDefault()
+      e.stopPropagation()
       const pos = iconPositions[appKey] ?? getPosition(appKey, entries.findIndex(([k]) => k === appKey))
       setDraggingKey(appKey)
       dragStartRef.current = {

@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import ChromeFrame from '../components/ChromeFrame'
 import ChromeWindow from '../components/ChromeWindow'
 import ChromeHome from '../components/ChromeHome'
+import ChromeContextMenu from '../components/ChromeContextMenu'
 import Desktop from '../components/Desktop'
 import MenuBar from '../components/MenuBar'
 import Dock from '../components/Dock'
@@ -15,11 +16,16 @@ function getDomainForTab(tab) {
   if (tab.type === 'home') return 'portfolio.local'
   const shortcut = SHORTCUTS.find((s) => s.type === tab.type)
   if (shortcut) {
-    if (tab.type === 'linkedin') return 'linkedin.com/in/85liez'
-    if (tab.type === 'github') return 'github.com/85liez'
+    if (tab.type === 'linkedin') return 'linkedin.com/in/christian-j-l'
+    if (tab.type === 'github') return 'github.com/haminxx'
     return `${tab.type}.local`
   }
   return getDomainForApp(tab.type)
+}
+
+function getUrlForTab(tab) {
+  const shortcut = SHORTCUTS.find((s) => s.type === tab.type)
+  return shortcut?.url ?? null
 }
 
 export default function ChromeLanding() {
@@ -28,6 +34,7 @@ export default function ChromeLanding() {
   const [chromeMaximized, setChromeMaximized] = useState(false)
   const [chromeMinimized, setChromeMinimized] = useState(true)
   const [sortBy, setSortBy] = useState('name')
+  const [chromeContextMenu, setChromeContextMenu] = useState(null)
 
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0]
   const currentDomain = getDomainForTab(activeTab)
@@ -89,14 +96,26 @@ export default function ChromeLanding() {
             onMinimize={setMinimized}
             onWindowClose={setMinimized}
           />
-          <div className="chrome-landing__content">
+          <div
+            className="chrome-landing__content"
+            onContextMenu={(e) => {
+              e.preventDefault()
+              const url = getUrlForTab(activeTab)
+              setChromeContextMenu({ x: e.clientX, y: e.clientY, url })
+            }}
+          >
           {activeTab.type === 'home' ? (
             <ChromeHome onShortcut={openShortcutTab} />
-          ) : (
-            <div className="chrome-landing__empty">
-              <span>Opened: {activeTab.title}</span>
-            </div>
-          )}
+          ) : (() => {
+            const url = getUrlForTab(activeTab)
+            return url ? (
+              <iframe src={url} className="chrome-landing__iframe" title={activeTab.title} />
+            ) : (
+              <div className="chrome-landing__empty">
+                <span>Opened: {activeTab.title}</span>
+              </div>
+            )
+          })()}
           </div>
         </ChromeWindow>
       )}
@@ -106,6 +125,15 @@ export default function ChromeLanding() {
         isChromeMinimized={chromeMinimized}
         onRestoreChrome={() => setChromeMinimized(false)}
       />
+      {chromeContextMenu && (
+        <ChromeContextMenu
+          x={chromeContextMenu.x}
+          y={chromeContextMenu.y}
+          currentUrl={chromeContextMenu.url}
+          onClose={() => setChromeContextMenu(null)}
+          onOpenInNewTab={() => {}}
+        />
+      )}
     </div>
   )
 }
