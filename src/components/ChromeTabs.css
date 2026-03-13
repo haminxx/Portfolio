@@ -19,7 +19,7 @@
   font-size: 13px;
   font-weight: 500;
   color: #1d1d1f;
-  transition: background 0.15s ease;
+  transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease, max-width 0.2s ease;
 }
 
 .chrome-tabs__tab:hover {
@@ -29,6 +29,45 @@
 .chrome-tabs__tab--active {
   background: #fff;
   box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.chrome-tabs__tab--added {
+  animation: chrome-tab-add 0.3s ease-out;
+}
+
+.chrome-tabs__tab--closing {
+  animation: chrome-tab-close 0.2s ease-in forwards;
+  pointer-events: none;
+}
+
+.chrome-tabs__tab--dragging {
+  opacity: 0.6;
+}
+
+.chrome-tabs__tab--drag-over {
+  border-left: 2px solid #007aff;
+  margin-left: -2px;
+}
+
+@keyframes chrome-tab-add {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes chrome-tab-close {
+  to {
+    opacity: 0;
+    max-width: 0;
+    padding-left: 0;
+    padding-right: 0;
+    overflow: hidden;
+  }
 }
 
 .chrome-tabs__title {
@@ -73,4 +112,12 @@
 
 .chrome-tabs__new:hover {
   background: rgba(0, 0, 0, 0.08);
+}
+
+.chrome-tabs__new--animate {
+  transition: transform 0.15s ease;
+}
+
+.chrome-tabs__new--animate:active {
+  transform: scale(0.95);
 }

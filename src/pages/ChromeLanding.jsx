@@ -14,6 +14,7 @@ import ContactPage from '../components/ContactPage'
 import SocialProfileWindow from '../components/SocialProfileWindow'
 import FolderWindow from '../components/FolderWindow'
 import MapWindow from '../components/MapWindow'
+import DoomWindow from '../components/DoomWindow'
 import NetflixWindow from '../components/NetflixWindow'
 import YouTubeMusicWindow from '../components/YouTubeMusicWindow'
 import SettingsWindow from '../components/SettingsWindow'
@@ -84,6 +85,7 @@ export default function ChromeLanding() {
   const [chromeMaximized, setChromeMaximized] = useState(false)
   const [chromeMinimized, setChromeMinimized] = useState(true)
   const [chromeMinimizing, setChromeMinimizing] = useState(false)
+  const [chromeOpening, setChromeOpening] = useState(false)
   const [sortBy, setSortBy] = useState('name')
   const [chromeContextMenu, setChromeContextMenu] = useState(null)
   const [desktopItems, setDesktopItemsState] = useState(() => {
@@ -145,6 +147,7 @@ export default function ChromeLanding() {
     if (appKey === 'chrome') {
       if (chromeMinimized) {
         setChromeMinimized(false)
+        setChromeOpening(true)
       } else {
         setChromeMinimizing(true)
       }
@@ -195,6 +198,9 @@ export default function ChromeLanding() {
   }, [])
 
   const setActiveTab = useCallback((id) => setActiveTabId(id), [])
+  const reorderTabs = useCallback((newTabs) => {
+    setTabs(newTabs)
+  }, [])
   const closeTab = useCallback((id) => {
     const willBeEmpty = tabs.filter((t) => t.id !== id).length === 0
     setTabs((prev) => {
@@ -222,6 +228,10 @@ export default function ChromeLanding() {
     setChromeMinimizing(false)
   }, [])
 
+  const handleChromeOpeningComplete = useCallback(() => {
+    setChromeOpening(false)
+  }, [])
+
   useEffect(() => {
     document.documentElement.dataset.theme = nightMode ? 'dark' : 'light'
   }, [nightMode])
@@ -246,6 +256,8 @@ export default function ChromeLanding() {
           isMaximized={chromeMaximized}
           onMaximize={toggleMaximize}
           isMinimizing={chromeMinimizing}
+          isOpening={chromeOpening}
+          onOpeningComplete={handleChromeOpeningComplete}
           onMinimizeComplete={handleChromeMinimizeComplete}
         >
           <ChromeFrame
@@ -254,6 +266,7 @@ export default function ChromeLanding() {
             onSelectTab={setActiveTab}
             onCloseTab={closeTab}
             onNewTab={openNewHomeTab}
+            onReorderTabs={reorderTabs}
             currentDomain={currentDomain}
             onGoHome={goHome}
             activeTabType={activeTab.type}
@@ -367,6 +380,8 @@ export default function ChromeLanding() {
           content = <AppStoreWindow />
         } else if (win.appKey === 'gallery') {
           content = <GalleryWindow />
+        } else if (win.appKey === 'doom') {
+          content = <DoomWindow />
         } else if (profileUrl) {
           content = <iframe src={profileUrl} className="chrome-landing__iframe" title={app.label} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} />
         } else {

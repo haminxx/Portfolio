@@ -80,6 +80,7 @@ export default function DesktopCustomIcons({
         x: e.clientX,
         y: e.clientY,
         item,
+        element: e.currentTarget,
       }
     },
     []
@@ -88,11 +89,14 @@ export default function DesktopCustomIcons({
   const handleMouseMove = useCallback(
     (e) => {
       if (!draggingId) return
-      const { x, y, item } = dragStartRef.current
+      const { x, y, item, element } = dragStartRef.current
       const dx = e.clientX - x
       const dy = e.clientY - y
       const distance = Math.sqrt(dx * dx + dy * dy)
       if (distance >= DRAG_THRESHOLD) {
+        if (element) {
+          element.style.transform = `translate(${dx}px, ${dy}px)`
+        }
         const el = document.elementFromPoint(e.clientX, e.clientY)
         const folderEl = el?.closest('[data-folder-id]')
         setDropTargetId(folderEl ? folderEl.dataset.folderId : null)
@@ -115,6 +119,8 @@ export default function DesktopCustomIcons({
       document.removeEventListener('mouseup', handleMouseUp)
 
       if (distance >= DRAG_THRESHOLD) {
+        const { element } = dragStartRef.current
+        if (element) element.style.transform = ''
         const el = document.elementFromPoint(e.clientX, e.clientY)
         const folderEl = el?.closest('[data-folder-id]')
         const targetFolderId = folderEl?.dataset.folderId
@@ -182,7 +188,11 @@ export default function DesktopCustomIcons({
             onContextMenu={(e) => onIconContextMenu?.(e, item)}
           >
             <span className="desktop-custom-icons__icon">
-              <Icon size={40} strokeWidth={1.5} />
+              {isShortcut && item.appKey === 'doom' ? (
+                <img src="/dock-icons/doom.png" alt="Doom" className="desktop-custom-icons__icon-img" />
+              ) : (
+                <Icon size={40} strokeWidth={1.5} />
+              )}
             </span>
             {renamingId === item.id ? (
               <input

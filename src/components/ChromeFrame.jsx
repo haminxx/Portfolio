@@ -10,6 +10,7 @@ export default function ChromeFrame({
   onSelectTab,
   onCloseTab,
   onNewTab,
+  onReorderTabs,
   currentDomain,
   onGoHome,
   activeTabType,
@@ -32,6 +33,7 @@ export default function ChromeFrame({
           onSelectTab={onSelectTab}
           onCloseTab={onCloseTab}
           onNewTab={onNewTab}
+          onReorderTabs={onReorderTabs}
         />
         <AddressBar
           domain={currentDomain}
