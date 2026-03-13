@@ -1,6 +1,75 @@
+import { useState, useEffect, useCallback } from 'react'
 import './YouTubeMusicWindow.css'
 
+const API_URL = import.meta.env.VITE_API_URL || ''
+
 export default function YouTubeMusicWindow() {
+  const [curated, setCurated] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState(null)
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [view, setView] = useState('home')
+
+  const baseUrl = API_URL.replace(/\/$/, '')
+
+  const fetchCurated = useCallback(async () => {
+    if (!baseUrl) {
+      setCurated([
+        { title: 'Quick picks', subtitle: 'Based on your listening', items: [] },
+        { title: 'Recommended for you', subtitle: null, items: [] },
+      ])
+      return
+    }
+    try {
+      const res = await fetch(`${baseUrl}/api/ytmusic/curated`)
+      if (res.ok) {
+        const data = await res.json()
+        setCurated(data.sections || [])
+      } else {
+        setCurated([])
+      }
+    } catch {
+      setCurated([])
+    }
+  }, [baseUrl])
+
+  const fetchSearch = useCallback(async (q) => {
+    if (!q.trim()) {
+      setSearchResults(null)
+      return
+    }
+    if (!baseUrl) {
+      setSearchResults([])
+      return
+    }
+    setSearchLoading(true)
+    try {
+      const res = await fetch(`${baseUrl}/api/ytmusic/search?q=${encodeURIComponent(q)}`)
+      if (res.ok) {
+        const data = await res.json()
+        setSearchResults(data.items || [])
+      } else {
+        setSearchResults([])
+      }
+    } catch {
+      setSearchResults([])
+    } finally {
+      setSearchLoading(false)
+    }
+  }, [baseUrl])
+
+  useEffect(() => {
+    fetchCurated()
+  }, [fetchCurated])
+
+  useEffect(() => {
+    const t = setTimeout(() => fetchSearch(searchQuery), 300)
+    return () => clearTimeout(t)
+  }, [searchQuery, fetchSearch])
+
+  const showSearch = searchQuery.trim().length > 0
+  const sections = curated || []
+
   return (
     <div className="ytmusic-window">
       <aside className="ytmusic-window__sidebar">
@@ -9,37 +78,113 @@ export default function YouTubeMusicWindow() {
           <span className="ytmusic-window__logo-text">YouTube Music</span>
         </div>
         <nav className="ytmusic-window__nav">
-          <span className="ytmusic-window__nav-item ytmusic-window__nav-item--active">Home</span>
-          <span className="ytmusic-window__nav-item">Explore</span>
-          <span className="ytmusic-window__nav-item">Library</span>
+          <button
+            type="button"
+            className={`ytmusic-window__nav-item ${view === 'home' ? 'ytmusic-window__nav-item--active' : ''}`}
+            onClick={() => setView('home')}
+          >
+            Home
+          </button>
+          <button
+            type="button"
+            className={`ytmusic-window__nav-item ${view === 'explore' ? 'ytmusic-window__nav-item--active' : ''}`}
+            onClick={() => setView('explore')}
+          >
+            Explore
+          </button>
+          <button
+            type="button"
+            className={`ytmusic-window__nav-item ${view === 'library' ? 'ytmusic-window__nav-item--active' : ''}`}
+            onClick={() => setView('library')}
+          >
+            Library
+          </button>
         </nav>
       </aside>
       <main className="ytmusic-window__main">
         <div className="ytmusic-window__search-bar">
-          <input type="text" placeholder="Search" className="ytmusic-window__search-input" readOnly />
+          <input
+            type="text"
+            placeholder="Search for songs, albums, or artists"
+            className="ytmusic-window__search-input"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-        <div className="ytmusic-window__hero">
-          <div className="ytmusic-window__hero-art">
-            <div className="ytmusic-window__play-circle">
-              <span className="ytmusic-window__play-icon">▶</span>
+
+        {showSearch ? (
+          <section className="ytmusic-window__section">
+            <h2 className="ytmusic-window__section-title">
+              Search results {searchLoading && '(loading...)'}
+            </h2>
+            <div className="ytmusic-window__grid">
+              {searchLoading ? (
+                [1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="ytmusic-window__card ytmusic-window__card--loading">
+                    <div className="ytmusic-window__card-art" />
+                    <span className="ytmusic-window__card-title">...</span>
+                  </div>
+                ))
+              ) : searchResults?.length ? (
+                searchResults.map((item, i) => (
+                  <a
+                    key={i}
+                    href={item.url || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ytmusic-window__card"
+                  >
+                    <div className="ytmusic-window__card-art">
+                      {item.thumbnail && (
+                        <img src={item.thumbnail} alt="" className="ytmusic-window__card-img" />
+                      )}
+                    </div>
+                    <span className="ytmusic-window__card-title">{item.title}</span>
+                    <span className="ytmusic-window__card-artist">{item.artist}</span>
+                  </a>
+                ))
+              ) : (
+                <p className="ytmusic-window__empty">No results found</p>
+              )}
             </div>
-          </div>
-          <div className="ytmusic-window__hero-info">
-            <h1 className="ytmusic-window__hero-title">Quick picks</h1>
-            <p className="ytmusic-window__hero-desc">Based on your listening</p>
-          </div>
-        </div>
-        <section className="ytmusic-window__section">
-          <h2 className="ytmusic-window__section-title">Recommended for you</h2>
-          <div className="ytmusic-window__grid">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="ytmusic-window__card">
-                <div className="ytmusic-window__card-art" />
-                <span className="ytmusic-window__card-title">Mix {i}</span>
+          </section>
+        ) : (
+          <>
+            {sections[0] && (
+              <div className="ytmusic-window__hero">
+                <div className="ytmusic-window__hero-art">
+                  <div className="ytmusic-window__play-circle">
+                    <span className="ytmusic-window__play-icon">▶</span>
+                  </div>
+                </div>
+                <div className="ytmusic-window__hero-info">
+                  <h1 className="ytmusic-window__hero-title">{sections[0].title}</h1>
+                  <p className="ytmusic-window__hero-desc">{sections[0].subtitle || 'Your music'}</p>
+                </div>
               </div>
+            )}
+            {sections.slice(1).map((section, idx) => (
+              <section key={idx} className="ytmusic-window__section">
+                <h2 className="ytmusic-window__section-title">{section.title}</h2>
+                <div className="ytmusic-window__grid">
+                  {(section.items || []).map((item, i) => (
+                    <div key={i} className="ytmusic-window__card">
+                      <div className="ytmusic-window__card-art">
+                        {item.thumbnail && (
+                          <img src={item.thumbnail} alt="" className="ytmusic-window__card-img" />
+                        )}
+                      </div>
+                      <span className="ytmusic-window__card-title">{item.title}</span>
+                      {item.artist && (
+                        <span className="ytmusic-window__card-artist">{item.artist}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
             ))}
-          </div>
-        </section>
+          </>
+        )}
       </main>
     </div>
   )

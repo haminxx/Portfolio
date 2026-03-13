@@ -1,7 +1,7 @@
-import { X } from 'lucide-react'
+import { X, Plus } from 'lucide-react'
 import './ChromeTabs.css'
 
-export default function ChromeTabs({ tabs, activeTabId, onSelectTab, onCloseTab }) {
+export default function ChromeTabs({ tabs, activeTabId, onSelectTab, onCloseTab, onNewTab }) {
   return (
     <div className="chrome-tabs">
       {tabs.map((tab) => (
@@ -33,6 +33,14 @@ export default function ChromeTabs({ tabs, activeTabId, onSelectTab, onCloseTab 
           </button>
         </div>
       ))}
+      <button
+        type="button"
+        className="chrome-tabs__new"
+        onClick={(e) => { e.stopPropagation(); onNewTab?.(); }}
+        aria-label="New tab"
+      >
+        <Plus size={16} strokeWidth={2.5} />
+      </button>
     </div>
   )
 }

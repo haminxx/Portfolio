@@ -1,0 +1,38 @@
+.project-page {
+  padding: 32px;
+  max-width: 720px;
+}
+
+.project-page__title {
+  margin: 0 0 24px;
+  font-size: 28px;
+  font-weight: 600;
+  color: #202124;
+}
+
+.project-page__list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.project-page__item {
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e8eaed;
+}
+
+.project-page__item-title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #202124;
+}
+
+.project-page__item-desc {
+  margin: 0;
+  font-size: 14px;
+  color: #5f6368;
+  line-height: 1.5;
+}

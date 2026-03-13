@@ -8,6 +8,9 @@ import Desktop from '../components/Desktop'
 import GitHubProfileCard from '../components/GitHubProfileCard'
 import LinkedInProfileCard from '../components/LinkedInProfileCard'
 import InstagramProfileCard from '../components/InstagramProfileCard'
+import AboutPage from '../components/AboutPage'
+import ProjectPage from '../components/ProjectPage'
+import ContactPage from '../components/ContactPage'
 import SocialProfileWindow from '../components/SocialProfileWindow'
 import FolderWindow from '../components/FolderWindow'
 import MapWindow from '../components/MapWindow'
@@ -80,6 +83,7 @@ export default function ChromeLanding() {
   const [activeTabId, setActiveTabId] = useState('home')
   const [chromeMaximized, setChromeMaximized] = useState(false)
   const [chromeMinimized, setChromeMinimized] = useState(true)
+  const [chromeMinimizing, setChromeMinimizing] = useState(false)
   const [sortBy, setSortBy] = useState('name')
   const [chromeContextMenu, setChromeContextMenu] = useState(null)
   const [desktopItems, setDesktopItemsState] = useState(() => loadDesktopItems())
@@ -121,7 +125,11 @@ export default function ChromeLanding() {
     const app = APPS[appKey]
     if (!app) return
     if (appKey === 'chrome') {
-      setChromeMinimized(false)
+      if (chromeMinimized) {
+        setChromeMinimized(false)
+      } else {
+        setChromeMinimizing(true)
+      }
       return
     }
     setOpenAppWindows((prev) => {
@@ -137,6 +145,7 @@ export default function ChromeLanding() {
         id,
         appKey,
         position: { x: 120 + prev.length * 40, y: 80 + prev.length * 40 },
+        size: { width: 640, height: 480 },
         isMaximized: false,
         isMinimized: false,
         isOpening: true,
@@ -144,7 +153,7 @@ export default function ChromeLanding() {
       setFocusedAppWindowId(id)
       return [...prev, win]
     })
-  }, [])
+  }, [chromeMinimized])
 
   const openShortcutTab = useCallback((shortcutType) => {
     const shortcut = SHORTCUTS.find((s) => s.type === shortcutType)
@@ -169,8 +178,20 @@ export default function ChromeLanding() {
   }, [activeTabId, tabs])
 
   const goHome = useCallback(() => setActiveTabId('home'), [])
+
+  const openNewHomeTab = useCallback(() => {
+    const homeTab = { id: `home-${Date.now()}`, title: 'Home', type: 'home' }
+    setTabs((prev) => [...prev, homeTab])
+    setActiveTabId(homeTab.id)
+    setChromeMinimized(false)
+  }, [])
   const toggleMaximize = useCallback(() => setChromeMaximized((m) => !m), [])
-  const setMinimized = useCallback(() => setChromeMinimized(true), [])
+  const setMinimized = useCallback(() => setChromeMinimizing(true), [])
+
+  const handleChromeMinimizeComplete = useCallback(() => {
+    setChromeMinimized(true)
+    setChromeMinimizing(false)
+  }, [])
 
   useEffect(() => {
     document.documentElement.dataset.theme = nightMode ? 'dark' : 'light'
@@ -191,13 +212,19 @@ export default function ChromeLanding() {
         startRenameId={startRenameId}
         onClearStartRenameId={() => setStartRenameId(null)}
       />
-      {!chromeMinimized && (
-        <ChromeWindow isMaximized={chromeMaximized} onMaximize={toggleMaximize}>
+      {(!chromeMinimized || chromeMinimizing) && (
+        <ChromeWindow
+          isMaximized={chromeMaximized}
+          onMaximize={toggleMaximize}
+          isMinimizing={chromeMinimizing}
+          onMinimizeComplete={handleChromeMinimizeComplete}
+        >
           <ChromeFrame
             tabs={tabs}
             activeTabId={activeTabId}
             onSelectTab={setActiveTab}
             onCloseTab={closeTab}
+            onNewTab={openNewHomeTab}
             currentDomain={currentDomain}
             onGoHome={goHome}
             activeTabType={activeTab.type}
@@ -215,6 +242,12 @@ export default function ChromeLanding() {
           >
           {activeTab.type === 'home' ? (
             <ChromeHome onShortcut={openShortcutTab} />
+          ) : activeTab.type === 'about' ? (
+            <AboutPage />
+          ) : activeTab.type === 'project' ? (
+            <ProjectPage />
+          ) : activeTab.type === 'contact' ? (
+            <ContactPage />
           ) : activeTab.type === 'github' ? (
             <SocialProfileWindow profileUrl={getUrlForTab(activeTab)}>
               <GitHubProfileCard profileUrl={getUrlForTab(activeTab)} />
@@ -222,10 +255,6 @@ export default function ChromeLanding() {
           ) : activeTab.type === 'linkedin' ? (
             <SocialProfileWindow profileUrl={getUrlForTab(activeTab)}>
               <LinkedInProfileCard profileUrl={getUrlForTab(activeTab)} />
-            </SocialProfileWindow>
-          ) : activeTab.type === 'instagram' ? (
-            <SocialProfileWindow profileUrl={getUrlForTab(activeTab)}>
-              <InstagramProfileCard profileUrl={getUrlForTab(activeTab)} />
             </SocialProfileWindow>
           ) : (() => {
             const url = getUrlForTab(activeTab)
@@ -323,7 +352,9 @@ export default function ChromeLanding() {
             position={win.position}
             isOpening={win.isOpening}
             onOpeningComplete={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isOpening: false } : w)))}
+            size={win.size ?? { width: 640, height: 480 }}
             onPositionChange={(pos) => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, position: pos } : w)))}
+            onSizeChange={(size) => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, size } : w)))}
             onClose={() => setOpenAppWindows((prev) => prev.filter((w) => w.id !== win.id))}
             onMinimize={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isMinimizing: true } : w)))}
             onMinimizeComplete={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isMinimized: true, isMinimizing: false } : w)))}

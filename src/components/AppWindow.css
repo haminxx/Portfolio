@@ -1,7 +1,5 @@
 .app-window {
   position: fixed;
-  width: 640px;
-  height: 480px;
   min-width: 320px;
   min-height: 240px;
   background: #fff;
@@ -126,5 +124,34 @@
     transform: scale(0.05) translateY(40vh);
     opacity: 0;
   }
+}
+
+.app-window__resize {
+  position: absolute;
+  z-index: 15;
+}
+
+.app-window__resize--e {
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: ew-resize;
+}
+
+.app-window__resize--s {
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  cursor: ns-resize;
+}
+
+.app-window__resize--se {
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
 }
 

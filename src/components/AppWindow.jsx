@@ -1,14 +1,19 @@
 import { useState, useRef, useEffect } from 'react'
 import './AppWindow.css'
 
+const MIN_WIDTH = 320
+const MIN_HEIGHT = 240
+
 export default function AppWindow({
   id,
   title,
   icon,
   position,
+  size = { width: 640, height: 480 },
   isOpening,
   onOpeningComplete,
   onPositionChange,
+  onSizeChange,
   onClose,
   onMinimize,
   onMinimizeComplete,
@@ -20,6 +25,8 @@ export default function AppWindow({
   children,
 }) {
   const [isDragging, setIsDragging] = useState(false)
+  const [isResizing, setIsResizing] = useState(false)
+  const resizeRef = useRef({ edge: '', startX: 0, startY: 0, startW: 0, startH: 0, startLeft: 0, startTop: 0 })
   const [isClosing, setIsClosing] = useState(false)
   const [openingPhase, setOpeningPhase] = useState('dock')
   const dragRef = useRef({ startX: 0, startY: 0, startLeft: 0, startTop: 0 })
@@ -65,6 +72,41 @@ export default function AppWindow({
     }
   }, [isDragging, onPositionChange])
 
+  const handleResizeStart = (e, edge) => {
+    e.stopPropagation()
+    if (isMaximized) return
+    onFocus?.()
+    setIsResizing(true)
+    resizeRef.current = {
+      edge,
+      startX: e.clientX,
+      startY: e.clientY,
+      startW: size.width,
+      startH: size.height,
+    }
+  }
+
+  useEffect(() => {
+    if (!isResizing) return
+    const handleMove = (e) => {
+      const { edge, startX, startY, startW, startH } = resizeRef.current
+      const dx = e.clientX - startX
+      const dy = e.clientY - startY
+      let w = startW
+      let h = startH
+      if (edge.includes('e') || edge === 'se') w = Math.max(MIN_WIDTH, startW + dx)
+      if (edge.includes('s') || edge === 'se') h = Math.max(MIN_HEIGHT, startH + dy)
+      onSizeChange?.({ width: w, height: h })
+    }
+    const handleUp = () => setIsResizing(false)
+    document.addEventListener('mousemove', handleMove)
+    document.addEventListener('mouseup', handleUp)
+    return () => {
+      document.removeEventListener('mousemove', handleMove)
+      document.removeEventListener('mouseup', handleUp)
+    }
+  }, [isResizing, onSizeChange])
+
   useEffect(() => {
     if (!isClosing) return
     const el = document.getElementById(`app-window-${id}`)
@@ -103,9 +145,17 @@ export default function AppWindow({
       ? {
           left: 'calc(50vw - 320px)',
           top: '100vh',
+          width: 640,
+          height: 480,
           transform: 'translateY(-20px) scale(0.92)',
         }
-      : { left: position.x, top: position.y, transform: 'scale(1)' }
+      : {
+          left: position.x,
+          top: position.y,
+          width: size.width,
+          height: size.height,
+          transform: 'scale(1)',
+        }
 
   return (
     <div
@@ -149,6 +199,13 @@ export default function AppWindow({
       <div className="app-window__content">
         {children}
       </div>
+      {!isMaximized && (
+        <>
+          <div className="app-window__resize app-window__resize--e" onMouseDown={(e) => handleResizeStart(e, 'e')} />
+          <div className="app-window__resize app-window__resize--s" onMouseDown={(e) => handleResizeStart(e, 's')} />
+          <div className="app-window__resize app-window__resize--se" onMouseDown={(e) => handleResizeStart(e, 'se')} />
+        </>
+      )}
     </div>
   )
 }

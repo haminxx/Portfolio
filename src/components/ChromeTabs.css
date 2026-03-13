@@ -55,3 +55,22 @@
 .chrome-tabs__close:hover {
   background: rgba(0, 0, 0, 0.1);
 }
+
+.chrome-tabs__new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #1d1d1f;
+  cursor: pointer;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.chrome-tabs__new:hover {
+  background: rgba(0, 0, 0, 0.08);
+}

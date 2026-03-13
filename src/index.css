@@ -15,3 +15,31 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
 }
+
+/* Hide scrollbars but keep scroll functionality */
+.app-window__content,
+.chrome-landing__content,
+.ytmusic-window__main,
+.gallery-window__main,
+.gallery-window__grid,
+.app-store-window__main,
+.settings-window__main,
+.social-profile-window__card,
+.folder-window__content,
+.social-profile-card {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.app-window__content::-webkit-scrollbar,
+.chrome-landing__content::-webkit-scrollbar,
+.ytmusic-window__main::-webkit-scrollbar,
+.gallery-window__main::-webkit-scrollbar,
+.gallery-window__grid::-webkit-scrollbar,
+.app-store-window__main::-webkit-scrollbar,
+.settings-window__main::-webkit-scrollbar,
+.social-profile-window__card::-webkit-scrollbar,
+.folder-window__content::-webkit-scrollbar,
+.social-profile-card::-webkit-scrollbar {
+  display: none;
+}
