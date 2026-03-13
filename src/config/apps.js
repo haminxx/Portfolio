@@ -11,6 +11,7 @@ export const APPS = {
     label: 'Instagram',
     domain: 'instagram.com/85liez',
     icon: 'instagram',
+    url: 'https://www.instagram.com/85liez/',
   },
   netflix: {
     label: 'Netflix',

@@ -21,9 +21,9 @@ const APP_ICONS = {
   map: Map,
 }
 
-export default function Dock({ onOpenApp, isChromeMinimized, onRestoreChrome }) {
+export default function Dock({ onOpenApp, isChromeMinimized, isChromeMaximized, onRestoreChrome }) {
   return (
-    <footer className="dock">
+    <footer className={`dock ${isChromeMaximized ? 'dock--fullscreen-hidden' : ''}`}>
       <div className="dock__inner">
         {isChromeMinimized && (
           <button

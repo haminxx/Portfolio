@@ -36,6 +36,7 @@ export default function DesktopIcons({
 }) {
   const [draggingKey, setDraggingKey] = useState(null)
   const dragStartRef = useRef({ x: 0, y: 0, posX: 0, posY: 0 })
+  const lastClickRef = useRef({ appKey: null, time: 0 })
 
   let entries = Object.entries(APPS)
   if (sortBy === 'name') {
@@ -111,7 +112,14 @@ export default function DesktopIcons({
       const dy = e.clientY - y
       const distance = Math.sqrt(dx * dx + dy * dy)
       if (distance < DRAG_THRESHOLD) {
-        onOpenApp?.(appKey)
+        const now = Date.now()
+        const last = lastClickRef.current
+        if (last.appKey === appKey && now - last.time < 400) {
+          onOpenApp?.(appKey)
+          lastClickRef.current = { appKey: null, time: 0 }
+        } else {
+          lastClickRef.current = { appKey, time: now }
+        }
       } else {
         const finalX = posX + dx
         const finalY = posY + dy

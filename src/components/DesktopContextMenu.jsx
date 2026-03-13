@@ -12,10 +12,15 @@ export default function DesktopContextMenu({
   x,
   y,
   appKey,
+  customItem,
   onClose,
   onOpenApp,
   onSortByChange,
   sortBy,
+  onNewFolder,
+  onNewFile,
+  onOpenFolder,
+  onStartRename,
 }) {
   const menuRef = useRef(null)
 
@@ -69,6 +74,32 @@ export default function DesktopContextMenu({
           </button>
           <div className="desktop-context-menu__divider" />
         </>
+      ) : customItem ? (
+        <>
+          {customItem.type === 'folder' ? (
+            <button
+              type="button"
+              className="desktop-context-menu__item"
+              onClick={() => {
+                onOpenFolder?.(customItem.id)
+                onClose?.()
+              }}
+            >
+              Open
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="desktop-context-menu__item"
+            onClick={() => {
+              onStartRename?.(customItem.id)
+              onClose?.()
+            }}
+          >
+            Rename
+          </button>
+          <div className="desktop-context-menu__divider" />
+        </>
       ) : null}
       <div className="desktop-context-menu__submenu">
         <span className="desktop-context-menu__label">Sort by</span>
@@ -90,10 +121,10 @@ export default function DesktopContextMenu({
       <button type="button" className="desktop-context-menu__item">
         Personalize
       </button>
-      <button type="button" className="desktop-context-menu__item">
+      <button type="button" className="desktop-context-menu__item" onClick={() => { onNewFolder?.(x, y); onClose?.(); }}>
         New folder
       </button>
-      <button type="button" className="desktop-context-menu__item">
+      <button type="button" className="desktop-context-menu__item" onClick={() => { onNewFile?.(x, y); onClose?.(); }}>
         Add file
       </button>
       <div className="desktop-context-menu__divider" />

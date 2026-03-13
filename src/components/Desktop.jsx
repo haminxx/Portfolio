@@ -1,10 +1,31 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import DesktopIcons from './DesktopIcons'
+import DesktopCustomIcons from './DesktopCustomIcons'
 import DesktopContextMenu from './DesktopContextMenu'
 import { APPS } from '../config/apps'
 import './Desktop.css'
 
 const STORAGE_KEY = 'desktop-icon-positions'
+const DESKTOP_ITEMS_KEY = 'desktop-items'
+
+function loadDesktopItems() {
+  try {
+    const raw = localStorage.getItem(DESKTOP_ITEMS_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function saveDesktopItems(items) {
+  try {
+    localStorage.setItem(DESKTOP_ITEMS_KEY, JSON.stringify(items))
+  } catch {
+    // ignore
+  }
+}
 
 function getDefaultPositions() {
   const entries = Object.keys(APPS)
@@ -41,6 +62,14 @@ export default function Desktop({
   onOpenApp,
   sortBy,
   onSortByChange,
+  desktopItems = [],
+  onItemsChange,
+  onOpenFolder,
+  onNewFolder,
+  onNewFile,
+  onStartRename,
+  startRenameId,
+  onClearStartRenameId,
 }) {
   const [iconPositions, setIconPositions] = useState(() => {
     const saved = loadPositions()
@@ -70,7 +99,7 @@ export default function Desktop({
 
   const handleMouseDown = useCallback((e) => {
     if (e.button !== 0) return
-    if (e.target.closest('.desktop-icons__item')) return
+    if (e.target.closest('.desktop-icons__item') || e.target.closest('.desktop-custom-icons__item')) return
     setContextMenu(null)
     setSelectedIcons(new Set())
     setSelectionBox({
@@ -122,9 +151,15 @@ export default function Desktop({
 
   const handleContextMenu = useCallback((e) => {
     e.preventDefault()
-    if (e.target.closest('.desktop-icons__item')) return
+    if (e.target.closest('.desktop-icons__item') || e.target.closest('.desktop-custom-icons__item')) return
     setContextMenu({ x: e.clientX, y: e.clientY })
     setSelectionBox(null)
+  }, [])
+
+  const handleCustomIconContextMenu = useCallback((e, item) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setContextMenu({ x: e.clientX, y: e.clientY, customItem: item })
   }, [])
 
   useEffect(() => {
@@ -151,6 +186,14 @@ export default function Desktop({
       onContextMenu={handleContextMenu}
     >
       <div ref={iconsRef} className="desktop__icons-wrap">
+        <DesktopCustomIcons
+          desktopItems={desktopItems}
+          onItemsChange={onItemsChange}
+          onOpenFolder={onOpenFolder}
+          onIconContextMenu={handleCustomIconContextMenu}
+          startRenameId={startRenameId}
+          onClearStartRenameId={onClearStartRenameId}
+        />
         <DesktopIcons
           onOpenApp={onOpenApp}
           iconPositions={iconPositions}
@@ -176,10 +219,15 @@ export default function Desktop({
           x={contextMenu.x}
           y={contextMenu.y}
           appKey={contextMenu.appKey}
+          customItem={contextMenu.customItem}
           onClose={() => setContextMenu(null)}
           onOpenApp={onOpenApp}
           onSortByChange={onSortByChange}
           sortBy={sortBy}
+          onNewFolder={onNewFolder}
+          onNewFile={onNewFile}
+          onOpenFolder={onOpenFolder}
+          onStartRename={onStartRename}
         />
       )}
     </div>

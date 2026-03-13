@@ -4,6 +4,7 @@ import ChromeWindow from '../components/ChromeWindow'
 import ChromeHome from '../components/ChromeHome'
 import ChromeContextMenu from '../components/ChromeContextMenu'
 import Desktop from '../components/Desktop'
+import FolderWindow from '../components/FolderWindow'
 import MenuBar from '../components/MenuBar'
 import Dock from '../components/Dock'
 import { APPS, getDomainForApp } from '../config/apps'
@@ -11,6 +12,26 @@ import { SHORTCUTS } from '../config/shortcuts'
 import './ChromeLanding.css'
 
 const HOME_TAB = { id: 'home', title: 'Home', type: 'home' }
+const DESKTOP_ITEMS_KEY = 'desktop-items'
+
+function loadDesktopItems() {
+  try {
+    const raw = localStorage.getItem(DESKTOP_ITEMS_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function saveDesktopItems(items) {
+  try {
+    localStorage.setItem(DESKTOP_ITEMS_KEY, JSON.stringify(items))
+  } catch {
+    // ignore
+  }
+}
 
 function getDomainForTab(tab) {
   if (tab.type === 'home') return 'portfolio.local'
@@ -23,9 +44,13 @@ function getDomainForTab(tab) {
   return getDomainForApp(tab.type)
 }
 
+const EMBED_BLOCKED_TYPES = ['linkedin', 'github', 'instagram']
+
 function getUrlForTab(tab) {
   const shortcut = SHORTCUTS.find((s) => s.type === tab.type)
-  return shortcut?.url ?? null
+  if (shortcut?.url) return shortcut.url
+  const app = APPS[tab.type]
+  return app?.url ?? null
 }
 
 export default function ChromeLanding() {
@@ -35,6 +60,32 @@ export default function ChromeLanding() {
   const [chromeMinimized, setChromeMinimized] = useState(true)
   const [sortBy, setSortBy] = useState('name')
   const [chromeContextMenu, setChromeContextMenu] = useState(null)
+  const [desktopItems, setDesktopItemsState] = useState(() => loadDesktopItems())
+  const [openFolderId, setOpenFolderId] = useState(null)
+  const [startRenameId, setStartRenameId] = useState(null)
+
+  const setDesktopItems = useCallback((fnOrValue) => {
+    setDesktopItemsState((prev) => {
+      const next = typeof fnOrValue === 'function' ? fnOrValue(prev) : fnOrValue
+      saveDesktopItems(next)
+      return next
+    })
+  }, [])
+
+  const handleNewFolder = useCallback((x, y) => {
+    const id = `folder-${Date.now()}`
+    setDesktopItems((prev) => [...prev, { id, type: 'folder', name: 'New Folder', parentId: null, x, y }])
+    setStartRenameId(id)
+  }, [setDesktopItems])
+
+  const handleNewFile = useCallback((x, y) => {
+    const id = `file-${Date.now()}`
+    setDesktopItems((prev) => [...prev, { id, type: 'file', name: 'New File', parentId: null, x, y }])
+    setStartRenameId(id)
+  }, [setDesktopItems])
+
+  const handleOpenFolder = useCallback((id) => setOpenFolderId(id), [])
+  const handleStartRename = useCallback((id) => setStartRenameId(id), [])
 
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0]
   const currentDomain = getDomainForTab(activeTab)
@@ -81,6 +132,14 @@ export default function ChromeLanding() {
         onOpenApp={openAppTab}
         sortBy={sortBy}
         onSortByChange={setSortBy}
+        desktopItems={desktopItems}
+        onItemsChange={setDesktopItems}
+        onOpenFolder={handleOpenFolder}
+        onNewFolder={handleNewFolder}
+        onNewFile={handleNewFile}
+        onStartRename={handleStartRename}
+        startRenameId={startRenameId}
+        onClearStartRenameId={() => setStartRenameId(null)}
       />
       {!chromeMinimized && (
         <ChromeWindow isMaximized={chromeMaximized} onMaximize={toggleMaximize}>
@@ -108,9 +167,29 @@ export default function ChromeLanding() {
             <ChromeHome onShortcut={openShortcutTab} />
           ) : (() => {
             const url = getUrlForTab(activeTab)
-            return url ? (
-              <iframe src={url} className="chrome-landing__iframe" title={activeTab.title} />
-            ) : (
+            const isEmbedBlocked = EMBED_BLOCKED_TYPES.includes(activeTab.type)
+            if (url && isEmbedBlocked) {
+              return (
+                <div className="chrome-landing__embed-blocked">
+                  <p className="chrome-landing__embed-msg">
+                    {activeTab.title} restricts embedding. Open in a new tab to view.
+                  </p>
+                  <button
+                    type="button"
+                    className="chrome-landing__open-tab-btn"
+                    onClick={() => window.open(url, '_blank')}
+                  >
+                    Open in new tab
+                  </button>
+                </div>
+              )
+            }
+            if (url) {
+              return (
+                <iframe src={url} className="chrome-landing__iframe" title={activeTab.title} />
+              )
+            }
+            return (
               <div className="chrome-landing__empty">
                 <span>Opened: {activeTab.title}</span>
               </div>
@@ -123,8 +202,19 @@ export default function ChromeLanding() {
       <Dock
         onOpenApp={openAppTab}
         isChromeMinimized={chromeMinimized}
+        isChromeMaximized={chromeMaximized}
         onRestoreChrome={() => setChromeMinimized(false)}
       />
+      {openFolderId && (
+        <FolderWindow
+          folderId={openFolderId}
+          folderName={desktopItems.find((i) => i.id === openFolderId)?.name ?? 'Folder'}
+          desktopItems={desktopItems}
+          onItemsChange={setDesktopItems}
+          onClose={() => setOpenFolderId(null)}
+          onOpenFolder={handleOpenFolder}
+        />
+      )}
       {chromeContextMenu && (
         <ChromeContextMenu
           x={chromeContextMenu.x}

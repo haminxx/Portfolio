@@ -1,4 +1,4 @@
-import { Search, User, Folder, Mail, Linkedin, Github } from 'lucide-react'
+import { Search, User, Folder, Mail, Linkedin, Github, Image } from 'lucide-react'
 import { SHORTCUTS } from '../config/shortcuts'
 import './ChromeHome.css'
 
@@ -8,6 +8,7 @@ const SHORTCUT_ICONS = {
   mail: Mail,
   linkedin: Linkedin,
   github: Github,
+  instagram: Image,
 }
 
 export default function ChromeHome({ onShortcut }) {

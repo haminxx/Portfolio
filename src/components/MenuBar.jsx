@@ -14,32 +14,59 @@ const MENUS = [
 export default function MenuBar() {
   const [openMenu, setOpenMenu] = useState(null)
   const barRef = useRef(null)
+  const leaveTimeoutRef = useRef(null)
 
-  useEffect(() => {
-    if (!openMenu) return
-    const handleClickOutside = (e) => {
-      if (barRef.current && !barRef.current.contains(e.target)) setOpenMenu(null)
+  const handleMenuEnter = (menuId) => {
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current)
+      leaveTimeoutRef.current = null
     }
-    document.addEventListener('click', handleClickOutside)
-    return () => document.removeEventListener('click', handleClickOutside)
-  }, [openMenu])
+    setOpenMenu(menuId)
+  }
+
+  const handleMenuLeave = () => {
+    leaveTimeoutRef.current = setTimeout(() => setOpenMenu(null), 150)
+  }
+
+  const handleDropdownEnter = () => {
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current)
+      leaveTimeoutRef.current = null
+    }
+  }
+
+  const handleDropdownLeave = () => {
+    leaveTimeoutRef.current = setTimeout(() => setOpenMenu(null), 150)
+  }
+
+  useEffect(() => () => {
+    if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current)
+  }, [])
 
   return (
     <header className="menu-bar" ref={barRef}>
       <div className="menu-bar__left">
         <span className="menu-bar__logo">CNL</span>
         {MENUS.map((menu) => (
-          <div key={menu.id} className="menu-bar__menu-wrap">
+          <div
+            key={menu.id}
+            className="menu-bar__menu-wrap"
+            onMouseEnter={() => handleMenuEnter(menu.id)}
+            onMouseLeave={handleMenuLeave}
+          >
             <button
               type="button"
               className={`menu-bar__menu-trigger ${openMenu === menu.id ? 'menu-bar__menu-trigger--open' : ''}`}
-              onClick={() => setOpenMenu(openMenu === menu.id ? null : menu.id)}
               aria-expanded={openMenu === menu.id}
             >
               {menu.label}
             </button>
             {openMenu === menu.id && (
-              <div className="menu-bar__dropdown">
+              <div
+                className="menu-bar__dropdown"
+                onMouseEnter={handleDropdownEnter}
+                onMouseLeave={handleDropdownLeave}
+              >
                 {menu.items.map((item, i) =>
                   item === '—' ? (
                     <div key={`${menu.id}-div-${i}`} className="menu-bar__divider" />
