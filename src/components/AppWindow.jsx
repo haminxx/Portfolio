@@ -83,20 +83,39 @@ export default function AppWindow({
       startY: e.clientY,
       startW: size.width,
       startH: size.height,
+      startLeft: position.x,
+      startTop: position.y,
     }
   }
 
   useEffect(() => {
     if (!isResizing) return
     const handleMove = (e) => {
-      const { edge, startX, startY, startW, startH } = resizeRef.current
+      const { edge, startX, startY, startW, startH, startLeft, startTop } = resizeRef.current
       const dx = e.clientX - startX
       const dy = e.clientY - startY
       let w = startW
       let h = startH
-      if (edge.includes('e') || edge === 'se') w = Math.max(MIN_WIDTH, startW + dx)
-      if (edge.includes('s') || edge === 'se') h = Math.max(MIN_HEIGHT, startH + dy)
+      let left = startLeft
+      let top = startTop
+      if (edge.includes('e')) w = Math.max(MIN_WIDTH, startW + dx)
+      else if (edge.includes('w')) {
+        const maxDx = startW - MIN_WIDTH
+        const clampedDx = Math.min(dx, maxDx)
+        w = startW - clampedDx
+        left = startLeft + clampedDx
+      }
+      if (edge.includes('s')) h = Math.max(MIN_HEIGHT, startH + dy)
+      else if (edge.includes('n')) {
+        const maxDy = startH - MIN_HEIGHT
+        const clampedDy = Math.min(dy, maxDy)
+        h = startH - clampedDy
+        top = startTop + clampedDy
+      }
       onSizeChange?.({ width: w, height: h })
+      if (left !== startLeft || top !== startTop) {
+        onPositionChange?.({ x: left, y: top })
+      }
     }
     const handleUp = () => setIsResizing(false)
     document.addEventListener('mousemove', handleMove)
@@ -105,7 +124,7 @@ export default function AppWindow({
       document.removeEventListener('mousemove', handleMove)
       document.removeEventListener('mouseup', handleUp)
     }
-  }, [isResizing, onSizeChange])
+  }, [isResizing, onSizeChange, onPositionChange])
 
   useEffect(() => {
     if (!isClosing) return
@@ -201,8 +220,13 @@ export default function AppWindow({
       </div>
       {!isMaximized && (
         <>
-          <div className="app-window__resize app-window__resize--e" onMouseDown={(e) => handleResizeStart(e, 'e')} />
+          <div className="app-window__resize app-window__resize--n" onMouseDown={(e) => handleResizeStart(e, 'n')} />
           <div className="app-window__resize app-window__resize--s" onMouseDown={(e) => handleResizeStart(e, 's')} />
+          <div className="app-window__resize app-window__resize--e" onMouseDown={(e) => handleResizeStart(e, 'e')} />
+          <div className="app-window__resize app-window__resize--w" onMouseDown={(e) => handleResizeStart(e, 'w')} />
+          <div className="app-window__resize app-window__resize--nw" onMouseDown={(e) => handleResizeStart(e, 'nw')} />
+          <div className="app-window__resize app-window__resize--ne" onMouseDown={(e) => handleResizeStart(e, 'ne')} />
+          <div className="app-window__resize app-window__resize--sw" onMouseDown={(e) => handleResizeStart(e, 'sw')} />
           <div className="app-window__resize app-window__resize--se" onMouseDown={(e) => handleResizeStart(e, 'se')} />
         </>
       )}

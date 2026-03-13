@@ -131,12 +131,12 @@
   z-index: 15;
 }
 
-.app-window__resize--e {
+.app-window__resize--n {
   top: 0;
-  right: 0;
-  width: 6px;
-  height: 100%;
-  cursor: ew-resize;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  cursor: n-resize;
 }
 
 .app-window__resize--s {
@@ -144,7 +144,47 @@
   left: 0;
   width: 100%;
   height: 6px;
-  cursor: ns-resize;
+  cursor: s-resize;
+}
+
+.app-window__resize--e {
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: e-resize;
+}
+
+.app-window__resize--w {
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  cursor: w-resize;
+}
+
+.app-window__resize--nw {
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+}
+
+.app-window__resize--ne {
+  top: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nesw-resize;
+}
+
+.app-window__resize--sw {
+  bottom: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nesw-resize;
 }
 
 .app-window__resize--se {

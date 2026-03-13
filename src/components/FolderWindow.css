@@ -11,6 +11,25 @@
   flex-direction: column;
 }
 
+.folder-window--opening {
+  transition: left 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    top 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.folder-window--closing {
+  transform-origin: center bottom;
+  animation: folder-window-to-dock 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes folder-window-to-dock {
+  to {
+    transform: scale(0.05) translateY(40vh);
+    opacity: 0;
+  }
+}
+
 .folder-window__titlebar {
   display: flex;
   align-items: center;

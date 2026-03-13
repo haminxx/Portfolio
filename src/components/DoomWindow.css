@@ -21,3 +21,15 @@
   width: 100% !important;
   height: 100% !important;
 }
+
+.doom-window--fallback {
+  position: relative;
+}
+
+.doom-window__iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}

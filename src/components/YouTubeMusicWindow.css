@@ -155,6 +155,19 @@
 
 .ytmusic-window__card {
   cursor: pointer;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+
+.ytmusic-window__card:disabled {
+  cursor: default;
+  opacity: 0.7;
 }
 
 .ytmusic-window__card-art {
@@ -175,12 +188,7 @@
   object-fit: cover;
 }
 
-.ytmusic-window__card {
-  text-decoration: none;
-  color: inherit;
-}
-
-.ytmusic-window__card:hover .ytmusic-window__card-art {
+.ytmusic-window__card:hover:not(:disabled) .ytmusic-window__card-art {
   background: #3a3a3a;
 }
 
@@ -201,4 +209,41 @@
   grid-column: 1 / -1;
   color: rgba(255, 255, 255, 0.6);
   font-size: 14px;
+}
+
+.ytmusic-window__player {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.ytmusic-window__player-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.ytmusic-window__player-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.ytmusic-window__player-iframe {
+  width: min(90vw, 853px);
+  height: min(50vw, 480px);
+  max-height: 90vh;
+  border: none;
+  border-radius: 8px;
 }

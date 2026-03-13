@@ -1,8 +1,19 @@
 /**
- * Curated YouTube Music content. Replace with your songs/albums when ready.
- * Structure: { sections: [{ title, items: [{ title, artist, thumbnail, url? }] }] }
+ * Curated YouTube Music content.
+ * Structure: { sections: [{ title, items: [{ title, artist, thumbnail, url?, videoId? }] }] }
  */
 export const CURATED_SECTIONS = [
+  {
+    title: 'Rebel',
+    subtitle: 'Rock anthems',
+    items: [
+      { title: 'Moon on the Water', artist: 'Beat Crusaders', videoId: 'KFyiHJz502E' },
+      { title: 'City of God', artist: 'Idaho', videoId: null },
+      { title: "Don't Look Back in Anger", artist: 'Oasis', videoId: 'r8OipmKFDeM' },
+      { title: 'Wonderwall', artist: 'Oasis', videoId: 'vU05Eksc_iM' },
+      { title: 'Judas Syndrome', artist: 'Old English Sheep Dog', videoId: null },
+    ],
+  },
   {
     title: 'Quick picks',
     subtitle: 'Based on your listening',

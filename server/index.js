@@ -16,6 +16,7 @@ async function getYTMusic() {
 const PORT = process.env.PORT || 3001
 const GITHUB_USER = process.env.GITHUB_USER || 'haminxx'
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY
 
 const GITHUB_HEADERS = {
   Accept: 'application/vnd.github+json',
@@ -100,6 +101,34 @@ app.get('/api/ytmusic/search', async (req, res) => {
 
 app.get('/api/ytmusic/curated', (req, res) => {
   res.json({ sections: CURATED_SECTIONS })
+})
+
+app.get('/api/youtube/search', async (req, res) => {
+  const q = req.query.q?.trim()
+  if (!q) {
+    return res.status(400).json({ error: 'Missing query parameter: q' })
+  }
+  if (!YOUTUBE_API_KEY) {
+    return res.status(503).json({ error: 'YouTube API key not configured' })
+  }
+  try {
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&type=video&maxResults=20&key=${YOUTUBE_API_KEY}`
+    const resp = await fetch(url)
+    const data = await resp.json()
+    if (data.error) {
+      return res.status(400).json({ error: data.error.message || 'YouTube API error' })
+    }
+    const items = (data.items || []).map((item) => ({
+      id: item.id?.videoId,
+      title: item.snippet?.title,
+      thumbnail: item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url,
+      channelTitle: item.snippet?.channelTitle,
+    })).filter((i) => i.id)
+    res.json({ items })
+  } catch (err) {
+    console.error('YouTube search error:', err)
+    res.status(500).json({ error: 'Search failed' })
+  }
 })
 
 app.listen(PORT, () => {

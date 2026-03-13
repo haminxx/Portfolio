@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { Home, GraduationCap, MapPin, Globe, Search } from 'lucide-react'
@@ -53,9 +53,9 @@ const homeIcon = L.divIcon({
   iconAnchor: [24, 48],
 })
 
-async function geocode(query) {
+async function geocode(query, limit = 1) {
   const res = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
+    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=${limit}`,
     {
       headers: {
         'Accept-Language': 'en',
@@ -64,11 +64,15 @@ async function geocode(query) {
     }
   )
   const data = await res.json()
-  if (data && data[0]) {
-    const { lat, lon, display_name } = data[0]
-    return { coords: [parseFloat(lat), parseFloat(lon)], address: display_name }
-  }
-  return null
+  if (!data || !Array.isArray(data)) return limit === 1 ? null : []
+  return limit === 1
+    ? data[0]
+      ? { coords: [parseFloat(data[0].lat), parseFloat(data[0].lon)], address: data[0].display_name }
+      : null
+    : data.map((d) => ({
+        coords: [parseFloat(d.lat), parseFloat(d.lon)],
+        address: d.display_name,
+      }))
 }
 
 export default function MapWindow() {
@@ -78,6 +82,10 @@ export default function MapWindow() {
   const [searchCoords, setSearchCoords] = useState(null)
   const [isSearching, setIsSearching] = useState(false)
   const [recentSearches, setRecentSearches] = useState([])
+  const [suggestions, setSuggestions] = useState([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false)
+  const suggestionsDebounceRef = useRef(null)
 
   const flyToCoords = searchCoords ?? (activeLocation ? LOCATIONS[activeLocation]?.coords : null)
   const flyToZoom = searchCoords ? 14 : (activeLocation ? LOCATIONS[activeLocation]?.zoom : null)
@@ -86,6 +94,7 @@ export default function MapWindow() {
     setActiveLocation(key)
     setSearchCoords(null)
     setSearchResult(null)
+    setShowSuggestions(false)
   }, [])
 
   const handleSearch = useCallback(async () => {
@@ -93,8 +102,9 @@ export default function MapWindow() {
     if (!q) return
     setIsSearching(true)
     setSearchResult(null)
+    setShowSuggestions(false)
     try {
-      const result = await geocode(q)
+      const result = await geocode(q, 1)
       if (result) {
         setSearchCoords(result.coords)
         setSearchResult(result)
@@ -117,10 +127,47 @@ export default function MapWindow() {
     [handleSearch]
   )
 
+  useEffect(() => {
+    const q = searchQuery.trim()
+    if (!q) {
+      setSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+    if (suggestionsDebounceRef.current) clearTimeout(suggestionsDebounceRef.current)
+    suggestionsDebounceRef.current = setTimeout(async () => {
+      setSuggestionsLoading(true)
+      try {
+        const results = await geocode(q, 5)
+        setSuggestions(results || [])
+        setShowSuggestions(true)
+      } catch {
+        setSuggestions([])
+      } finally {
+        setSuggestionsLoading(false)
+      }
+    }, 300)
+    return () => {
+      if (suggestionsDebounceRef.current) clearTimeout(suggestionsDebounceRef.current)
+    }
+  }, [searchQuery])
+
+  const selectSuggestion = useCallback((item) => {
+    setSearchCoords(item.coords)
+    setSearchResult({ address: item.address })
+    setSearchQuery(item.address)
+    setShowSuggestions(false)
+    setSuggestions([])
+    setRecentSearches((prev) => {
+      const next = [{ query: item.address, ...item }, ...prev.filter((r) => r.address !== item.address)].slice(0, 5)
+      return next
+    })
+  }, [])
+
   return (
     <div className="map-window">
       <div className="map-window__search">
-        <div className="map-window__search-wrap">
+        <div className="map-window__search-wrap map-window__search-wrap--relative">
           <Search size={18} strokeWidth={1.5} className="map-window__search-icon" />
           <input
             type="text"
@@ -129,7 +176,30 @@ export default function MapWindow() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
+            onFocus={() => searchQuery.trim() && setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
           />
+          {showSuggestions && (suggestions.length > 0 || suggestionsLoading) && (
+            <div className="map-window__suggestions">
+              {suggestionsLoading ? (
+                <div className="map-window__suggestion-item map-window__suggestion-item--loading">Searching...</div>
+              ) : (
+                suggestions.map((s, i) => (
+                  <button
+                    key={`${s.address}-${i}`}
+                    type="button"
+                    className="map-window__suggestion-item"
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                      selectSuggestion(s)
+                    }}
+                  >
+                    {s.address}
+                  </button>
+                ))
+              )}
+            </div>
+          )}
           <button
             type="button"
             className="map-window__search-btn"
@@ -142,7 +212,7 @@ export default function MapWindow() {
       </div>
       <div className="map-window__layout">
         <aside className="map-window__sidebar">
-          <h3 className="map-window__sidebar-title">Recents</h3>
+          <h3 className="map-window__sidebar-title">Saved Location</h3>
           {Object.entries(LOCATIONS).map(([key, loc]) => {
             const Icon = loc.icon ?? MapPin
             return (

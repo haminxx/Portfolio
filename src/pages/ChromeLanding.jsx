@@ -111,6 +111,7 @@ export default function ChromeLanding() {
   const [startRenameId, setStartRenameId] = useState(null)
   const [openAppWindows, setOpenAppWindows] = useState([])
   const [focusedAppWindowId, setFocusedAppWindowId] = useState(null)
+  const [chromeFocused, setChromeFocused] = useState(false)
   const [showShutdown, setShowShutdown] = useState(false)
   const [nightMode, setNightMode] = useState(true)
   const { isCapturing, takeScreenshot } = useScreenshot()
@@ -148,6 +149,8 @@ export default function ChromeLanding() {
       if (chromeMinimized) {
         setChromeMinimized(false)
         setChromeOpening(true)
+        setChromeFocused(true)
+        setFocusedAppWindowId(null)
       } else {
         setChromeMinimizing(true)
       }
@@ -259,6 +262,8 @@ export default function ChromeLanding() {
           isOpening={chromeOpening}
           onOpeningComplete={handleChromeOpeningComplete}
           onMinimizeComplete={handleChromeMinimizeComplete}
+          onFocus={() => { setChromeFocused(true); setFocusedAppWindowId(null) }}
+          isFocused={chromeFocused}
         >
           <ChromeFrame
             tabs={tabs}
@@ -407,7 +412,7 @@ export default function ChromeLanding() {
             isMinimized={win.isMinimized}
             isMinimizing={win.isMinimizing}
             isFocused={focusedAppWindowId === win.id}
-            onFocus={() => setFocusedAppWindowId(win.id)}
+            onFocus={() => { setFocusedAppWindowId(win.id); setChromeFocused(false) }}
           >
             {content}
           </AppWindow>

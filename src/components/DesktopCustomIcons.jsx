@@ -3,6 +3,7 @@ import { Folder, FileText, Gamepad2 } from 'lucide-react'
 import './DesktopCustomIcons.css'
 
 const DRAG_THRESHOLD = 10
+const HOLD_TO_DRAG_MS = 250
 
 export default function DesktopCustomIcons({
   desktopItems = [],
@@ -17,7 +18,9 @@ export default function DesktopCustomIcons({
   const [renameValue, setRenameValue] = useState('')
   const [draggingId, setDraggingId] = useState(null)
   const [dropTargetId, setDropTargetId] = useState(null)
-  const dragStartRef = useRef({ x: 0, y: 0, item: null })
+  const [holdingId, setHoldingId] = useState(null)
+  const dragStartRef = useRef({ x: 0, y: 0, item: null, element: null })
+  const holdTimerRef = useRef(null)
   const lastClickRef = useRef({ id: null, time: 0 })
 
   const rootItems = desktopItems.filter((i) => !i.parentId)
@@ -71,20 +74,61 @@ export default function DesktopCustomIcons({
     [onOpenFolder, onOpenApp]
   )
 
+  const clearHoldTimer = useCallback(() => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current)
+      holdTimerRef.current = null
+    }
+  }, [])
+
   const handleMouseDown = useCallback(
     (e, item) => {
       if (e.button !== 0) return
       e.stopPropagation()
-      setDraggingId(item.id)
+      clearHoldTimer()
       dragStartRef.current = {
         x: e.clientX,
         y: e.clientY,
         item,
         element: e.currentTarget,
       }
+      setHoldingId(item.id)
+      holdTimerRef.current = setTimeout(() => {
+        holdTimerRef.current = null
+        setHoldingId(null)
+        setDraggingId(item.id)
+      }, HOLD_TO_DRAG_MS)
     },
-    []
+    [clearHoldTimer]
   )
+
+  const handleHoldMouseMove = useCallback((e) => {
+    if (!holdingId) return
+    const { x, y } = dragStartRef.current
+    const dx = e.clientX - x
+    const dy = e.clientY - y
+    const distance = Math.sqrt(dx * dx + dy * dy)
+    if (distance >= DRAG_THRESHOLD) {
+      clearHoldTimer()
+      setHoldingId(null)
+    }
+  }, [holdingId, clearHoldTimer])
+
+  const handleHoldMouseUp = useCallback((e) => {
+    if (!holdingId) return
+    clearHoldTimer()
+    setHoldingId(null)
+    const { item } = dragStartRef.current
+    const now = Date.now()
+    const last = lastClickRef.current
+    if (last.id === item.id && now - last.time < 400) {
+      if (item.type === 'folder') onOpenFolder?.(item.id)
+      else if (item.type === 'shortcut' && item.appKey) onOpenApp?.(item.appKey)
+      lastClickRef.current = { id: null, time: 0 }
+    } else {
+      lastClickRef.current = { id: item.id, time: now }
+    }
+  }, [holdingId, clearHoldTimer, onOpenFolder, onOpenApp])
 
   const handleMouseMove = useCallback(
     (e) => {
@@ -158,6 +202,16 @@ export default function DesktopCustomIcons({
     },
     [draggingId, handleMouseMove, onItemsChange, onOpenFolder]
   )
+
+  useEffect(() => {
+    if (!holdingId) return
+    document.addEventListener('mousemove', handleHoldMouseMove)
+    document.addEventListener('mouseup', handleHoldMouseUp)
+    return () => {
+      document.removeEventListener('mousemove', handleHoldMouseMove)
+      document.removeEventListener('mouseup', handleHoldMouseUp)
+    }
+  }, [holdingId, handleHoldMouseMove, handleHoldMouseUp])
 
   useEffect(() => {
     if (!draggingId) return

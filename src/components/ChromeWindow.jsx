@@ -4,7 +4,7 @@ import './ChromeWindow.css'
 const MIN_WIDTH = 400
 const MIN_HEIGHT = 300
 
-export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, isOpening, onOpeningComplete, onMinimizeComplete, children }) {
+export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, isOpening, onOpeningComplete, onMinimizeComplete, onFocus, isFocused, children }) {
   const winRef = useRef(null)
   const openingCompleteRef = useRef(false)
   const [openingPhase, setOpeningPhase] = useState('dock')
@@ -19,7 +19,7 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const dragStartRef = useRef({ x: 0, y: 0, left: 0, top: 0 })
-  const resizeRef = useRef({ edge: '', startX: 0, startY: 0, startW: 0, startH: 0 })
+  const resizeRef = useRef({ edge: '', startX: 0, startY: 0, startW: 0, startH: 0, startLeft: 0, startTop: 0 })
 
   useEffect(() => {
     if (!isOpening) return
@@ -43,16 +43,17 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
     if (isMaximized) return
     const target = e.target
     if (target.closest('button') || target.closest('a') || target.closest('input')) return
-    if (!target.closest('.chrome-frame')) return
+    if (!target.closest('.chrome-frame') && !target.closest('.chrome-window__resize')) return
     e.preventDefault()
-    setIsDragging(true)
+    onFocus?.()
+    if (target.closest('.chrome-frame')) setIsDragging(true)
     dragStartRef.current = {
       x: e.clientX,
       y: e.clientY,
       left: position.x,
       top: position.y,
     }
-  }, [isMaximized, position])
+  }, [isMaximized, position, onFocus])
 
   useEffect(() => {
     if (!isDragging) return
@@ -87,6 +88,7 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
   const handleResizeStart = useCallback((e, edge) => {
     e.stopPropagation()
     if (isMaximized) return
+    onFocus?.()
     setIsResizing(true)
     resizeRef.current = {
       edge,
@@ -94,20 +96,37 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
       startY: e.clientY,
       startW: size.width,
       startH: size.height,
+      startLeft: position.x,
+      startTop: position.y,
     }
-  }, [isMaximized, size])
+  }, [isMaximized, size, position, onFocus])
 
   useEffect(() => {
     if (!isResizing) return
     const handleMove = (e) => {
-      const { edge, startX, startY, startW, startH } = resizeRef.current
+      const { edge, startX, startY, startW, startH, startLeft, startTop } = resizeRef.current
       const dx = e.clientX - startX
       const dy = e.clientY - startY
       let w = startW
       let h = startH
-      if (edge.includes('e') || edge === 'se') w = Math.max(MIN_WIDTH, startW + dx)
-      if (edge.includes('s') || edge === 'se') h = Math.max(MIN_HEIGHT, startH + dy)
+      let left = startLeft
+      let top = startTop
+      if (edge.includes('e')) w = Math.max(MIN_WIDTH, startW + dx)
+      else if (edge.includes('w')) {
+        const maxDx = startW - MIN_WIDTH
+        const clampedDx = Math.min(dx, maxDx)
+        w = startW - clampedDx
+        left = startLeft + clampedDx
+      }
+      if (edge.includes('s')) h = Math.max(MIN_HEIGHT, startH + dy)
+      else if (edge.includes('n')) {
+        const maxDy = startH - MIN_HEIGHT
+        const clampedDy = Math.min(dy, maxDy)
+        h = startH - clampedDy
+        top = startTop + clampedDy
+      }
       setSize({ width: w, height: h })
+      setPosition({ x: left, y: top })
     }
     const handleUp = () => setIsResizing(false)
     document.addEventListener('mousemove', handleMove)
@@ -137,7 +156,7 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
     <div
       ref={winRef}
       id="chrome-window-main"
-      className={`chrome-window ${isMaximized ? 'chrome-window--maximized' : ''} ${isDragging ? 'chrome-window--dragging' : ''} ${isMinimizing ? 'chrome-window--minimizing' : ''} ${isOpening ? 'chrome-window--opening' : ''}`}
+      className={`chrome-window ${isMaximized ? 'chrome-window--maximized' : ''} ${isFocused ? 'chrome-window--focused' : ''} ${isDragging ? 'chrome-window--dragging' : ''} ${isMinimizing ? 'chrome-window--minimizing' : ''} ${isOpening ? 'chrome-window--opening' : ''}`}
       style={style}
       onMouseDown={handleMouseDown}
       onTransitionEnd={isOpening ? handleOpeningTransitionEnd : undefined}
@@ -148,8 +167,13 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
       </div>
       {!isMaximized && !isMinimizing && (
         <>
-          <div className="chrome-window__resize chrome-window__resize--e" onMouseDown={(e) => handleResizeStart(e, 'e')} />
+          <div className="chrome-window__resize chrome-window__resize--n" onMouseDown={(e) => handleResizeStart(e, 'n')} />
           <div className="chrome-window__resize chrome-window__resize--s" onMouseDown={(e) => handleResizeStart(e, 's')} />
+          <div className="chrome-window__resize chrome-window__resize--e" onMouseDown={(e) => handleResizeStart(e, 'e')} />
+          <div className="chrome-window__resize chrome-window__resize--w" onMouseDown={(e) => handleResizeStart(e, 'w')} />
+          <div className="chrome-window__resize chrome-window__resize--nw" onMouseDown={(e) => handleResizeStart(e, 'nw')} />
+          <div className="chrome-window__resize chrome-window__resize--ne" onMouseDown={(e) => handleResizeStart(e, 'ne')} />
+          <div className="chrome-window__resize chrome-window__resize--sw" onMouseDown={(e) => handleResizeStart(e, 'sw')} />
           <div className="chrome-window__resize chrome-window__resize--se" onMouseDown={(e) => handleResizeStart(e, 'se')} />
         </>
       )}

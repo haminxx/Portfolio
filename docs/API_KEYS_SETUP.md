@@ -27,9 +27,10 @@ Your backend runs on [Render](https://render.com). For production, add all secre
 | `INSTAGRAM_ACCESS_TOKEN` | Instagram | If using API | Long-lived token (60 days) |
 | `LINKEDIN_CLIENT_ID` | LinkedIn | If using Verified API | OAuth |
 | `LINKEDIN_CLIENT_SECRET` | LinkedIn | If using Verified API | OAuth |
+| `YOUTUBE_API_KEY` | YouTube Data API v3 | Optional | For search + Rebel album playback |
 | `PORT` | Server | Auto | Render sets this |
 
-**YouTube Music:** No variables needed. Uses [ytmusic-api](https://www.npmjs.com/package/ytmusic-api) (scraper, no API key).
+**YouTube Music:** Uses [ytmusic-api](https://www.npmjs.com/package/ytmusic-api) (scraper) for search when `YOUTUBE_API_KEY` is not set. With `YOUTUBE_API_KEY`, search uses YouTube Data API v3.
 
 ---
 
@@ -55,11 +56,22 @@ Your backend runs on [Render](https://render.com). For production, add all secre
 
 ## 2. YouTube Music
 
-**What it does:** Search songs/albums/artists and display curated sections. Uses the unofficial [ytmusic-api](https://www.npmjs.com/package/ytmusic-api) package.
+**What it does:** Search songs/albums/artists and display curated sections (including the Rebel album). Playback via YouTube embed.
 
-**No API key required.** The package scrapes YouTube Music directly.
+**With `YOUTUBE_API_KEY`:** Search uses YouTube Data API v3 (`/api/youtube/search`). More reliable and returns video IDs for playback.
 
-**Curated content:** Edit `server/ytmusic-curated.js` to add your songs/albums. The frontend fetches from `/api/ytmusic/curated` and `/api/ytmusic/search`.
+**Without API key:** Search falls back to [ytmusic-api](https://www.npmjs.com/package/ytmusic-api) (scraper). Rebel album and curated items with `videoId` still play via embed.
+
+**Variable:** `YOUTUBE_API_KEY` (optional)
+
+**How to get it:**
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a project (or select existing)
+3. Enable **YouTube Data API v3**
+4. Create credentials → API key
+5. Restrict the key to YouTube Data API v3 (recommended)
+
+**Curated content:** Edit `server/ytmusic-curated.js`. Add `videoId` to items for playback. Rebel album includes: Beat Crusaders - Moon on the Water, Oasis - Wonderwall, Oasis - Don't Look Back in Anger.
 
 ---
 
@@ -102,7 +114,7 @@ Your backend runs on [Render](https://render.com). For production, add all secre
 | Service | Variable(s) | Where to Add | Complexity |
 |---------|-------------|---------------|------------|
 | **GitHub** | `GITHUB_TOKEN` | `server/.env`, Render | Easy |
-| **YouTube Music** | None | N/A | Easy (ytmusic-api) |
+| **YouTube Music** | `YOUTUBE_API_KEY` | Render (optional) | Easy |
 | **Instagram** | `INSTAGRAM_ACCESS_TOKEN` | Render | Hard (Business/Creator account) |
 | **LinkedIn** | `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET` | Render (if Verified API) | Medium |
 

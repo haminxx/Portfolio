@@ -26,7 +26,39 @@ export default function FolderWindow({
     return { x: (window.innerWidth - w) / 2, y: (window.innerHeight - h) / 2 }
   })
   const [isDragging, setIsDragging] = useState(false)
+  const [isOpening, setIsOpening] = useState(true)
+  const [isClosing, setIsClosing] = useState(false)
+  const [openingPhase, setOpeningPhase] = useState('dock')
   const dragRef = useRef({ startX: 0, startY: 0, startLeft: 0, startTop: 0 })
+
+  useEffect(() => {
+    if (!isOpening) return
+    const t = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setOpeningPhase('final'))
+    })
+    return () => cancelAnimationFrame(t)
+  }, [isOpening])
+
+  const handleOpeningTransitionEnd = useCallback((e) => {
+    if (!isOpening || openingPhase !== 'final') return
+    if (e.propertyName === 'transform' || e.propertyName === 'top' || e.propertyName === 'left') {
+      setIsOpening(false)
+    }
+  }, [isOpening, openingPhase])
+
+  const handleClose = useCallback(() => {
+    if (isClosing) return
+    setIsClosing(true)
+  }, [isClosing])
+
+  useEffect(() => {
+    if (!isClosing) return
+    const el = document.getElementById(`folder-window-${folderId}`)
+    if (!el) return
+    const onEnd = () => onClose?.()
+    el.addEventListener('animationend', onEnd, { once: true })
+    return () => el.removeEventListener('animationend', onEnd)
+  }, [isClosing, folderId, onClose])
 
   const handleTitleMouseDown = useCallback((e) => {
     if (e.target.closest('button')) return
@@ -58,6 +90,23 @@ export default function FolderWindow({
       document.removeEventListener('mouseup', handleUp)
     }
   }, [isDragging])
+
+  const winWidth = Math.min(700, typeof window !== 'undefined' ? window.innerWidth * 0.9 : 700)
+  const winHeight = Math.min(450, typeof window !== 'undefined' ? window.innerHeight * 0.7 : 450)
+  const finalX = (typeof window !== 'undefined' ? window.innerWidth : 1200) / 2 - winWidth / 2
+  const finalY = (typeof window !== 'undefined' ? window.innerHeight : 800) / 2 - winHeight / 2
+  const showOpening = isOpening && openingPhase === 'dock'
+  const folderStyle = showOpening
+    ? {
+        left: finalX,
+        top: typeof window !== 'undefined' ? window.innerHeight : 800,
+        width: winWidth,
+        height: winHeight,
+        transform: 'translateY(-20px) scale(0.92)',
+      }
+    : isClosing
+      ? { left: position.x, top: position.y, width: winWidth, height: winHeight }
+      : { left: position.x, top: position.y, width: winWidth, height: winHeight }
 
   const children = desktopItems.filter((i) => i.parentId === folderId)
   const subfolders = desktopItems.filter((i) => i.type === 'folder')
@@ -104,15 +153,17 @@ export default function FolderWindow({
 
   return (
     <div
-      className={`folder-window ${isDragging ? 'folder-window--dragging' : ''}`}
-      style={{ left: position.x, top: position.y }}
+      id={`folder-window-${folderId}`}
+      className={`folder-window ${isDragging ? 'folder-window--dragging' : ''} ${isOpening ? 'folder-window--opening' : ''} ${isClosing ? 'folder-window--closing' : ''}`}
+      style={folderStyle}
+      onTransitionEnd={isOpening ? handleOpeningTransitionEnd : undefined}
     >
       <div
         className="folder-window__titlebar"
         onMouseDown={handleTitleMouseDown}
       >
         <div className="folder-window__traffic-lights">
-          <button type="button" className="folder-window__btn folder-window__btn--close" aria-label="Close" onClick={onClose} />
+          <button type="button" className="folder-window__btn folder-window__btn--close" aria-label="Close" onClick={handleClose} />
           <button type="button" className="folder-window__btn folder-window__btn--minimize" aria-label="Minimize" />
           <button type="button" className="folder-window__btn folder-window__btn--maximize" aria-label="Maximize" />
         </div>
