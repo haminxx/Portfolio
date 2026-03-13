@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import ChromeFrame from '../components/ChromeFrame'
 import ChromeWindow from '../components/ChromeWindow'
 import ChromeHome from '../components/ChromeHome'
-import DesktopIcons from '../components/DesktopIcons'
+import Desktop from '../components/Desktop'
 import MenuBar from '../components/MenuBar'
 import Dock from '../components/Dock'
 import { APPS, getDomainForApp } from '../config/apps'
@@ -26,7 +26,8 @@ export default function ChromeLanding() {
   const [tabs, setTabs] = useState([HOME_TAB])
   const [activeTabId, setActiveTabId] = useState('home')
   const [chromeMaximized, setChromeMaximized] = useState(false)
-  const [chromeMinimized, setChromeMinimized] = useState(false)
+  const [chromeMinimized, setChromeMinimized] = useState(true)
+  const [sortBy, setSortBy] = useState('name')
 
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0]
   const currentDomain = getDomainForTab(activeTab)
@@ -53,13 +54,15 @@ export default function ChromeLanding() {
 
   const setActiveTab = useCallback((id) => setActiveTabId(id), [])
   const closeTab = useCallback((id) => {
+    const willBeEmpty = tabs.filter((t) => t.id !== id).length === 0
     setTabs((prev) => {
       const next = prev.filter((t) => t.id !== id)
       if (activeTabId === id && next.length) setActiveTabId(next[0].id)
       else if (activeTabId === id) setActiveTabId('home')
-      return next
+      return next.length ? next : [HOME_TAB]
     })
-  }, [activeTabId])
+    if (willBeEmpty) setChromeMinimized(true)
+  }, [activeTabId, tabs])
 
   const goHome = useCallback(() => setActiveTabId('home'), [])
   const toggleMaximize = useCallback(() => setChromeMaximized((m) => !m), [])
@@ -67,9 +70,11 @@ export default function ChromeLanding() {
 
   return (
     <div className="chrome-landing">
-      <div className="daedalos-desktop" aria-hidden="true">
-        <DesktopIcons onOpenApp={openAppTab} />
-      </div>
+      <Desktop
+        onOpenApp={openAppTab}
+        sortBy={sortBy}
+        onSortByChange={setSortBy}
+      />
       {!chromeMinimized && (
         <ChromeWindow isMaximized={chromeMaximized} onMaximize={toggleMaximize}>
           <ChromeFrame
@@ -84,7 +89,7 @@ export default function ChromeLanding() {
             onMinimize={setMinimized}
             onWindowClose={setMinimized}
           />
-        <div className="chrome-landing__content">
+          <div className="chrome-landing__content">
           {activeTab.type === 'home' ? (
             <ChromeHome onShortcut={openShortcutTab} />
           ) : (
@@ -92,7 +97,7 @@ export default function ChromeLanding() {
               <span>Opened: {activeTab.title}</span>
             </div>
           )}
-        </div>
+          </div>
         </ChromeWindow>
       )}
       <MenuBar />

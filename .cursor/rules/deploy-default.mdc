@@ -1,0 +1,18 @@
+---
+description: Default deploy rule – push to GitHub and deploy Firebase after code changes
+alwaysApply: true
+---
+
+# Deploy Pipeline (Default)
+
+When the user requests improvements, changes, or fixes to the codebase:
+
+1. **Push to GitHub** after completing the work:
+   - `git add -A`
+   - `git commit -m "<descriptive message>"`
+   - `git push origin main`
+
+2. **Deploy to Firebase**:
+   - `npm run deploy` (builds + deploys)
+
+Treat this as the default closing step unless the user explicitly opts out.

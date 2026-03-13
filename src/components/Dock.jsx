@@ -1,12 +1,24 @@
 import { APPS } from '../config/apps'
-import { Music2, Image, Linkedin, Film, Monitor } from 'lucide-react'
+import {
+  Globe,
+  Image,
+  Film,
+  Images,
+  ShoppingBag,
+  Settings,
+  Map,
+  Monitor,
+} from 'lucide-react'
 import './Dock.css'
 
 const APP_ICONS = {
-  youtube: Music2,
+  chrome: Globe,
   instagram: Image,
-  linkedin: Linkedin,
   netflix: Film,
+  gallery: Images,
+  appStore: ShoppingBag,
+  settings: Settings,
+  map: Map,
 }
 
 export default function Dock({ onOpenApp, isChromeMinimized, onRestoreChrome }) {
@@ -27,7 +39,9 @@ export default function Dock({ onOpenApp, isChromeMinimized, onRestoreChrome }) 
             <span className="dock__label">Portfolio</span>
           </button>
         )}
-        {Object.entries(APPS).map(([key, app]) => {
+        {Object.entries(APPS)
+          .filter(([key]) => key !== 'chrome' || isChromeMinimized)
+          .map(([key, app]) => {
           const Icon = APP_ICONS[key]
           return (
             <button
@@ -39,7 +53,7 @@ export default function Dock({ onOpenApp, isChromeMinimized, onRestoreChrome }) 
               aria-label={app.label}
             >
               <span className="dock__icon">
-                {Icon ? <Icon size={28} strokeWidth={1.8} /> : null}
+                {Icon ? <Icon size={26} strokeWidth={1.6} /> : null}
               </span>
               <span className="dock__label">{app.label}</span>
             </button>
