@@ -17,3 +17,23 @@ Pre-landing gate (Fn+F11 or Mobile User) and Chrome-browser-style landing page w
 
 - `npm run build`
 - `npm run preview` to preview the build.
+
+## Firebase Hosting
+
+The project is set up for Firebase Hosting (build output: `dist`, SPA rewrites for React Router).
+
+1. **Log in to Firebase** (opens browser; use your Google account):
+   ```bash
+   npx firebase-tools login
+   ```
+2. **Link your Firebase project** (use the project ID from [Firebase Console](https://console.firebase.google.com)):
+   ```bash
+   npx firebase-tools use your-firebase-project-id
+   ```
+   Or create a new project in the console, then run the same command with that project ID. Update `.firebaserc` if you prefer editing the file: set `"default"` to your project ID.
+3. **Add your custom domain** in Firebase Console: Hosting → Add custom domain, then follow the DNS steps.
+4. **Deploy**:
+   ```bash
+   npm run deploy
+   ```
+   This builds the app and deploys to Firebase Hosting.
