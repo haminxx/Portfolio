@@ -1,0 +1,32 @@
+.chrome-landing {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #202124;
+}
+
+.chrome-landing__content {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+/* Pathway: add your chrome window background image at public/background.jpg (or src/assets/chrome-window-background.jpg and import). Image can be missing until you add it. */
+.chrome-landing__bg {
+  position: absolute;
+  inset: 0;
+  background: #2d2d2d;
+  background-image: url('/background.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+.chrome-landing__empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.95rem;
+}

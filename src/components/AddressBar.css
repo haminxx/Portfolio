@@ -1,0 +1,50 @@
+.address-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 4px 6px;
+}
+
+.address-bar__nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.address-bar__btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #1d1d1f;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.address-bar__btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.address-bar__url {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: #fff;
+  border: 1px solid #d2d2d7;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1d1d1f;
+}
+
+.address-bar__domain {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
