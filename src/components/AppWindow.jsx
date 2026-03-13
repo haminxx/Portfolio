@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react'
-import { Minus, Square, X } from 'lucide-react'
 import './AppWindow.css'
 
 export default function AppWindow({
@@ -67,31 +66,25 @@ export default function AppWindow({
       >
         {icon && <span className="app-window__icon">{icon}</span>}
         <span className="app-window__title-text">{title}</span>
-        <div className="app-window__controls">
+        <div className="app-window__traffic-lights">
           <button
             type="button"
-            className="app-window__btn"
-            onClick={(e) => { e.stopPropagation(); onMinimize?.(); }}
-            aria-label="Minimize"
-          >
-            <Minus size={14} strokeWidth={2.5} />
-          </button>
-          <button
-            type="button"
-            className="app-window__btn"
-            onClick={(e) => { e.stopPropagation(); onMaximize?.(); }}
-            aria-label="Maximize"
-          >
-            <Square size={12} strokeWidth={2.5} />
-          </button>
-          <button
-            type="button"
-            className="app-window__btn app-window__btn--close"
+            className="app-window__traffic app-window__traffic--close"
             onClick={(e) => { e.stopPropagation(); onClose?.(); }}
             aria-label="Close"
-          >
-            <X size={14} strokeWidth={2.5} />
-          </button>
+          />
+          <button
+            type="button"
+            className="app-window__traffic app-window__traffic--minimize"
+            onClick={(e) => { e.stopPropagation(); onMinimize?.(); }}
+            aria-label="Minimize"
+          />
+          <button
+            type="button"
+            className="app-window__traffic app-window__traffic--maximize"
+            onClick={(e) => { e.stopPropagation(); onMaximize?.(); }}
+            aria-label="Maximize"
+          />
         </div>
       </header>
       <div className="app-window__content">

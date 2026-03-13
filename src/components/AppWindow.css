@@ -61,32 +61,31 @@
   white-space: nowrap;
 }
 
-.app-window__controls {
+.app-window__traffic-lights {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 8px;
 }
 
-.app-window__btn {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.app-window__traffic {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
   border: none;
-  background: transparent;
-  color: #1d1d1f;
+  padding: 0;
   cursor: pointer;
-  border-radius: 4px;
 }
 
-.app-window__btn:hover {
-  background: rgba(0, 0, 0, 0.06);
+.app-window__traffic--close {
+  background: #ff5f57;
 }
 
-.app-window__btn--close:hover {
-  background: #e81123;
-  color: #fff;
+.app-window__traffic--minimize {
+  background: #febc2e;
+}
+
+.app-window__traffic--maximize {
+  background: #28c840;
 }
 
 .app-window__content {

@@ -4,12 +4,27 @@ import ChromeWindow from '../components/ChromeWindow'
 import ChromeHome from '../components/ChromeHome'
 import ChromeContextMenu from '../components/ChromeContextMenu'
 import Desktop from '../components/Desktop'
+import GitHubProfileCard from '../components/GitHubProfileCard'
+import LinkedInProfileCard from '../components/LinkedInProfileCard'
+import InstagramProfileCard from '../components/InstagramProfileCard'
 import FolderWindow from '../components/FolderWindow'
 import MenuBar from '../components/MenuBar'
 import Dock from '../components/Dock'
+import AppWindow from '../components/AppWindow'
 import { APPS, getDomainForApp } from '../config/apps'
 import { SHORTCUTS } from '../config/shortcuts'
+import { Globe, Image, Film, Images, ShoppingBag, Settings, Map } from 'lucide-react'
 import './ChromeLanding.css'
+
+const APP_ICONS = {
+  chrome: Globe,
+  instagram: Image,
+  netflix: Film,
+  gallery: Images,
+  appStore: ShoppingBag,
+  settings: Settings,
+  map: Map,
+}
 
 const HOME_TAB = { id: 'home', title: 'Home', type: 'home' }
 const DESKTOP_ITEMS_KEY = 'desktop-items'
@@ -44,8 +59,6 @@ function getDomainForTab(tab) {
   return getDomainForApp(tab.type)
 }
 
-const EMBED_BLOCKED_TYPES = ['linkedin', 'github', 'instagram']
-
 function getUrlForTab(tab) {
   const shortcut = SHORTCUTS.find((s) => s.type === tab.type)
   if (shortcut?.url) return shortcut.url
@@ -63,6 +76,8 @@ export default function ChromeLanding() {
   const [desktopItems, setDesktopItemsState] = useState(() => loadDesktopItems())
   const [openFolderId, setOpenFolderId] = useState(null)
   const [startRenameId, setStartRenameId] = useState(null)
+  const [openAppWindows, setOpenAppWindows] = useState([])
+  const [focusedAppWindowId, setFocusedAppWindowId] = useState(null)
 
   const setDesktopItems = useCallback((fnOrValue) => {
     setDesktopItemsState((prev) => {
@@ -93,11 +108,27 @@ export default function ChromeLanding() {
   const openAppTab = useCallback((appKey) => {
     const app = APPS[appKey]
     if (!app) return
-    const id = `${appKey}-${Date.now()}`
-    const newTab = { id, title: app.label, type: appKey }
-    setTabs((prev) => [...prev, newTab])
-    setActiveTabId(id)
-    setChromeMinimized(false)
+    if (appKey === 'chrome') {
+      setChromeMinimized(false)
+      return
+    }
+    setOpenAppWindows((prev) => {
+      const existing = prev.find((w) => w.appKey === appKey)
+      if (existing) {
+        setFocusedAppWindowId(existing.id)
+        return prev
+      }
+      const id = `app-${appKey}-${Date.now()}`
+      const win = {
+        id,
+        appKey,
+        position: { x: 120 + prev.length * 40, y: 80 + prev.length * 40 },
+        isMaximized: false,
+        isMinimized: false,
+      }
+      setFocusedAppWindowId(id)
+      return [...prev, win]
+    })
   }, [])
 
   const openShortcutTab = useCallback((shortcutType) => {
@@ -165,25 +196,14 @@ export default function ChromeLanding() {
           >
           {activeTab.type === 'home' ? (
             <ChromeHome onShortcut={openShortcutTab} />
+          ) : activeTab.type === 'github' ? (
+            <GitHubProfileCard profileUrl={getUrlForTab(activeTab)} />
+          ) : activeTab.type === 'linkedin' ? (
+            <LinkedInProfileCard profileUrl={getUrlForTab(activeTab)} />
+          ) : activeTab.type === 'instagram' ? (
+            <InstagramProfileCard profileUrl={getUrlForTab(activeTab)} />
           ) : (() => {
             const url = getUrlForTab(activeTab)
-            const isEmbedBlocked = EMBED_BLOCKED_TYPES.includes(activeTab.type)
-            if (url && isEmbedBlocked) {
-              return (
-                <div className="chrome-landing__embed-blocked">
-                  <p className="chrome-landing__embed-msg">
-                    {activeTab.title} restricts embedding. Open in a new tab to view.
-                  </p>
-                  <button
-                    type="button"
-                    className="chrome-landing__open-tab-btn"
-                    onClick={() => window.open(url, '_blank')}
-                  >
-                    Open in new tab
-                  </button>
-                </div>
-              )
-            }
             if (url) {
               return (
                 <iframe src={url} className="chrome-landing__iframe" title={activeTab.title} />
@@ -215,6 +235,42 @@ export default function ChromeLanding() {
           onOpenFolder={handleOpenFolder}
         />
       )}
+      {openAppWindows.map((win) => {
+        const app = APPS[win.appKey]
+        if (!app) return null
+        const Icon = APP_ICONS[win.appKey]
+        const profileUrl = app.url ?? SHORTCUTS.find((s) => s.type === win.appKey)?.url
+        let content
+        if (win.appKey === 'instagram') {
+          content = <InstagramProfileCard profileUrl={profileUrl} />
+        } else if (win.appKey === 'github') {
+          content = <GitHubProfileCard profileUrl={profileUrl} />
+        } else if (win.appKey === 'linkedin') {
+          content = <LinkedInProfileCard profileUrl={profileUrl} />
+        } else if (profileUrl) {
+          content = <iframe src={profileUrl} className="chrome-landing__iframe" title={app.label} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} />
+        } else {
+          content = <div className="chrome-landing__empty" style={{ padding: 24 }}><span>Opened: {app.label}</span></div>
+        }
+        return (
+          <AppWindow
+            key={win.id}
+            id={win.id}
+            title={app.label}
+            icon={Icon ? <Icon size={16} strokeWidth={1.5} /> : null}
+            position={win.position}
+            onPositionChange={(pos) => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, position: pos } : w)))}
+            onClose={() => setOpenAppWindows((prev) => prev.filter((w) => w.id !== win.id))}
+            onMinimize={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isMinimized: true } : w)))}
+            onMaximize={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isMaximized: !w.isMaximized } : w)))}
+            isMaximized={win.isMaximized}
+            isFocused={focusedAppWindowId === win.id}
+            onFocus={() => setFocusedAppWindowId(win.id)}
+          >
+            {content}
+          </AppWindow>
+        )
+      })}
       {chromeContextMenu && (
         <ChromeContextMenu
           x={chromeContextMenu.x}

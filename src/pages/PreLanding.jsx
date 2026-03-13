@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import './PreLanding.css'
 
-export default function PreLanding() {
-  const navigate = useNavigate()
+export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
   const [phase, setPhase] = useState('booting') // 'booting' | 'ready'
   const [showMobileButton, setShowMobileButton] = useState(false)
 
@@ -24,21 +22,15 @@ export default function PreLanding() {
     const handleKeyDown = (e) => {
       if (e.key === 'F11') {
         e.preventDefault()
-        if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen().then(() => {
-            navigate('/home')
-          }).catch(() => navigate('/home'))
-        } else {
-          navigate('/home')
-        }
+        onEnterDesktop?.()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [navigate])
+  }, [onEnterDesktop])
 
   const handleMobileEnter = () => {
-    navigate('/home')
+    onEnterMobile?.()
   }
 
   if (phase === 'booting') {

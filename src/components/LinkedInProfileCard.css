@@ -1,0 +1,18 @@
+.social-profile-card--linkedin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.linkedin-badge-container {
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.linkedin-badge-container .LI-profile-badge,
+.linkedin-badge-container .LI-badge-container {
+  min-height: 280px;
+}

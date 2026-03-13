@@ -1,0 +1,165 @@
+.iphone-mobile {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #1d1d1f 0%, #2c2c2e 50%, #1d1d1f 100%);
+  display: flex;
+  flex-direction: column;
+  max-width: 430px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.iphone-mobile__status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.iphone-mobile__status-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.iphone-mobile__signal::before,
+.iphone-mobile__wifi::before,
+.iphone-mobile__battery::before {
+  content: '';
+  display: inline-block;
+  width: 18px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 2px;
+  clip-path: polygon(0 50%, 30% 50%, 30% 0, 70% 0, 70% 50%, 100% 50%, 100% 100%, 0 100%);
+}
+
+.iphone-mobile__pages {
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.iphone-mobile__pages-inner {
+  display: flex;
+  height: 100%;
+  min-height: 400px;
+}
+
+.iphone-mobile__page {
+  flex: 0 0 100%;
+  width: 100%;
+  min-height: 0;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.iphone-mobile__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px 16px;
+  padding: 8px 0;
+}
+
+.iphone-mobile__icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #fff;
+  transition: transform 0.2s ease;
+}
+
+.iphone-mobile__icon:active {
+  transform: scale(0.92);
+}
+
+.iphone-mobile__icon-bg {
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.iphone-mobile__icon-label {
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+  max-width: 70px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.iphone-mobile__dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  flex-shrink: 0;
+}
+
+.iphone-mobile__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.iphone-mobile__dot--active {
+  background: rgba(255, 255, 255, 0.9);
+  transform: scale(1.15);
+}
+
+.iphone-mobile__dock {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 12px 20px 24px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 24px 24px 0 0;
+  margin: 0 16px 0;
+  flex-shrink: 0;
+}
+
+.iphone-mobile__dock-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #fff;
+  transition: transform 0.2s ease;
+}
+
+.iphone-mobile__dock-icon:active {
+  transform: scale(0.9);
+}
+
+.iphone-mobile__dock-icon-bg {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}

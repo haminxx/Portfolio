@@ -1,0 +1,109 @@
+.social-profile-card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #f8f9fa;
+  overflow: auto;
+}
+
+.social-profile-card--loading,
+.social-profile-card--error {
+  gap: 12px;
+  color: #5f6368;
+  font-size: 14px;
+}
+
+.social-profile-card__spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e0e0e0;
+  border-top-color: #1a73e8;
+  border-radius: 50%;
+  animation: social-profile-card-spin 0.8s linear infinite;
+}
+
+@keyframes social-profile-card-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.social-profile-card--github {
+  gap: 20px;
+}
+
+.social-profile-card__header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.social-profile-card__avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.social-profile-card__info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.social-profile-card__name {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #202124;
+}
+
+.social-profile-card__username {
+  font-size: 0.9rem;
+  color: #5f6368;
+}
+
+.social-profile-card__bio {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+  color: #5f6368;
+  max-width: 360px;
+  line-height: 1.4;
+}
+
+.social-profile-card__stats {
+  display: flex;
+  gap: 24px;
+  font-size: 0.9rem;
+  color: #5f6368;
+}
+
+.social-profile-card__stats strong {
+  color: #202124;
+  margin-right: 4px;
+}
+
+.social-profile-card__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #202124;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.social-profile-card__link:hover {
+  background: #3c4043;
+}
