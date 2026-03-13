@@ -128,7 +128,9 @@ export default function ChromeLanding() {
       const existing = prev.find((w) => w.appKey === appKey)
       if (existing) {
         setFocusedAppWindowId(existing.id)
-        return prev
+        return prev.map((w) =>
+          w.id === existing.id ? { ...w, isMinimized: !w.isMinimized } : w
+        )
       }
       const id = `app-${appKey}-${Date.now()}`
       const win = {
@@ -265,6 +267,7 @@ export default function ChromeLanding() {
         />
       )}
       {[...openAppWindows]
+        .filter((w) => !w.isMinimized)
         .sort((a, b) => {
           if (a.id === focusedAppWindowId) return 1
           if (b.id === focusedAppWindowId) return -1
@@ -325,6 +328,7 @@ export default function ChromeLanding() {
             onMinimize={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isMinimized: true } : w)))}
             onMaximize={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isMaximized: !w.isMaximized } : w)))}
             isMaximized={win.isMaximized}
+            isMinimized={win.isMinimized}
             isFocused={focusedAppWindowId === win.id}
             onFocus={() => setFocusedAppWindowId(win.id)}
           >

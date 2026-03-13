@@ -89,9 +89,9 @@ export default function AppWindow({
       ? {
           left: 'calc(50vw - 320px)',
           top: '100vh',
-          transform: 'translateY(-20px)',
+          transform: 'translateY(-20px) scale(0.92)',
         }
-      : { left: position.x, top: position.y }
+      : { left: position.x, top: position.y, transform: 'scale(1)' }
 
   return (
     <div
