@@ -7,7 +7,6 @@ import {
   ShoppingBag,
   Settings,
   Map,
-  Monitor,
 } from 'lucide-react'
 import './Dock.css'
 
@@ -22,26 +21,11 @@ const APP_ICONS = {
   youtubeMusic: Film,
 }
 
-export default function Dock({ onOpenApp, isChromeMinimized, isChromeMaximized, onRestoreChrome }) {
+export default function Dock({ onOpenApp, isChromeMaximized }) {
   return (
     <footer className={`dock ${isChromeMaximized ? 'dock--fullscreen-hidden' : ''}`}>
       <div className="dock__inner">
-        {isChromeMinimized && (
-          <button
-            type="button"
-            className="dock__item"
-            onClick={onRestoreChrome}
-            title="Restore Portfolio"
-            aria-label="Restore Portfolio"
-          >
-            <span className="dock__icon">
-              <Monitor size={28} strokeWidth={1.8} />
-            </span>
-            <span className="dock__label">Portfolio</span>
-          </button>
-        )}
         {Object.entries(APPS)
-          .filter(([key]) => key !== 'chrome' || isChromeMinimized)
           .map(([key, app]) => {
           const Icon = APP_ICONS[key]
           return (

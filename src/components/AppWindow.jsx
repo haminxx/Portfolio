@@ -6,6 +6,8 @@ export default function AppWindow({
   title,
   icon,
   position,
+  isOpening,
+  onOpeningComplete,
   onPositionChange,
   onClose,
   onMinimize,
@@ -17,7 +19,16 @@ export default function AppWindow({
 }) {
   const [isDragging, setIsDragging] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
+  const [openingPhase, setOpeningPhase] = useState('dock')
   const dragRef = useRef({ startX: 0, startY: 0, startLeft: 0, startTop: 0 })
+
+  useEffect(() => {
+    if (!isOpening) return
+    const t = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setOpeningPhase('final'))
+    })
+    return () => cancelAnimationFrame(t)
+  }, [isOpening])
 
   const handleMouseDown = (e) => {
     if (isMaximized) return
@@ -62,16 +73,33 @@ export default function AppWindow({
     return () => el.removeEventListener('animationend', onEnd)
   }, [isClosing, id, onClose])
 
+  const openingCompleteRef = useRef(false)
+  const handleOpeningTransitionEnd = (e) => {
+    if (!isOpening || openingCompleteRef.current) return
+    if (e.propertyName === 'transform' || e.propertyName === 'top' || e.propertyName === 'left') {
+      openingCompleteRef.current = true
+      onOpeningComplete?.()
+    }
+  }
+
+  const showOpening = isOpening && openingPhase === 'dock'
   const style = isMaximized
     ? undefined
-    : { left: position.x, top: position.y }
+    : showOpening
+      ? {
+          left: 'calc(50vw - 320px)',
+          top: '100vh',
+          transform: 'translateY(-20px)',
+        }
+      : { left: position.x, top: position.y }
 
   return (
     <div
       id={`app-window-${id}`}
-      className={`app-window ${isMaximized ? 'app-window--maximized' : ''} ${isFocused ? 'app-window--focused' : ''} ${isClosing ? 'app-window--closing' : ''}`}
+      className={`app-window ${isMaximized ? 'app-window--maximized' : ''} ${isFocused ? 'app-window--focused' : ''} ${isClosing ? 'app-window--closing' : ''} ${isOpening ? 'app-window--opening' : ''}`}
       style={style}
       onClick={onFocus}
+      onTransitionEnd={isOpening ? handleOpeningTransitionEnd : undefined}
     >
       <header
         className="app-window__title"

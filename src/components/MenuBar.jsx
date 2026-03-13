@@ -17,7 +17,7 @@ const CNL_ITEMS = [
   { id: 'turnOff', label: 'Turn Off…' },
 ]
 
-export default function MenuBar({ onTurnOff, onRestart, onSleep, nightMode, onNightModeToggle, isRecording, onRecordToggle }) {
+export default function MenuBar({ onTurnOff, onRestart, onSleep, nightMode, onNightModeToggle, isCapturing, onScreenshot }) {
   const [openMenu, setOpenMenu] = useState(null)
   const [openCnl, setOpenCnl] = useState(false)
   const barRef = useRef(null)
@@ -149,8 +149,8 @@ export default function MenuBar({ onTurnOff, onRestart, onSleep, nightMode, onNi
         <SystemTray
           nightMode={nightMode ?? true}
           onNightModeToggle={onNightModeToggle ?? (() => {})}
-          isRecording={isRecording ?? false}
-          onRecordToggle={onRecordToggle ?? (() => {})}
+          isCapturing={isCapturing ?? false}
+          onScreenshot={onScreenshot ?? (() => {})}
         />
       </div>
     </header>

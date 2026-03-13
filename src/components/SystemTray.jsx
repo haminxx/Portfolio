@@ -66,7 +66,7 @@ function CalendarDropdown({ now }) {
   )
 }
 
-export default function SystemTray({ nightMode, onNightModeToggle, isRecording, onRecordToggle }) {
+export default function SystemTray({ nightMode, onNightModeToggle, isCapturing, onScreenshot }) {
   const [showWifi, setShowWifi] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
   const [now, setNow] = useState(() => new Date())
@@ -121,11 +121,12 @@ export default function SystemTray({ nightMode, onNightModeToggle, isRecording, 
       </div>
       <button
         type="button"
-        className={`system-tray__icon-btn system-tray__record-btn ${isRecording ? 'system-tray__record-btn--active' : ''}`}
-        aria-label="Record screen"
-        onClick={onRecordToggle}
+        className={`system-tray__icon-btn system-tray__screenshot-btn ${isCapturing ? 'system-tray__screenshot-btn--active' : ''}`}
+        aria-label="Screenshot"
+        title="Screenshot"
+        onClick={onScreenshot}
       >
-        <Circle size={12} fill={isRecording ? '#ff3b30' : 'currentColor'} stroke="none" />
+        <Circle size={12} fill={isCapturing ? '#ff3b30' : 'currentColor'} stroke="none" />
       </button>
       <button
         type="button"

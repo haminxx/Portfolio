@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { useScreenRecording } from '../hooks/useScreenRecording'
+import { useScreenshot } from '../hooks/useScreenshot'
 import ChromeFrame from '../components/ChromeFrame'
 import ChromeWindow from '../components/ChromeWindow'
 import ChromeHome from '../components/ChromeHome'
@@ -8,10 +8,14 @@ import Desktop from '../components/Desktop'
 import GitHubProfileCard from '../components/GitHubProfileCard'
 import LinkedInProfileCard from '../components/LinkedInProfileCard'
 import InstagramProfileCard from '../components/InstagramProfileCard'
+import SocialProfileWindow from '../components/SocialProfileWindow'
 import FolderWindow from '../components/FolderWindow'
 import MapWindow from '../components/MapWindow'
 import NetflixWindow from '../components/NetflixWindow'
 import YouTubeMusicWindow from '../components/YouTubeMusicWindow'
+import SettingsWindow from '../components/SettingsWindow'
+import AppStoreWindow from '../components/AppStoreWindow'
+import GalleryWindow from '../components/GalleryWindow'
 import MenuBar from '../components/MenuBar'
 import Dock from '../components/Dock'
 import AppWindow from '../components/AppWindow'
@@ -85,7 +89,7 @@ export default function ChromeLanding() {
   const [focusedAppWindowId, setFocusedAppWindowId] = useState(null)
   const [showShutdown, setShowShutdown] = useState(false)
   const [nightMode, setNightMode] = useState(true)
-  const { isRecording, toggleRecording } = useScreenRecording()
+  const { isCapturing, takeScreenshot } = useScreenshot()
 
   const setDesktopItems = useCallback((fnOrValue) => {
     setDesktopItemsState((prev) => {
@@ -133,6 +137,7 @@ export default function ChromeLanding() {
         position: { x: 120 + prev.length * 40, y: 80 + prev.length * 40 },
         isMaximized: false,
         isMinimized: false,
+        isOpening: true,
       }
       setFocusedAppWindowId(id)
       return [...prev, win]
@@ -209,11 +214,17 @@ export default function ChromeLanding() {
           {activeTab.type === 'home' ? (
             <ChromeHome onShortcut={openShortcutTab} />
           ) : activeTab.type === 'github' ? (
-            <GitHubProfileCard profileUrl={getUrlForTab(activeTab)} />
+            <SocialProfileWindow profileUrl={getUrlForTab(activeTab)}>
+              <GitHubProfileCard profileUrl={getUrlForTab(activeTab)} />
+            </SocialProfileWindow>
           ) : activeTab.type === 'linkedin' ? (
-            <LinkedInProfileCard profileUrl={getUrlForTab(activeTab)} />
+            <SocialProfileWindow profileUrl={getUrlForTab(activeTab)}>
+              <LinkedInProfileCard profileUrl={getUrlForTab(activeTab)} />
+            </SocialProfileWindow>
           ) : activeTab.type === 'instagram' ? (
-            <InstagramProfileCard profileUrl={getUrlForTab(activeTab)} />
+            <SocialProfileWindow profileUrl={getUrlForTab(activeTab)}>
+              <InstagramProfileCard profileUrl={getUrlForTab(activeTab)} />
+            </SocialProfileWindow>
           ) : (() => {
             const url = getUrlForTab(activeTab)
             if (url) {
@@ -236,14 +247,12 @@ export default function ChromeLanding() {
         onSleep={() => setShowShutdown(true)}
         nightMode={nightMode}
         onNightModeToggle={() => setNightMode((m) => !m)}
-        isRecording={isRecording}
-        onRecordToggle={toggleRecording}
+        isCapturing={isCapturing}
+        onScreenshot={takeScreenshot}
       />
       <Dock
         onOpenApp={openAppTab}
-        isChromeMinimized={chromeMinimized}
         isChromeMaximized={chromeMaximized}
-        onRestoreChrome={() => setChromeMinimized(false)}
       />
       {openFolderId && (
         <FolderWindow
@@ -274,11 +283,29 @@ export default function ChromeLanding() {
         } else if (win.appKey === 'youtubeMusic') {
           content = <YouTubeMusicWindow />
         } else if (win.appKey === 'instagram') {
-          content = <InstagramProfileCard profileUrl={profileUrl} />
+          content = (
+            <SocialProfileWindow profileUrl={profileUrl}>
+              <InstagramProfileCard profileUrl={profileUrl} />
+            </SocialProfileWindow>
+          )
         } else if (win.appKey === 'github') {
-          content = <GitHubProfileCard profileUrl={profileUrl} />
+          content = (
+            <SocialProfileWindow profileUrl={profileUrl}>
+              <GitHubProfileCard profileUrl={profileUrl} />
+            </SocialProfileWindow>
+          )
         } else if (win.appKey === 'linkedin') {
-          content = <LinkedInProfileCard profileUrl={profileUrl} />
+          content = (
+            <SocialProfileWindow profileUrl={profileUrl}>
+              <LinkedInProfileCard profileUrl={profileUrl} />
+            </SocialProfileWindow>
+          )
+        } else if (win.appKey === 'settings') {
+          content = <SettingsWindow />
+        } else if (win.appKey === 'appStore') {
+          content = <AppStoreWindow />
+        } else if (win.appKey === 'gallery') {
+          content = <GalleryWindow />
         } else if (profileUrl) {
           content = <iframe src={profileUrl} className="chrome-landing__iframe" title={app.label} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} />
         } else {
@@ -291,6 +318,8 @@ export default function ChromeLanding() {
             title={app.label}
             icon={Icon ? <Icon size={16} strokeWidth={1.5} /> : null}
             position={win.position}
+            isOpening={win.isOpening}
+            onOpeningComplete={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isOpening: false } : w)))}
             onPositionChange={(pos) => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, position: pos } : w)))}
             onClose={() => setOpenAppWindows((prev) => prev.filter((w) => w.id !== win.id))}
             onMinimize={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isMinimized: true } : w)))}
