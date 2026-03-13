@@ -16,6 +16,7 @@ export default function AppWindow({
   children,
 }) {
   const [isDragging, setIsDragging] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
   const dragRef = useRef({ startX: 0, startY: 0, startLeft: 0, startTop: 0 })
 
   const handleMouseDown = (e) => {
@@ -50,13 +51,25 @@ export default function AppWindow({
     }
   }, [isDragging, onPositionChange])
 
+  useEffect(() => {
+    if (!isClosing) return
+    const el = document.getElementById(`app-window-${id}`)
+    if (!el) return
+    const onEnd = () => {
+      onClose?.()
+    }
+    el.addEventListener('animationend', onEnd, { once: true })
+    return () => el.removeEventListener('animationend', onEnd)
+  }, [isClosing, id, onClose])
+
   const style = isMaximized
     ? undefined
     : { left: position.x, top: position.y }
 
   return (
     <div
-      className={`app-window ${isMaximized ? 'app-window--maximized' : ''} ${isFocused ? 'app-window--focused' : ''}`}
+      id={`app-window-${id}`}
+      className={`app-window ${isMaximized ? 'app-window--maximized' : ''} ${isFocused ? 'app-window--focused' : ''} ${isClosing ? 'app-window--closing' : ''}`}
       style={style}
       onClick={onFocus}
     >
@@ -68,7 +81,11 @@ export default function AppWindow({
           <button
             type="button"
             className="app-window__traffic app-window__traffic--close"
-            onClick={(e) => { e.stopPropagation(); onClose?.(); }}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (isClosing) return
+              setIsClosing(true)
+            }}
             aria-label="Close"
           />
           <button

@@ -11,7 +11,7 @@
   position: fixed;
   inset: 0;
   background: #1a1a1e;
-  background-image: url('/os-background.png');
+  background-image: url('/home-background.png');
   background-size: cover;
   background-position: center;
   z-index: 0;

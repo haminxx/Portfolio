@@ -74,6 +74,15 @@
   border: none;
   padding: 0;
   cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.app-window__traffic:hover {
+  filter: brightness(0.85);
+}
+
+.app-window__traffic:active {
+  filter: brightness(0.7);
 }
 
 .app-window__traffic--close {
@@ -92,4 +101,17 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
+}
+
+.app-window--closing {
+  transform-origin: center bottom;
+  animation: app-window-close-to-dock 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes app-window-close-to-dock {
+  to {
+    transform: scale(0.05) translateY(40vh);
+    opacity: 0;
+  }
 }

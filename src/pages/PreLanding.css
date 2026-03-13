@@ -49,9 +49,9 @@
 }
 
 .pre-landing__hello-path {
-  stroke-dasharray: 1200;
-  stroke-dashoffset: 1200;
-  animation: pre-landing-hello-draw 2.2s ease-in-out forwards;
+  stroke-dasharray: 1800;
+  stroke-dashoffset: 1800;
+  animation: pre-landing-hello-draw 2.5s ease-in-out forwards;
 }
 
 @keyframes pre-landing-hello-draw {

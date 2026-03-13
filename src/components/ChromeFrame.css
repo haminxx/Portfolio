@@ -24,12 +24,15 @@
   border-radius: 50%;
   border: none;
   cursor: pointer;
-  transition: filter 0.15s ease, transform 0.1s ease;
+  transition: filter 0.15s ease;
 }
 
 .chrome-frame__traffic:hover {
-  filter: brightness(1.15);
-  transform: scale(1.05);
+  filter: brightness(0.85);
+}
+
+.chrome-frame__traffic:active {
+  filter: brightness(0.7);
 }
 
 .chrome-frame__traffic--close {

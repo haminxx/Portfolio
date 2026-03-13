@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { useScreenRecording } from '../hooks/useScreenRecording'
 import ChromeFrame from '../components/ChromeFrame'
 import ChromeWindow from '../components/ChromeWindow'
 import ChromeHome from '../components/ChromeHome'
@@ -84,7 +85,7 @@ export default function ChromeLanding() {
   const [focusedAppWindowId, setFocusedAppWindowId] = useState(null)
   const [showShutdown, setShowShutdown] = useState(false)
   const [nightMode, setNightMode] = useState(true)
-  const [isRecording, setIsRecording] = useState(false)
+  const { isRecording, toggleRecording } = useScreenRecording()
 
   const setDesktopItems = useCallback((fnOrValue) => {
     setDesktopItemsState((prev) => {
@@ -236,7 +237,7 @@ export default function ChromeLanding() {
         nightMode={nightMode}
         onNightModeToggle={() => setNightMode((m) => !m)}
         isRecording={isRecording}
-        onRecordToggle={() => setIsRecording((r) => !r)}
+        onRecordToggle={toggleRecording}
       />
       <Dock
         onOpenApp={openAppTab}
@@ -254,7 +255,13 @@ export default function ChromeLanding() {
           onOpenFolder={handleOpenFolder}
         />
       )}
-      {openAppWindows.map((win) => {
+      {[...openAppWindows]
+        .sort((a, b) => {
+          if (a.id === focusedAppWindowId) return 1
+          if (b.id === focusedAppWindowId) return -1
+          return 0
+        })
+        .map((win) => {
         const app = APPS[win.appKey]
         if (!app) return null
         const Icon = APP_ICONS[win.appKey]

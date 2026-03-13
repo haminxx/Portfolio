@@ -33,7 +33,7 @@ function getDefaultPositions() {
   entries.forEach((key, index) => {
     positions[key] = {
       x: 24 + (index % 4) * 100,
-      y: 24 + Math.floor(index / 4) * 88,
+      y: 80 + Math.floor(index / 4) * 88,
     }
   })
   return positions
@@ -92,6 +92,14 @@ export default function Desktop({
   const handleIconPositionChange = useCallback((appKey, x, y) => {
     setIconPositions((prev) => {
       const next = { ...prev, [appKey]: { x, y } }
+      savePositions(next)
+      return next
+    })
+  }, [])
+
+  const handleIconPositionsBatchChange = useCallback((updates) => {
+    setIconPositions((prev) => {
+      const next = { ...prev, ...updates }
       savePositions(next)
       return next
     })
@@ -198,6 +206,7 @@ export default function Desktop({
           onOpenApp={onOpenApp}
           iconPositions={iconPositions}
           onIconPositionChange={handleIconPositionChange}
+          onIconPositionsBatchChange={handleIconPositionsBatchChange}
           selectedIcons={selectedIcons}
           onIconContextMenu={handleIconContextMenu}
           sortBy={sortBy}

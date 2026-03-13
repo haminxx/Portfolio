@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Wifi, Battery, Circle, Moon, Search } from 'lucide-react'
 import './SystemTray.css'
 
@@ -9,8 +9,7 @@ const WIFI_NETWORKS = [
   { id: 'off', name: 'Wi-Fi Off', connected: false },
 ]
 
-function CalendarDropdown() {
-  const now = new Date()
+function CalendarDropdown({ now }) {
   const year = now.getFullYear()
   const month = now.getMonth()
   const firstDay = new Date(year, month, 1).getDay()
@@ -70,8 +69,13 @@ function CalendarDropdown() {
 export default function SystemTray({ nightMode, onNightModeToggle, isRecording, onRecordToggle }) {
   const [showWifi, setShowWifi] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
+  const [now, setNow] = useState(() => new Date())
 
-  const now = new Date()
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(id)
+  }, [])
+
   const clockStr = now.toLocaleString(undefined, {
     weekday: 'short',
     month: 'short',
@@ -148,7 +152,7 @@ export default function SystemTray({ nightMode, onNightModeToggle, isRecording, 
         {showCalendar && (
           <>
             <div className="system-tray__backdrop" onClick={() => setShowCalendar(false)} aria-hidden />
-            <CalendarDropdown />
+            <CalendarDropdown now={now} />
           </>
         )}
       </div>

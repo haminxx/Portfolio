@@ -30,13 +30,14 @@ export default function DesktopIcons({
   onOpenApp,
   iconPositions = {},
   onIconPositionChange,
+  onIconPositionsBatchChange,
   selectedIcons = new Set(),
   onIconContextMenu,
   containerRef,
   sortBy,
 }) {
-  const [draggingKey, setDraggingKey] = useState(null)
-  const dragStartRef = useRef({ x: 0, y: 0, posX: 0, posY: 0 })
+  const [draggingKeys, setDraggingKeys] = useState(new Set())
+  const dragStartRef = useRef({ x: 0, y: 0, positions: {} })
   const lastClickRef = useRef({ appKey: null, time: 0 })
 
   let entries = Object.entries(APPS)
@@ -52,7 +53,7 @@ export default function DesktopIcons({
       }
       return {
         x: 24 + (index % 4) * 100,
-        y: 24 + Math.floor(index / 4) * 88,
+        y: 80 + Math.floor(index / 4) * 88,
       }
     },
     [iconPositions]
@@ -63,72 +64,89 @@ export default function DesktopIcons({
       if (e.button !== 0) return
       e.preventDefault()
       e.stopPropagation()
-      const pos = iconPositions[appKey] ?? getPosition(appKey, entries.findIndex(([k]) => k === appKey))
-      setDraggingKey(appKey)
+      const keysToDrag = selectedIcons.has(appKey) ? selectedIcons : new Set([appKey])
+      const positions = {}
+      keysToDrag.forEach((key) => {
+        const idx = entries.findIndex(([k]) => k === key)
+        positions[key] = iconPositions[key] ?? getPosition(key, idx >= 0 ? idx : 0)
+      })
+      setDraggingKeys(keysToDrag)
       dragStartRef.current = {
         x: e.clientX,
         y: e.clientY,
-        posX: pos.x,
-        posY: pos.y,
+        positions: { ...positions },
       }
     },
-    [iconPositions, getPosition, entries]
+    [iconPositions, getPosition, entries, selectedIcons]
   )
 
   const handleMouseMove = useCallback(
     (e) => {
-      if (!draggingKey) return
-      const { x, y, posX, posY } = dragStartRef.current
-      const dx = e.clientX - x
-      const dy = e.clientY - y
-      const newX = posX + dx
-      const newY = posY + dy
+      if (draggingKeys.size === 0) return
+      const { x, y, positions, lastX, lastY } = dragStartRef.current
+      const prevX = lastX ?? x
+      const prevY = lastY ?? y
+      const dx = e.clientX - prevX
+      const dy = e.clientY - prevY
 
       const maxX = Math.max(0, (typeof window !== 'undefined' ? window.innerWidth : 1200) - ICON_WIDTH)
       const maxY = Math.max(0, (typeof window !== 'undefined' ? window.innerHeight : 800) - ICON_HEIGHT)
-      const clampedX = Math.max(0, Math.min(newX, maxX))
-      const clampedY = Math.max(0, Math.min(newY, maxY))
+
+      const updates = {}
+      draggingKeys.forEach((key) => {
+        const pos = positions[key] || { x: 0, y: 0 }
+        const newX = Math.max(0, Math.min(pos.x + dx, maxX))
+        const newY = Math.max(0, Math.min(pos.y + dy, maxY))
+        updates[key] = { x: newX, y: newY }
+        positions[key] = { x: newX, y: newY }
+      })
 
       dragStartRef.current = {
-        x: e.clientX,
-        y: e.clientY,
-        posX: clampedX,
-        posY: clampedY,
+        ...dragStartRef.current,
+        lastX: e.clientX,
+        lastY: e.clientY,
+        positions,
       }
-      onIconPositionChange?.(draggingKey, clampedX, clampedY)
+      onIconPositionsBatchChange?.(updates)
     },
-    [draggingKey, onIconPositionChange]
+    [draggingKeys, onIconPositionsBatchChange]
   )
 
   useEffect(() => {
-    if (!draggingKey) return
+    if (draggingKeys.size === 0) return
     const moveHandler = (e) => handleMouseMove(e)
     const upHandler = (e) => {
-      const appKey = draggingKey
-      setDraggingKey(null)
+      const keys = new Set(draggingKeys)
+      const primaryKey = keys.values().next().value
+      setDraggingKeys(new Set())
       document.removeEventListener('mousemove', moveHandler)
       document.removeEventListener('mouseup', upHandler)
-      const { x, y, posX, posY } = dragStartRef.current
+      const { x, y, positions, lastX, lastY } = dragStartRef.current
       const dx = e.clientX - x
       const dy = e.clientY - y
       const distance = Math.sqrt(dx * dx + dy * dy)
       if (distance < DRAG_THRESHOLD) {
         const now = Date.now()
         const last = lastClickRef.current
-        if (last.appKey === appKey && now - last.time < 400) {
-          onOpenApp?.(appKey)
+        if (last.appKey === primaryKey && now - last.time < 400) {
+          onOpenApp?.(primaryKey)
           lastClickRef.current = { appKey: null, time: 0 }
         } else {
-          lastClickRef.current = { appKey, time: now }
+          lastClickRef.current = { appKey: primaryKey, time: now }
         }
       } else {
-        const finalX = posX + dx
-        const finalY = posY + dy
         const maxX = Math.max(0, (typeof window !== 'undefined' ? window.innerWidth : 1200) - ICON_WIDTH)
         const maxY = Math.max(0, (typeof window !== 'undefined' ? window.innerHeight : 800) - ICON_HEIGHT)
-        const clampedX = Math.max(0, Math.min(finalX, maxX))
-        const clampedY = Math.max(0, Math.min(finalY, maxY))
-        onIconPositionChange?.(appKey, clampedX, clampedY)
+        const finalDx = e.clientX - (lastX ?? x)
+        const finalDy = e.clientY - (lastY ?? y)
+        const updates = {}
+        keys.forEach((key) => {
+          const pos = positions[key] || { x: 0, y: 0 }
+          const finalX = Math.max(0, Math.min(pos.x + finalDx, maxX))
+          const finalY = Math.max(0, Math.min(pos.y + finalDy, maxY))
+          updates[key] = { x: finalX, y: finalY }
+        })
+        onIconPositionsBatchChange?.(updates)
       }
     }
     document.addEventListener('mousemove', moveHandler)
@@ -137,7 +155,7 @@ export default function DesktopIcons({
       document.removeEventListener('mousemove', moveHandler)
       document.removeEventListener('mouseup', upHandler)
     }
-  }, [draggingKey, onOpenApp, onIconPositionChange])
+  }, [draggingKeys, onOpenApp, onIconPositionsBatchChange])
 
   return (
     <div className="desktop-icons" ref={containerRef} aria-label="Desktop icons">
@@ -149,7 +167,7 @@ export default function DesktopIcons({
           <button
             key={key}
             type="button"
-            className={`desktop-icons__item ${isSelected ? 'desktop-icons__item--selected' : ''} ${draggingKey === key ? 'desktop-icons__item--dragging' : ''}`}
+            className={`desktop-icons__item ${isSelected ? 'desktop-icons__item--selected' : ''} ${draggingKeys.has(key) ? 'desktop-icons__item--dragging' : ''}`}
             data-app-key={key}
             style={{ left: pos.x, top: pos.y }}
             onMouseDown={(e) => handleIconMouseDown(e, key)}

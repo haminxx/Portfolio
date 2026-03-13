@@ -40,6 +40,15 @@
   border-radius: 50%;
   border: none;
   cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.folder-window__btn:hover {
+  filter: brightness(0.85);
+}
+
+.folder-window__btn:active {
+  filter: brightness(0.7);
 }
 
 .folder-window__btn--close {
