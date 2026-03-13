@@ -61,6 +61,10 @@
   cursor: nwse-resize;
 }
 
+.chrome-window--dragging {
+  will-change: transform;
+}
+
 .chrome-window--minimizing {
   transform-origin: center bottom;
   animation: chrome-window-to-dock 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;

@@ -86,7 +86,25 @@ export default function ChromeLanding() {
   const [chromeMinimizing, setChromeMinimizing] = useState(false)
   const [sortBy, setSortBy] = useState('name')
   const [chromeContextMenu, setChromeContextMenu] = useState(null)
-  const [desktopItems, setDesktopItemsState] = useState(() => loadDesktopItems())
+  const [desktopItems, setDesktopItemsState] = useState(() => {
+    const loaded = loadDesktopItems()
+    const hasDoom = loaded.some((i) => i.type === 'shortcut' && i.appKey === 'doom')
+    if (!hasDoom) {
+      const doomItem = {
+        id: 'doom-shortcut',
+        type: 'shortcut',
+        name: 'Doom',
+        appKey: 'doom',
+        parentId: null,
+        x: 24,
+        y: 24,
+      }
+      const next = [...loaded, doomItem]
+      saveDesktopItems(next)
+      return next
+    }
+    return loaded
+  })
   const [openFolderId, setOpenFolderId] = useState(null)
   const [startRenameId, setStartRenameId] = useState(null)
   const [openAppWindows, setOpenAppWindows] = useState([])
@@ -136,15 +154,26 @@ export default function ChromeLanding() {
       const existing = prev.find((w) => w.appKey === appKey)
       if (existing) {
         setFocusedAppWindowId(existing.id)
+        if (existing.isMinimized) {
+          return prev.map((w) =>
+            w.id === existing.id ? { ...w, isMinimized: false } : w
+          )
+        }
         return prev.map((w) =>
-          w.id === existing.id ? { ...w, isMinimized: !w.isMinimized } : w
+          w.id === existing.id ? { ...w, isMinimizing: true } : w
         )
       }
+      const winWidth = 640
+      const winHeight = 480
+      const vw = typeof window !== 'undefined' ? window.innerWidth : 1200
+      const vh = typeof window !== 'undefined' ? window.innerHeight : 800
+      const x = Math.max(0, (vw - winWidth) / 2 + prev.length * 24)
+      const y = Math.max(0, (vh - winHeight) / 2 + prev.length * 24 - 36)
       const id = `app-${appKey}-${Date.now()}`
       const win = {
         id,
         appKey,
-        position: { x: 120 + prev.length * 40, y: 80 + prev.length * 40 },
+        position: { x, y },
         size: { width: 640, height: 480 },
         isMaximized: false,
         isMinimized: false,

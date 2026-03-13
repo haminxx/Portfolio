@@ -39,19 +39,30 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, on
     const handleMove = (e) => {
       const dx = e.clientX - dragStartRef.current.x
       const dy = e.clientY - dragStartRef.current.y
-      setPosition({
-        x: Math.max(0, dragStartRef.current.left + dx),
-        y: Math.max(0, dragStartRef.current.top + dy),
-      })
+      const newX = Math.max(0, dragStartRef.current.left + dx)
+      const newY = Math.max(0, dragStartRef.current.top + dy)
+      if (winRef.current) {
+        winRef.current.style.transform = `translate(${newX - position.x}px, ${newY - position.y}px)`
+      }
     }
-    const handleUp = () => setIsDragging(false)
+    const handleUp = (e) => {
+      const dx = e.clientX - dragStartRef.current.x
+      const dy = e.clientY - dragStartRef.current.y
+      const newX = Math.max(0, dragStartRef.current.left + dx)
+      const newY = Math.max(0, dragStartRef.current.top + dy)
+      if (winRef.current) {
+        winRef.current.style.transform = ''
+      }
+      setPosition({ x: newX, y: newY })
+      setIsDragging(false)
+    }
     document.addEventListener('mousemove', handleMove)
     document.addEventListener('mouseup', handleUp)
     return () => {
       document.removeEventListener('mousemove', handleMove)
       document.removeEventListener('mouseup', handleUp)
     }
-  }, [isDragging])
+  }, [isDragging, position.x, position.y])
 
   const handleResizeStart = useCallback((e, edge) => {
     e.stopPropagation()

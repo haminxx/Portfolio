@@ -46,6 +46,12 @@ export const APPS = {
     icon: 'youtubeMusic',
     iconPath: '/dock-icons/youtube-music.png',
   },
+  doom: {
+    label: 'Doom',
+    domain: 'doom.local',
+    icon: 'doom',
+    url: 'https://dos.zone/player/doom/',
+  },
 }
 
 export function getDomainForApp(appKey) {

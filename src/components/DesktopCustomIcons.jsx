@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { Folder, FileText } from 'lucide-react'
+import { Folder, FileText, Gamepad2 } from 'lucide-react'
 import './DesktopCustomIcons.css'
 
 const DRAG_THRESHOLD = 10
@@ -8,6 +8,7 @@ export default function DesktopCustomIcons({
   desktopItems = [],
   onItemsChange,
   onOpenFolder,
+  onOpenApp,
   onIconContextMenu,
   startRenameId,
   onClearStartRenameId,
@@ -63,9 +64,11 @@ export default function DesktopCustomIcons({
       e.stopPropagation()
       if (item.type === 'folder') {
         onOpenFolder?.(item.id)
+      } else if (item.type === 'shortcut' && item.appKey) {
+        onOpenApp?.(item.appKey)
       }
     },
-    [onOpenFolder]
+    [onOpenFolder, onOpenApp]
   )
 
   const handleMouseDown = useCallback(
@@ -164,7 +167,8 @@ export default function DesktopCustomIcons({
     <div className="desktop-custom-icons">
       {rootItems.map((item) => {
         const isFolder = item.type === 'folder'
-        const Icon = isFolder ? Folder : FileText
+        const isShortcut = item.type === 'shortcut'
+        const Icon = isFolder ? Folder : isShortcut ? Gamepad2 : FileText
         const isDropTarget = dropTargetId === item.id && draggingId !== item.id
 
         return (

@@ -26,6 +26,7 @@ export default function Dock({ onOpenApp, isChromeMaximized }) {
     <footer className={`dock ${isChromeMaximized ? 'dock--fullscreen-hidden' : ''}`}>
       <div className="dock__inner">
         {Object.entries(APPS)
+          .filter(([key]) => key !== 'doom')
           .map(([key, app]) => {
           const Icon = APP_ICONS[key]
           return (
