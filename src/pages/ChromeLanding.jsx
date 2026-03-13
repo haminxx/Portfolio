@@ -267,7 +267,7 @@ export default function ChromeLanding() {
         />
       )}
       {[...openAppWindows]
-        .filter((w) => !w.isMinimized)
+        .filter((w) => !w.isMinimized || w.isMinimizing)
         .sort((a, b) => {
           if (a.id === focusedAppWindowId) return 1
           if (b.id === focusedAppWindowId) return -1
@@ -325,10 +325,12 @@ export default function ChromeLanding() {
             onOpeningComplete={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isOpening: false } : w)))}
             onPositionChange={(pos) => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, position: pos } : w)))}
             onClose={() => setOpenAppWindows((prev) => prev.filter((w) => w.id !== win.id))}
-            onMinimize={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isMinimized: true } : w)))}
+            onMinimize={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isMinimizing: true } : w)))}
+            onMinimizeComplete={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isMinimized: true, isMinimizing: false } : w)))}
             onMaximize={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isMaximized: !w.isMaximized } : w)))}
             isMaximized={win.isMaximized}
             isMinimized={win.isMinimized}
+            isMinimizing={win.isMinimizing}
             isFocused={focusedAppWindowId === win.id}
             onFocus={() => setFocusedAppWindowId(win.id)}
           >

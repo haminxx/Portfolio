@@ -11,8 +11,10 @@ export default function AppWindow({
   onPositionChange,
   onClose,
   onMinimize,
+  onMinimizeComplete,
   onMaximize,
   isMaximized,
+  isMinimizing,
   isFocused,
   onFocus,
   children,
@@ -34,6 +36,7 @@ export default function AppWindow({
     if (isMaximized) return
     if (e.target.closest('button')) return
     e.preventDefault()
+    onFocus?.()
     setIsDragging(true)
     dragRef.current = {
       startX: e.clientX,
@@ -73,6 +76,17 @@ export default function AppWindow({
     return () => el.removeEventListener('animationend', onEnd)
   }, [isClosing, id, onClose])
 
+  useEffect(() => {
+    if (!isMinimizing) return
+    const el = document.getElementById(`app-window-${id}`)
+    if (!el) return
+    const onEnd = () => {
+      onMinimizeComplete?.()
+    }
+    el.addEventListener('animationend', onEnd, { once: true })
+    return () => el.removeEventListener('animationend', onEnd)
+  }, [isMinimizing, id, onMinimizeComplete])
+
   const openingCompleteRef = useRef(false)
   const handleOpeningTransitionEnd = (e) => {
     if (!isOpening || openingCompleteRef.current) return
@@ -96,7 +110,7 @@ export default function AppWindow({
   return (
     <div
       id={`app-window-${id}`}
-      className={`app-window ${isMaximized ? 'app-window--maximized' : ''} ${isFocused ? 'app-window--focused' : ''} ${isClosing ? 'app-window--closing' : ''} ${isOpening ? 'app-window--opening' : ''}`}
+      className={`app-window ${isMaximized ? 'app-window--maximized' : ''} ${isFocused ? 'app-window--focused' : ''} ${isClosing ? 'app-window--closing' : ''} ${isMinimizing ? 'app-window--minimizing' : ''} ${isOpening ? 'app-window--opening' : ''}`}
       style={style}
       onClick={onFocus}
       onTransitionEnd={isOpening ? handleOpeningTransitionEnd : undefined}

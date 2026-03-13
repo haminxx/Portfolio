@@ -7,6 +7,10 @@ Pre-landing gate (Fn+F11 or Mobile User) and Chrome-browser-style landing page w
 - `npm install`
 - `npm run dev`
 
+## API Keys
+
+For GitHub, YouTube, Instagram, and LinkedIn integrations, see [docs/API_KEYS_SETUP.md](docs/API_KEYS_SETUP.md) for setup instructions and where to add your keys.
+
 ## Customization
 
 - **Chrome window background:** Place your image at `public/background.jpg`. The content area already references this path; if the file is missing, a gray fallback is shown.
