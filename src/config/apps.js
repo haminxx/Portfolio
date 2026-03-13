@@ -17,6 +17,7 @@ export const APPS = {
     label: 'Netflix',
     domain: 'netflix.com',
     icon: 'netflix',
+    iconPath: '/dock-icons/netflix.png',
   },
   gallery: {
     label: 'Gallery',
@@ -37,6 +38,13 @@ export const APPS = {
     label: 'Map',
     domain: 'map.local',
     icon: 'map',
+    iconPath: '/dock-icons/map.png',
+  },
+  youtubeMusic: {
+    label: 'YouTube Music',
+    domain: 'music.youtube.com',
+    icon: 'youtubeMusic',
+    iconPath: '/dock-icons/youtube-music.png',
   },
 }
 

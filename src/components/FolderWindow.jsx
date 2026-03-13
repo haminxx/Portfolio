@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { Folder, FileText, Home } from 'lucide-react'
 import './FolderWindow.css'
 
@@ -19,6 +19,45 @@ export default function FolderWindow({
 }) {
   const [activeSidebarId, setActiveSidebarId] = useState('desktop')
   const [openFolders, setOpenFolders] = useState(new Set())
+  const [position, setPosition] = useState(() => {
+    if (typeof window === 'undefined') return { x: 0, y: 0 }
+    const w = Math.min(700, window.innerWidth * 0.9)
+    const h = Math.min(450, window.innerHeight * 0.7)
+    return { x: (window.innerWidth - w) / 2, y: (window.innerHeight - h) / 2 }
+  })
+  const [isDragging, setIsDragging] = useState(false)
+  const dragRef = useRef({ startX: 0, startY: 0, startLeft: 0, startTop: 0 })
+
+  const handleTitleMouseDown = useCallback((e) => {
+    if (e.target.closest('button')) return
+    e.preventDefault()
+    setIsDragging(true)
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startLeft: position.x,
+      startTop: position.y,
+    }
+  }, [position])
+
+  useEffect(() => {
+    if (!isDragging) return
+    const handleMove = (e) => {
+      const dx = e.clientX - dragRef.current.startX
+      const dy = e.clientY - dragRef.current.startY
+      setPosition({
+        x: Math.max(0, dragRef.current.startLeft + dx),
+        y: Math.max(0, dragRef.current.startTop + dy),
+      })
+    }
+    const handleUp = () => setIsDragging(false)
+    document.addEventListener('mousemove', handleMove)
+    document.addEventListener('mouseup', handleUp)
+    return () => {
+      document.removeEventListener('mousemove', handleMove)
+      document.removeEventListener('mouseup', handleUp)
+    }
+  }, [isDragging])
 
   const children = desktopItems.filter((i) => i.parentId === folderId)
   const subfolders = desktopItems.filter((i) => i.type === 'folder')
@@ -64,8 +103,14 @@ export default function FolderWindow({
   }, [folderId, onItemsChange])
 
   return (
-    <div className="folder-window">
-      <div className="folder-window__titlebar">
+    <div
+      className={`folder-window ${isDragging ? 'folder-window--dragging' : ''}`}
+      style={{ left: position.x, top: position.y }}
+    >
+      <div
+        className="folder-window__titlebar"
+        onMouseDown={handleTitleMouseDown}
+      >
         <div className="folder-window__traffic-lights">
           <button type="button" className="folder-window__btn folder-window__btn--close" aria-label="Close" onClick={onClose} />
           <button type="button" className="folder-window__btn folder-window__btn--minimize" aria-label="Minimize" />

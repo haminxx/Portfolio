@@ -29,6 +29,24 @@
   margin-right: 16px;
 }
 
+.menu-bar__logo--btn {
+  padding: 4px 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-right: 4px;
+}
+
+.menu-bar__logo--btn:hover,
+.menu-bar__logo--open {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.menu-bar__cnl-wrap {
+  position: relative;
+}
+
 .menu-bar__menu-wrap {
   position: relative;
 }

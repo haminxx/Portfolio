@@ -1,0 +1,167 @@
+.ytmusic-window {
+  display: flex;
+  height: 100%;
+  background: #0f0f0f;
+  color: #fff;
+}
+
+.ytmusic-window__sidebar {
+  width: 240px;
+  padding: 16px;
+  background: #0f0f0f;
+  border-right: 1px solid #272727;
+}
+
+.ytmusic-window__logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  margin-bottom: 24px;
+}
+
+.ytmusic-window__logo-icon {
+  width: 40px;
+  height: 40px;
+  background: #ff0000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #fff;
+}
+
+.ytmusic-window__logo-text {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.ytmusic-window__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ytmusic-window__nav-item {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+}
+
+.ytmusic-window__nav-item--active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.ytmusic-window__main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.ytmusic-window__search-bar {
+  margin-bottom: 24px;
+}
+
+.ytmusic-window__search-input {
+  width: 100%;
+  max-width: 400px;
+  padding: 12px 20px;
+  background: #272727;
+  border: none;
+  border-radius: 24px;
+  color: #fff;
+  font-size: 14px;
+}
+
+.ytmusic-window__hero {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 32px;
+  padding: 24px;
+  background: #1a1a1a;
+  border-radius: 12px;
+}
+
+.ytmusic-window__hero-art {
+  width: 180px;
+  height: 180px;
+  flex-shrink: 0;
+  background: #272727;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ytmusic-window__play-circle {
+  width: 72px;
+  height: 72px;
+  background: #ff0000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.ytmusic-window__play-circle:hover {
+  transform: scale(1.05);
+}
+
+.ytmusic-window__play-icon {
+  font-size: 28px;
+  color: #fff;
+  margin-left: 4px;
+}
+
+.ytmusic-window__hero-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ytmusic-window__hero-title {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.ytmusic-window__hero-desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+.ytmusic-window__section-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+
+.ytmusic-window__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 24px;
+}
+
+.ytmusic-window__card {
+  cursor: pointer;
+}
+
+.ytmusic-window__card-art {
+  width: 100%;
+  aspect-ratio: 1;
+  background: #272727;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.ytmusic-window__card-title {
+  font-size: 14px;
+  font-weight: 500;
+}

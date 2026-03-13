@@ -45,6 +45,12 @@
   height: 48px;
 }
 
+.desktop-icons__icon-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
 .desktop-icons__label {
   font-size: 12px;
   text-align: center;

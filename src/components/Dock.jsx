@@ -19,6 +19,7 @@ const APP_ICONS = {
   appStore: ShoppingBag,
   settings: Settings,
   map: Map,
+  youtubeMusic: Film,
 }
 
 export default function Dock({ onOpenApp, isChromeMinimized, isChromeMaximized, onRestoreChrome }) {
@@ -53,7 +54,11 @@ export default function Dock({ onOpenApp, isChromeMinimized, isChromeMaximized, 
               aria-label={app.label}
             >
               <span className="dock__icon">
-                {Icon ? <Icon size={26} strokeWidth={1.6} /> : null}
+                {app.iconPath ? (
+                  <img src={app.iconPath} alt="" className="dock__icon-img" />
+                ) : Icon ? (
+                  <Icon size={26} strokeWidth={1.6} />
+                ) : null}
               </span>
               <span className="dock__label">{app.label}</span>
             </button>

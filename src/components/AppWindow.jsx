@@ -64,8 +64,6 @@ export default function AppWindow({
         className="app-window__title"
         onMouseDown={handleMouseDown}
       >
-        {icon && <span className="app-window__icon">{icon}</span>}
-        <span className="app-window__title-text">{title}</span>
         <div className="app-window__traffic-lights">
           <button
             type="button"
@@ -86,6 +84,8 @@ export default function AppWindow({
             aria-label="Maximize"
           />
         </div>
+        {icon && <span className="app-window__icon">{icon}</span>}
+        <span className="app-window__title-text">{title}</span>
       </header>
       <div className="app-window__content">
         {children}

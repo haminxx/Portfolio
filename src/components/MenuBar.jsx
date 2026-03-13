@@ -11,8 +11,15 @@ const MENUS = [
   { id: 'help', label: 'Help', items: ['Portfolio Help'] },
 ]
 
-export default function MenuBar() {
+const CNL_ITEMS = [
+  { id: 'sleep', label: 'Sleep' },
+  { id: 'restart', label: 'Restart…' },
+  { id: 'turnOff', label: 'Turn Off…' },
+]
+
+export default function MenuBar({ onTurnOff, onRestart, onSleep, nightMode, onNightModeToggle, isRecording, onRecordToggle }) {
   const [openMenu, setOpenMenu] = useState(null)
+  const [openCnl, setOpenCnl] = useState(false)
   const barRef = useRef(null)
   const leaveTimeoutRef = useRef(null)
 
@@ -21,11 +28,35 @@ export default function MenuBar() {
       clearTimeout(leaveTimeoutRef.current)
       leaveTimeoutRef.current = null
     }
+    setOpenCnl(false)
     setOpenMenu(menuId)
   }
 
   const handleMenuLeave = () => {
-    leaveTimeoutRef.current = setTimeout(() => setOpenMenu(null), 150)
+    leaveTimeoutRef.current = setTimeout(() => {
+      setOpenMenu(null)
+      setOpenCnl(false)
+    }, 150)
+  }
+
+  const handleCnlEnter = () => {
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current)
+      leaveTimeoutRef.current = null
+    }
+    setOpenMenu(null)
+    setOpenCnl(true)
+  }
+
+  const handleCnlLeave = () => {
+    leaveTimeoutRef.current = setTimeout(() => setOpenCnl(false), 150)
+  }
+
+  const handleCnlItem = (id) => {
+    setOpenCnl(false)
+    if (id === 'turnOff') onTurnOff?.()
+    else if (id === 'restart') onRestart?.()
+    else if (id === 'sleep') onSleep?.()
   }
 
   const handleDropdownEnter = () => {
@@ -36,7 +67,10 @@ export default function MenuBar() {
   }
 
   const handleDropdownLeave = () => {
-    leaveTimeoutRef.current = setTimeout(() => setOpenMenu(null), 150)
+    leaveTimeoutRef.current = setTimeout(() => {
+      setOpenMenu(null)
+      setOpenCnl(false)
+    }, 150)
   }
 
   useEffect(() => () => {
@@ -46,7 +80,37 @@ export default function MenuBar() {
   return (
     <header className="menu-bar" ref={barRef}>
       <div className="menu-bar__left">
-        <span className="menu-bar__logo">CNL</span>
+        <div
+          className="menu-bar__cnl-wrap"
+          onMouseEnter={handleCnlEnter}
+          onMouseLeave={handleCnlLeave}
+        >
+          <button
+            type="button"
+            className={`menu-bar__logo menu-bar__logo--btn ${openCnl ? 'menu-bar__logo--open' : ''}`}
+            aria-expanded={openCnl}
+          >
+            CNL
+          </button>
+          {openCnl && (
+            <div
+              className="menu-bar__dropdown menu-bar__dropdown--cnl"
+              onMouseEnter={handleDropdownEnter}
+              onMouseLeave={handleDropdownLeave}
+            >
+              {CNL_ITEMS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="menu-bar__item"
+                  onClick={() => handleCnlItem(item.id)}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         {MENUS.map((menu) => (
           <div
             key={menu.id}
@@ -82,7 +146,12 @@ export default function MenuBar() {
         ))}
       </div>
       <div className="menu-bar__right">
-        <SystemTray />
+        <SystemTray
+          nightMode={nightMode ?? true}
+          onNightModeToggle={onNightModeToggle ?? (() => {})}
+          isRecording={isRecording ?? false}
+          onRecordToggle={onRecordToggle ?? (() => {})}
+        />
       </div>
     </header>
   )

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import ChromeFrame from '../components/ChromeFrame'
 import ChromeWindow from '../components/ChromeWindow'
 import ChromeHome from '../components/ChromeHome'
@@ -8,6 +8,9 @@ import GitHubProfileCard from '../components/GitHubProfileCard'
 import LinkedInProfileCard from '../components/LinkedInProfileCard'
 import InstagramProfileCard from '../components/InstagramProfileCard'
 import FolderWindow from '../components/FolderWindow'
+import MapWindow from '../components/MapWindow'
+import NetflixWindow from '../components/NetflixWindow'
+import YouTubeMusicWindow from '../components/YouTubeMusicWindow'
 import MenuBar from '../components/MenuBar'
 import Dock from '../components/Dock'
 import AppWindow from '../components/AppWindow'
@@ -24,6 +27,7 @@ const APP_ICONS = {
   appStore: ShoppingBag,
   settings: Settings,
   map: Map,
+  youtubeMusic: Film,
 }
 
 const HOME_TAB = { id: 'home', title: 'Home', type: 'home' }
@@ -78,6 +82,9 @@ export default function ChromeLanding() {
   const [startRenameId, setStartRenameId] = useState(null)
   const [openAppWindows, setOpenAppWindows] = useState([])
   const [focusedAppWindowId, setFocusedAppWindowId] = useState(null)
+  const [showShutdown, setShowShutdown] = useState(false)
+  const [nightMode, setNightMode] = useState(true)
+  const [isRecording, setIsRecording] = useState(false)
 
   const setDesktopItems = useCallback((fnOrValue) => {
     setDesktopItemsState((prev) => {
@@ -157,6 +164,10 @@ export default function ChromeLanding() {
   const toggleMaximize = useCallback(() => setChromeMaximized((m) => !m), [])
   const setMinimized = useCallback(() => setChromeMinimized(true), [])
 
+  useEffect(() => {
+    document.documentElement.dataset.theme = nightMode ? 'dark' : 'light'
+  }, [nightMode])
+
   return (
     <div className="chrome-landing">
       <Desktop
@@ -218,7 +229,15 @@ export default function ChromeLanding() {
           </div>
         </ChromeWindow>
       )}
-      <MenuBar />
+      <MenuBar
+        onTurnOff={() => setShowShutdown(true)}
+        onRestart={() => setShowShutdown(true)}
+        onSleep={() => setShowShutdown(true)}
+        nightMode={nightMode}
+        onNightModeToggle={() => setNightMode((m) => !m)}
+        isRecording={isRecording}
+        onRecordToggle={() => setIsRecording((r) => !r)}
+      />
       <Dock
         onOpenApp={openAppTab}
         isChromeMinimized={chromeMinimized}
@@ -241,7 +260,13 @@ export default function ChromeLanding() {
         const Icon = APP_ICONS[win.appKey]
         const profileUrl = app.url ?? SHORTCUTS.find((s) => s.type === win.appKey)?.url
         let content
-        if (win.appKey === 'instagram') {
+        if (win.appKey === 'map') {
+          content = <MapWindow />
+        } else if (win.appKey === 'netflix') {
+          content = <NetflixWindow />
+        } else if (win.appKey === 'youtubeMusic') {
+          content = <YouTubeMusicWindow />
+        } else if (win.appKey === 'instagram') {
           content = <InstagramProfileCard profileUrl={profileUrl} />
         } else if (win.appKey === 'github') {
           content = <GitHubProfileCard profileUrl={profileUrl} />
@@ -271,6 +296,15 @@ export default function ChromeLanding() {
           </AppWindow>
         )
       })}
+      {showShutdown && (
+        <div
+          className="chrome-landing__shutdown"
+          role="dialog"
+          aria-label="Shutting down"
+        >
+          <div className="chrome-landing__shutdown-inner" />
+        </div>
+      )}
       {chromeContextMenu && (
         <ChromeContextMenu
           x={chromeContextMenu.x}

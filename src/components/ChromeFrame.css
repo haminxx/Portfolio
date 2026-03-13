@@ -1,16 +1,18 @@
 .chrome-frame {
   display: flex;
   align-items: center;
-  min-height: 48px;
-  padding: 0 8px;
+  min-height: 52px;
+  padding: 0 12px;
   position: relative;
+  background: #f5f5f7;
+  border-bottom: 1px solid #e0e0e5;
 }
 
 .chrome-frame__traffic-lights {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 12px 0 8px;
+  gap: 8px;
+  padding: 0 16px 0 4px;
   flex-shrink: 0;
   position: relative;
   z-index: 2;
@@ -22,28 +24,12 @@
   border-radius: 50%;
   border: none;
   cursor: pointer;
-  transition: filter 0.15s ease;
+  transition: filter 0.15s ease, transform 0.1s ease;
 }
 
 .chrome-frame__traffic:hover {
-  filter: brightness(1.1);
-}
-
-.chrome-frame__traffic--close {
-  background: #ff5f57;
-}
-
-.chrome-frame__traffic--minimize {
-  background: #febc2e;
-}
-
-.chrome-frame__traffic--maximize {
-  background: #28c840;
-}
-
-.chrome-frame {
-  background: #e8e8ed;
-  border-bottom: 1px solid #d2d2d7;
+  filter: brightness(1.15);
+  transform: scale(1.05);
 }
 
 .chrome-frame__traffic--close {
@@ -72,17 +58,13 @@
 
 .chrome-frame__drag {
   position: absolute;
-  left: 0;
+  left: 52px;
   right: 0;
   top: 0;
-  height: 48px;
+  height: 52px;
   -webkit-app-region: drag;
   app-region: drag;
   pointer-events: none;
-}
-
-.chrome-frame__drag {
-  left: 52px;
 }
 
 .chrome-frame__right-controls {

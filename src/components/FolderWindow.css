@@ -1,8 +1,5 @@
 .folder-window {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   width: min(700px, 90vw);
   height: min(450px, 70vh);
   background: rgba(30, 30, 30, 0.95);
@@ -21,6 +18,15 @@
   padding: 12px 16px;
   background: rgba(50, 50, 50, 0.9);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: grab;
+}
+
+.folder-window__titlebar:active {
+  cursor: grabbing;
+}
+
+.folder-window--dragging {
+  cursor: grabbing;
 }
 
 .folder-window__traffic-lights {

@@ -110,3 +110,27 @@
   height: 100%;
   border: none;
 }
+
+.chrome-landing__shutdown {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: chrome-landing-shutdown 2s ease-out forwards;
+}
+
+.chrome-landing__shutdown-inner {
+  width: 100%;
+  height: 100%;
+  background: #000;
+  opacity: 0;
+  animation: chrome-landing-shutdown-fade 2s ease-out forwards;
+}
+
+@keyframes chrome-landing-shutdown-fade {
+  to {
+    opacity: 1;
+  }
+}

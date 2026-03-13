@@ -19,6 +19,7 @@ const APP_ICONS = {
   appStore: ShoppingBag,
   settings: Settings,
   map: Map,
+  youtubeMusic: Film,
 }
 
 const DRAG_THRESHOLD = 10
@@ -157,7 +158,11 @@ export default function DesktopIcons({
             aria-label={app.label}
           >
             <span className="desktop-icons__icon">
-              {Icon ? <Icon size={40} strokeWidth={1.5} /> : null}
+              {app.iconPath ? (
+                <img src={app.iconPath} alt="" className="desktop-icons__icon-img" />
+              ) : Icon ? (
+                <Icon size={40} strokeWidth={1.5} />
+              ) : null}
             </span>
             <span className="desktop-icons__label">{app.label}</span>
           </button>
