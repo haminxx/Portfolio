@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useScreenshot } from '../hooks/useScreenshot'
 import ChromeFrame from '../components/ChromeFrame'
 import ChromeWindow from '../components/ChromeWindow'
@@ -27,6 +27,7 @@ import AppWindow from '../components/AppWindow'
 import { APPS, getDomainForApp } from '../config/apps'
 import { SHORTCUTS } from '../config/shortcuts'
 import { useLanguage } from '../context/LanguageContext'
+import { useTheme } from '../context/ThemeContext'
 import { Globe, Image, Film, Images, ShoppingBag, Settings, Map } from 'lucide-react'
 import './ChromeLanding.css'
 
@@ -81,7 +82,7 @@ function getUrlForTab(tab) {
   return app?.url ?? null
 }
 
-export default function ChromeLanding() {
+export default function ChromeLanding({ onReboot }) {
   const [tabs, setTabs] = useState([HOME_TAB])
   const [activeTabId, setActiveTabId] = useState('home')
   const [chromeMaximized, setChromeMaximized] = useState(false)
@@ -110,7 +111,9 @@ export default function ChromeLanding() {
   const [focusedAppWindowId, setFocusedAppWindowId] = useState(null)
   const [chromeFocused, setChromeFocused] = useState(false)
   const [showShutdown, setShowShutdown] = useState(false)
-  const [nightMode, setNightMode] = useState(true)
+  const [shutdownAction, setShutdownAction] = useState(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const { nightMode, setNightMode } = useTheme()
   const { isCapturing, takeScreenshot } = useScreenshot()
   const { t } = useLanguage()
 
@@ -154,6 +157,7 @@ export default function ChromeLanding() {
       }
       return
     }
+    setChromeFocused(false)
     setOpenAppWindows((prev) => {
       const existing = prev.find((w) => w.appKey === appKey)
       if (existing) {
@@ -215,6 +219,40 @@ export default function ChromeLanding() {
 
   const goHome = useCallback(() => setActiveTabId('home'), [])
 
+  const tabHistoryRef = useRef([])
+  const historyIndexRef = useRef(-1)
+  const handleBack = useCallback(() => {
+    if (historyIndexRef.current > 0) {
+      historyIndexRef.current--
+      const prevId = tabHistoryRef.current[historyIndexRef.current]
+      if (prevId && tabs.some((t) => t.id === prevId)) setActiveTabId(prevId)
+    } else {
+      window.location.reload()
+    }
+  }, [tabs])
+  const handleForward = useCallback(() => {
+    if (historyIndexRef.current < tabHistoryRef.current.length - 1) {
+      historyIndexRef.current++
+      const nextId = tabHistoryRef.current[historyIndexRef.current]
+      if (nextId && tabs.some((t) => t.id === nextId)) setActiveTabId(nextId)
+    } else {
+      window.location.reload()
+    }
+  }, [tabs])
+  const handleRefresh = useCallback(() => window.location.reload(), [])
+
+  useEffect(() => {
+    const idx = tabHistoryRef.current.findIndex((id) => id === activeTabId)
+    if (idx >= 0) {
+      historyIndexRef.current = idx
+    } else {
+      const newHistory = tabHistoryRef.current.slice(0, historyIndexRef.current + 1)
+      newHistory.push(activeTabId)
+      tabHistoryRef.current = newHistory
+      historyIndexRef.current = newHistory.length - 1
+    }
+  }, [activeTabId])
+
   const openNewHomeTab = useCallback(() => {
     const homeTab = { id: `home-${Date.now()}`, title: 'Home', type: 'home' }
     setTabs((prev) => [...prev, homeTab])
@@ -234,8 +272,46 @@ export default function ChromeLanding() {
   }, [])
 
   useEffect(() => {
-    document.documentElement.dataset.theme = nightMode ? 'dark' : 'light'
-  }, [nightMode])
+    const handler = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', handler)
+    handler()
+    return () => document.removeEventListener('fullscreenchange', handler)
+  }, [])
+
+  const handleFullScreenToggle = useCallback(() => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen?.()
+    } else {
+      document.documentElement.requestFullscreen?.()
+    }
+  }, [])
+
+  const handleTurnOff = useCallback(() => {
+    setShutdownAction('turnOff')
+    setShowShutdown(true)
+  }, [])
+
+  const handleRestart = useCallback(() => {
+    setShutdownAction('restart')
+    setShowShutdown(true)
+  }, [])
+
+  useEffect(() => {
+    if (!showShutdown || !shutdownAction) return
+    const t = setTimeout(() => {
+      if (shutdownAction === 'restart') {
+        onReboot?.()
+      } else if (shutdownAction === 'turnOff') {
+        window.close()
+        setTimeout(() => {
+          window.location.href = 'about:blank'
+        }, 100)
+      }
+      setShowShutdown(false)
+      setShutdownAction(null)
+    }, 2000)
+    return () => clearTimeout(t)
+  }, [showShutdown, shutdownAction, onReboot])
 
   return (
     <div className="chrome-landing">
@@ -253,8 +329,8 @@ export default function ChromeLanding() {
         onClearStartRenameId={() => setStartRenameId(null)}
       />
       <MenuBar
-        onTurnOff={() => setShowShutdown(true)}
-        onRestart={() => setShowShutdown(true)}
+        onTurnOff={handleTurnOff}
+        onRestart={handleRestart}
         onSleep={() => setShowShutdown(true)}
         nightMode={nightMode}
         onNightModeToggle={() => setNightMode((m) => !m)}
@@ -266,6 +342,8 @@ export default function ChromeLanding() {
         onGoHome={goHome}
         onMinimize={setMinimized}
         onZoom={toggleMaximize}
+        onFullScreenToggle={handleFullScreenToggle}
+        isFullscreen={isFullscreen}
       />
       <Dock
         onOpenApp={openAppTab}
@@ -377,6 +455,9 @@ export default function ChromeLanding() {
             onReorderTabs={reorderTabs}
             currentDomain={currentDomain}
             onGoHome={goHome}
+            onBack={handleBack}
+            onForward={handleForward}
+            onRefresh={handleRefresh}
             activeTabType={activeTab.type}
             onMaximize={toggleMaximize}
             onMinimize={setMinimized}

@@ -62,6 +62,8 @@ export default function MenuBar({
   onGoHome,
   onMinimize,
   onZoom,
+  onFullScreenToggle,
+  isFullscreen,
 }) {
   const { t } = useLanguage()
   const [openMenu, setOpenMenu] = useState(null)
@@ -131,6 +133,7 @@ export default function MenuBar({
       case 'minimize': onMinimize?.(); break
       case 'zoom': onZoom?.(); break
       case 'portfolioHelp': setShowHelp(true); break
+      case 'fullScreen': onFullScreenToggle?.(); break
       default: break
     }
   }
@@ -204,7 +207,7 @@ export default function MenuBar({
                         className="menu-bar__item"
                         onClick={() => handleMenuItem(item)}
                       >
-                        {t(item.labelKey)}
+                        {item.id === 'fullScreen' && isFullscreen ? t('menuBar.exitFullScreen') : t(item.labelKey)}
                       </button>
                     )
                   )}
@@ -219,6 +222,8 @@ export default function MenuBar({
             onNightModeToggle={onNightModeToggle ?? (() => {})}
             isCapturing={isCapturing ?? false}
             onScreenshot={onScreenshot ?? (() => {})}
+            onFullScreenToggle={onFullScreenToggle}
+            isFullscreen={isFullscreen ?? false}
           />
         </div>
       </header>

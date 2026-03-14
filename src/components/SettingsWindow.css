@@ -119,3 +119,127 @@
   background: #e5e5ea;
   border-radius: 14px;
 }
+
+.settings-window__select {
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  background: #fff;
+  color: #1d1d1f;
+  min-width: 120px;
+}
+
+.settings-window__toggle {
+  width: 52px;
+  height: 32px;
+  padding: 2px;
+  border: none;
+  background: #e5e5ea;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.settings-window__toggle--on {
+  background: #34c759;
+}
+
+.settings-window__toggle-knob {
+  display: block;
+  width: 28px;
+  height: 28px;
+  background: #fff;
+  border-radius: 50%;
+  border-radius: 14px;
+  transition: transform 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.settings-window__toggle--on .settings-window__toggle-knob {
+  transform: translateX(20px);
+}
+
+.settings-window__theme-options {
+  display: flex;
+  gap: 8px;
+}
+
+.settings-window__theme-btn {
+  padding: 8px 16px;
+  font-size: 14px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  background: #fff;
+  color: #1d1d1f;
+  cursor: pointer;
+}
+
+.settings-window__theme-btn:hover {
+  background: #f5f5f7;
+}
+
+.settings-window__theme-btn--active {
+  background: #e8e8ed;
+  border-color: #007aff;
+  color: #007aff;
+}
+
+.settings-window__accent-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.settings-window__accent-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: var(--accent, #007aff);
+  cursor: pointer;
+  padding: 0;
+}
+
+.settings-window__accent-btn:hover {
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.settings-window__accent-btn--active {
+  border-color: #1d1d1f;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.settings-window__bg-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+}
+
+.settings-window__bg-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 2px solid #e5e5ea;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.settings-window__bg-card:hover {
+  border-color: #d2d2d7;
+}
+
+.settings-window__bg-card-inner {
+  width: 64px;
+  height: 48px;
+  background: linear-gradient(135deg, #e8e8ed 0%, #d2d2d7 100%);
+  border-radius: 8px;
+}
+
+.settings-window__bg-card-label {
+  font-size: 12px;
+  color: #5f6368;
+}

@@ -4,6 +4,7 @@
   gap: 8px;
   height: 36px;
   padding: 0 4px 6px;
+  width: 100%;
 }
 
 .address-bar__nav {
@@ -41,6 +42,7 @@
   border-radius: 6px;
   font-size: 13px;
   color: #1d1d1f;
+  max-width: 500px;
 }
 
 .address-bar__domain {

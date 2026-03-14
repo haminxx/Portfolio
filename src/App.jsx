@@ -45,7 +45,12 @@ function LandingWrapper() {
     return <iPhoneMobileLanding />
   }
 
-  return <ChromeLanding />
+  const handleReboot = () => {
+    if (document.exitFullscreen) document.exitFullscreen().catch(() => {})
+    setView('boot')
+  }
+
+  return <ChromeLanding onReboot={handleReboot} />
 }
 
 function App() {

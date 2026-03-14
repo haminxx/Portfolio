@@ -50,7 +50,11 @@ export default function Dock({ onOpenApp, isChromeMaximized, anyMaximized, openA
             >
               <span className="dock__icon">
                 {app.iconPath ? (
-                  <img src={app.iconPath} alt="" className="dock__icon-img" />
+                  <img
+                    src={app.iconPath}
+                    alt=""
+                    className={`dock__icon-img ${key === 'dadnme' ? 'dock__icon-img--rounded-square' : ''}`}
+                  />
                 ) : Icon ? (
                   <Icon size={26} strokeWidth={1.6} />
                 ) : null}

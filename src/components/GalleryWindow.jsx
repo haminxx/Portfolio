@@ -1,36 +1,60 @@
-import { useState } from 'react'
-import { Search, Grid3X3, LayoutGrid } from 'lucide-react'
+import { useState, useCallback } from 'react'
+import { Search, Grid3X3, LayoutGrid, Heart } from 'lucide-react'
 import './GalleryWindow.css'
 
-// Supports mixed formats: place your 24 images in public/gallery/ as photo-1.png, photo-2.jpg, etc.
-const getImagePaths = (i) => [`/gallery/photo-${i + 1}.png`, `/gallery/photo-${i + 1}.jpg`, `/gallery/photo-${i + 1}.jpeg`]
+const GALLERY_SIZE = 25
+const getImagePath = (i) => `/gallery/photo-${i + 1}.png`
 
 const ALBUMS = ['Vacation', 'Screenshots', 'Portraits']
+const ALBUM_ASSIGNMENTS = {
+  Vacation: [0, 1, 2, 3, 4, 5, 6, 7],
+  Screenshots: [8, 9, 10, 11, 12, 13, 14],
+  Portraits: [15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+}
 
-function GalleryImage({ paths }) {
-  const [currentIdx, setCurrentIdx] = useState(0)
-  const [hasError, setHasError] = useState(false)
-  const src = paths[currentIdx]
+const FAVORITES_KEY = 'gallery-favorites'
 
-  const handleError = () => {
-    if (currentIdx < paths.length - 1) {
-      setCurrentIdx((prev) => prev + 1)
-    } else {
-      setHasError(true)
-    }
+function loadFavorites() {
+  try {
+    const raw = localStorage.getItem(FAVORITES_KEY)
+    if (!raw) return new Set()
+    const arr = JSON.parse(raw)
+    return new Set(Array.isArray(arr) ? arr : [])
+  } catch {
+    return new Set()
   }
+}
+
+function saveFavorites(set) {
+  try {
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify([...set]))
+  } catch {}
+}
+
+function GalleryImage({ index, src, isFavorite, onToggleFavorite, searchMatch }) {
+  const [hasError, setHasError] = useState(false)
 
   if (hasError) {
     return <div className="gallery-window__cell-placeholder" />
   }
 
   return (
-    <img
-      src={src}
-      alt=""
-      className="gallery-window__cell-img"
-      onError={handleError}
-    />
+    <div className="gallery-window__cell-wrap">
+      <img
+        src={src}
+        alt=""
+        className="gallery-window__cell-img"
+        onError={() => setHasError(true)}
+      />
+      <button
+        type="button"
+        className={`gallery-window__heart ${isFavorite ? 'gallery-window__heart--active' : ''}`}
+        onClick={(e) => { e.stopPropagation(); onToggleFavorite(index) }}
+        aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+      >
+        <Heart size={18} fill={isFavorite ? 'currentColor' : 'none'} strokeWidth={2} />
+      </button>
+    </div>
   )
 }
 
@@ -38,11 +62,44 @@ export default function GalleryWindow() {
   const [activeSection, setActiveSection] = useState('recents')
   const [activeAlbum, setActiveAlbum] = useState(null)
   const [viewMode, setViewMode] = useState('grid')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [favorites, setFavoritesState] = useState(loadFavorites)
+
+  const setFavorites = useCallback((fn) => {
+    setFavoritesState((prev) => {
+      const next = typeof fn === 'function' ? fn(prev) : fn
+      saveFavorites(next)
+      return next
+    })
+  }, [])
+
+  const toggleFavorite = useCallback((index) => {
+    setFavorites((prev) => {
+      const next = new Set(prev)
+      if (next.has(index)) next.delete(index)
+      else next.add(index)
+      return next
+    })
+  }, [setFavorites])
 
   const handleAlbumClick = (album) => {
     setActiveSection('albums')
     setActiveAlbum(album)
   }
+
+  const indices = (() => {
+    if (activeSection === 'favorites') {
+      return [...favorites].sort((a, b) => a - b)
+    }
+    if (activeSection === 'albums' && activeAlbum && ALBUM_ASSIGNMENTS[activeAlbum]) {
+      return ALBUM_ASSIGNMENTS[activeAlbum]
+    }
+    return Array.from({ length: GALLERY_SIZE }, (_, i) => i)
+  })()
+
+  const filteredIndices = searchQuery.trim()
+    ? indices.filter((i) => `photo-${i + 1}`.toLowerCase().includes(searchQuery.toLowerCase()))
+    : indices
 
   return (
     <div className="gallery-window">
@@ -93,7 +150,8 @@ export default function GalleryWindow() {
               type="search"
               placeholder="Search photos..."
               className="gallery-window__search"
-              readOnly
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <div className="gallery-window__view-options">
@@ -116,18 +174,28 @@ export default function GalleryWindow() {
           </div>
         </header>
         <div className={`gallery-window__grid ${viewMode === 'list' ? 'gallery-window__grid--list' : ''}`}>
-          {activeSection === 'recents' && (
+          {activeSection === 'recents' && !searchQuery && (
             <p className="gallery-window__section-hint">Showing recent photos</p>
           )}
-          {activeSection === 'favorites' && (
+          {activeSection === 'favorites' && !searchQuery && (
             <p className="gallery-window__section-hint">Favorites — tap heart on photos to add</p>
           )}
-          {activeSection === 'albums' && activeAlbum && (
+          {activeSection === 'albums' && activeAlbum && !searchQuery && (
             <p className="gallery-window__section-hint">Album: {activeAlbum}</p>
           )}
-          {Array.from({ length: 24 }, (_, i) => (
+          {searchQuery && (
+            <p className="gallery-window__section-hint">
+              {filteredIndices.length} result{filteredIndices.length !== 1 ? 's' : ''}
+            </p>
+          )}
+          {filteredIndices.map((i) => (
             <div key={i} className="gallery-window__cell">
-              <GalleryImage paths={getImagePaths(i)} />
+              <GalleryImage
+                index={i}
+                src={getImagePath(i)}
+                isFavorite={favorites.has(i)}
+                onToggleFavorite={toggleFavorite}
+              />
             </div>
           ))}
         </div>

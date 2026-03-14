@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Wifi, Battery, Circle, Moon, Search } from 'lucide-react'
+import { Wifi, Battery, Circle, Moon, Search, Maximize2, Minimize2 } from 'lucide-react'
 import './SystemTray.css'
 
 const WIFI_NETWORKS = [
@@ -66,7 +66,7 @@ function CalendarDropdown({ now }) {
   )
 }
 
-export default function SystemTray({ nightMode, onNightModeToggle, isCapturing, onScreenshot }) {
+export default function SystemTray({ nightMode, onNightModeToggle, isCapturing, onScreenshot, onFullScreenToggle, isFullscreen }) {
   const [showWifi, setShowWifi] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
   const [now, setNow] = useState(() => new Date())
@@ -137,6 +137,17 @@ export default function SystemTray({ nightMode, onNightModeToggle, isCapturing, 
       >
         <Moon size={14} strokeWidth={2} />
       </button>
+      {onFullScreenToggle && (
+        <button
+          type="button"
+          className="system-tray__icon-btn"
+          aria-label={isFullscreen ? 'Exit full screen' : 'Full screen'}
+          onClick={onFullScreenToggle}
+          title={isFullscreen ? 'Exit full screen' : 'Full screen'}
+        >
+          {isFullscreen ? <Minimize2 size={14} strokeWidth={2} /> : <Maximize2 size={14} strokeWidth={2} />}
+        </button>
+      )}
       <button type="button" className="system-tray__icon-btn" aria-label="Search">
         <Search size={14} strokeWidth={2} />
       </button>

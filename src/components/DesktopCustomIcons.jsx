@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { Folder, FileText, Gamepad2 } from 'lucide-react'
 import './DesktopCustomIcons.css'
 
-const DRAG_THRESHOLD = 3
+const DRAG_THRESHOLD = 1
 const ICON_WIDTH = 80
 const ICON_HEIGHT = 96
 
@@ -233,7 +233,7 @@ export default function DesktopCustomIcons({
               {isShortcut && item.appKey === 'doom' ? (
                 <img src="/dock-icons/doom.png" alt="Doom" className="desktop-custom-icons__icon-img" />
               ) : isShortcut && item.appKey === 'dadnme' ? (
-                <img src="/dock-icons/dadnme.png" alt="Dad n Me" className="desktop-custom-icons__icon-img desktop-custom-icons__icon-img--round" />
+                <img src="/dock-icons/dadnme.png" alt="Dad n Me" className="desktop-custom-icons__icon-img desktop-custom-icons__icon-img--rounded-square" />
               ) : (
                 <Icon size={40} strokeWidth={1.5} />
               )}

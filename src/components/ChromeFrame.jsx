@@ -13,6 +13,9 @@ export default function ChromeFrame({
   onReorderTabs,
   currentDomain,
   onGoHome,
+  onBack,
+  onForward,
+  onRefresh,
   activeTabType,
   onMinimize,
   onMaximize,
@@ -38,6 +41,9 @@ export default function ChromeFrame({
         <AddressBar
           domain={currentDomain}
           onGoHome={onGoHome}
+          onBack={onBack}
+          onForward={onForward}
+          onRefresh={onRefresh}
         />
       </div>
       <div className="chrome-frame__right">

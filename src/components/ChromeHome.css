@@ -42,10 +42,12 @@
 }
 
 .chrome-home__shortcuts {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 24px;
-  max-width: 560px;
+  max-width: 100%;
 }
 
 .chrome-home__shortcut {

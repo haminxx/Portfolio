@@ -104,8 +104,9 @@ export default function ChromeTabs({ tabs, activeTabId, onSelectTab, onCloseTab,
     setDragOverTabId(null)
   }, [])
 
+  const tabHeight = tabs.length <= 3 ? 40 : 32
   return (
-    <div className="chrome-tabs">
+    <div className="chrome-tabs" data-tab-count={tabs.length} style={{ ['--tab-height']: `${tabHeight}px` }}>
       {tabs.map((tab) => (
         <div
           key={tab.id}

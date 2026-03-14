@@ -83,6 +83,10 @@
   object-fit: contain;
 }
 
+.dock__icon-img--rounded-square {
+  border-radius: 10px;
+}
+
 .dock__item:hover .dock__icon,
 .dock__item:focus-visible .dock__icon {
   transform: scale(1.18);
