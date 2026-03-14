@@ -15,6 +15,7 @@ import SocialProfileWindow from '../components/SocialProfileWindow'
 import FolderWindow from '../components/FolderWindow'
 import MapWindow from '../components/MapWindow'
 import DoomWindow from '../components/DoomWindow'
+import DadNMeWindow from '../components/DadNMeWindow'
 import NetflixWindow from '../components/NetflixWindow'
 import YouTubeMusicWindow from '../components/YouTubeMusicWindow'
 import SettingsWindow from '../components/SettingsWindow'
@@ -92,21 +93,16 @@ export default function ChromeLanding() {
   const [desktopItems, setDesktopItemsState] = useState(() => {
     const loaded = loadDesktopItems()
     const hasDoom = loaded.some((i) => i.type === 'shortcut' && i.appKey === 'doom')
+    const hasDadnme = loaded.some((i) => i.type === 'shortcut' && i.appKey === 'dadnme')
+    let next = [...loaded]
     if (!hasDoom) {
-      const doomItem = {
-        id: 'doom-shortcut',
-        type: 'shortcut',
-        name: 'Doom',
-        appKey: 'doom',
-        parentId: null,
-        x: 24,
-        y: 24,
-      }
-      const next = [...loaded, doomItem]
-      saveDesktopItems(next)
-      return next
+      next = [...next, { id: 'doom-shortcut', type: 'shortcut', name: 'Doom', appKey: 'doom', parentId: null, x: 24, y: 24 }]
     }
-    return loaded
+    if (!hasDadnme) {
+      next = [...next, { id: 'dadnme-shortcut', type: 'shortcut', name: "Dad 'n Me", appKey: 'dadnme', parentId: null, x: 120, y: 24 }]
+    }
+    if (!hasDoom || !hasDadnme) saveDesktopItems(next)
+    return next
   })
   const [openFolderId, setOpenFolderId] = useState(null)
   const [startRenameId, setStartRenameId] = useState(null)
@@ -256,71 +252,6 @@ export default function ChromeLanding() {
         startRenameId={startRenameId}
         onClearStartRenameId={() => setStartRenameId(null)}
       />
-      {(!chromeMinimized || chromeMinimizing) && (
-        <ChromeWindow
-          isMaximized={chromeMaximized}
-          onMaximize={toggleMaximize}
-          isMinimizing={chromeMinimizing}
-          isOpening={chromeOpening}
-          onOpeningComplete={handleChromeOpeningComplete}
-          onMinimizeComplete={handleChromeMinimizeComplete}
-          onFocus={() => { setChromeFocused(true); setFocusedAppWindowId(null) }}
-          isFocused={chromeFocused}
-        >
-          <ChromeFrame
-            tabs={tabs}
-            activeTabId={activeTabId}
-            onSelectTab={setActiveTab}
-            onCloseTab={closeTab}
-            onNewTab={openNewHomeTab}
-            onReorderTabs={reorderTabs}
-            currentDomain={currentDomain}
-            onGoHome={goHome}
-            activeTabType={activeTab.type}
-            onMaximize={toggleMaximize}
-            onMinimize={setMinimized}
-            onWindowClose={setMinimized}
-          />
-          <div
-            className="chrome-landing__content"
-            onContextMenu={(e) => {
-              e.preventDefault()
-              const url = getUrlForTab(activeTab)
-              setChromeContextMenu({ x: e.clientX, y: e.clientY, url })
-            }}
-          >
-          {activeTab.type === 'home' ? (
-            <ChromeHome onShortcut={openShortcutTab} />
-          ) : activeTab.type === 'about' ? (
-            <AboutPage />
-          ) : activeTab.type === 'project' ? (
-            <ProjectPage />
-          ) : activeTab.type === 'contact' ? (
-            <ContactPage />
-          ) : activeTab.type === 'github' ? (
-            <SocialProfileWindow profileUrl={getUrlForTab(activeTab)}>
-              <GitHubProfileCard profileUrl={getUrlForTab(activeTab)} />
-            </SocialProfileWindow>
-          ) : activeTab.type === 'linkedin' ? (
-            <SocialProfileWindow profileUrl={getUrlForTab(activeTab)}>
-              <LinkedInProfileCard profileUrl={getUrlForTab(activeTab)} />
-            </SocialProfileWindow>
-          ) : (() => {
-            const url = getUrlForTab(activeTab)
-            if (url) {
-              return (
-                <iframe src={url} className="chrome-landing__iframe" title={activeTab.title} />
-              )
-            }
-            return (
-              <div className="chrome-landing__empty">
-                <span>Opened: {activeTab.title}</span>
-              </div>
-            )
-          })()}
-          </div>
-        </ChromeWindow>
-      )}
       <MenuBar
         onTurnOff={() => setShowShutdown(true)}
         onRestart={() => setShowShutdown(true)}
@@ -392,7 +323,9 @@ export default function ChromeLanding() {
         } else if (win.appKey === 'gallery') {
           content = <GalleryWindow />
         } else if (win.appKey === 'doom') {
-          content = <DoomWindow />
+          content = <DoomWindow isMinimized={win.isMinimized} isMinimizing={win.isMinimizing} />
+        } else if (win.appKey === 'dadnme') {
+          content = <DadNMeWindow />
         } else if (profileUrl) {
           content = <iframe src={profileUrl} className="chrome-landing__iframe" title={app.label} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} />
         } else {
@@ -424,6 +357,71 @@ export default function ChromeLanding() {
           </AppWindow>
         )
       })}
+      {(!chromeMinimized || chromeMinimizing) && (
+        <ChromeWindow
+          isMaximized={chromeMaximized}
+          onMaximize={toggleMaximize}
+          isMinimizing={chromeMinimizing}
+          isOpening={chromeOpening}
+          onOpeningComplete={handleChromeOpeningComplete}
+          onMinimizeComplete={handleChromeMinimizeComplete}
+          onFocus={() => { setChromeFocused(true); setFocusedAppWindowId(null) }}
+          isFocused={chromeFocused}
+        >
+          <ChromeFrame
+            tabs={tabs}
+            activeTabId={activeTabId}
+            onSelectTab={setActiveTab}
+            onCloseTab={closeTab}
+            onNewTab={openNewHomeTab}
+            onReorderTabs={reorderTabs}
+            currentDomain={currentDomain}
+            onGoHome={goHome}
+            activeTabType={activeTab.type}
+            onMaximize={toggleMaximize}
+            onMinimize={setMinimized}
+            onWindowClose={setMinimized}
+          />
+          <div
+            className="chrome-landing__content"
+            onContextMenu={(e) => {
+              e.preventDefault()
+              const url = getUrlForTab(activeTab)
+              setChromeContextMenu({ x: e.clientX, y: e.clientY, url })
+            }}
+          >
+          {activeTab.type === 'home' ? (
+            <ChromeHome onShortcut={openShortcutTab} />
+          ) : activeTab.type === 'about' ? (
+            <AboutPage />
+          ) : activeTab.type === 'project' ? (
+            <ProjectPage />
+          ) : activeTab.type === 'contact' ? (
+            <ContactPage />
+          ) : activeTab.type === 'github' ? (
+            <SocialProfileWindow profileUrl={getUrlForTab(activeTab)}>
+              <GitHubProfileCard profileUrl={getUrlForTab(activeTab)} />
+            </SocialProfileWindow>
+          ) : activeTab.type === 'linkedin' ? (
+            <SocialProfileWindow profileUrl={getUrlForTab(activeTab)}>
+              <LinkedInProfileCard profileUrl={getUrlForTab(activeTab)} />
+            </SocialProfileWindow>
+          ) : (() => {
+            const url = getUrlForTab(activeTab)
+            if (url) {
+              return (
+                <iframe src={url} className="chrome-landing__iframe" title={activeTab.title} />
+              )
+            }
+            return (
+              <div className="chrome-landing__empty">
+                <span>Opened: {activeTab.title}</span>
+              </div>
+            )
+          })()}
+          </div>
+        </ChromeWindow>
+      )}
       {showShutdown && (
         <div
           className="chrome-landing__shutdown"

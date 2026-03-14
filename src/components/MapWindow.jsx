@@ -89,7 +89,7 @@ async function geocode(query, limit = 1) {
 
 export default function MapWindow() {
   const [activeLocation, setActiveLocation] = useState(null)
-  const [expandedFolders, setExpandedFolders] = useState(new Set(['savedLocations']))
+  const [expandedFolders, setExpandedFolders] = useState(new Set())
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResult, setSearchResult] = useState(null)
   const [searchCoords, setSearchCoords] = useState(null)

@@ -4,6 +4,8 @@ import DesktopContextMenu from './DesktopContextMenu'
 import './Desktop.css'
 
 const DESKTOP_ITEMS_KEY = 'desktop-items'
+const ICON_WIDTH = 80
+const ICON_HEIGHT = 96
 
 function loadDesktopItems() {
   try {
@@ -24,6 +26,10 @@ function saveDesktopItems(items) {
   }
 }
 
+function rectsIntersect(r1, r2) {
+  return !(r1.right < r2.left || r1.left > r2.right || r1.bottom < r2.top || r1.top > r2.bottom)
+}
+
 export default function Desktop({
   onOpenApp,
   sortBy,
@@ -38,16 +44,70 @@ export default function Desktop({
   onClearStartRenameId,
 }) {
   const [contextMenu, setContextMenu] = useState(null)
-  const [selectedId, setSelectedId] = useState(null)
+  const [selectedIds, setSelectedIds] = useState([])
+  const [selectionBox, setSelectionBox] = useState(null)
   const desktopRef = useRef(null)
   const iconsRef = useRef(null)
+  const selectionStartRef = useRef(null)
 
   const handleMouseDown = useCallback((e) => {
     if (e.button !== 0) return
     if (e.target.closest('.desktop-custom-icons__item')) return
     setContextMenu(null)
-    setSelectedId(null)
+    setSelectedIds([])
+    selectionStartRef.current = { x: e.clientX, y: e.clientY }
+    setSelectionBox({ left: e.clientX, top: e.clientY, width: 0, height: 0 })
   }, [])
+
+  const selectionBoxRef = useRef(null)
+  selectionBoxRef.current = selectionBox
+
+  useEffect(() => {
+    if (!selectionBox) return
+    const handleMove = (e) => {
+      const start = selectionStartRef.current
+      if (!start) return
+      const left = Math.min(start.x, e.clientX)
+      const top = Math.min(start.y, e.clientY)
+      const width = Math.abs(e.clientX - start.x)
+      const height = Math.abs(e.clientY - start.y)
+      setSelectionBox({ left, top, width, height })
+    }
+    const handleUp = () => {
+      const start = selectionStartRef.current
+      const currentBox = selectionBoxRef.current
+      setSelectionBox(null)
+      selectionStartRef.current = null
+      if (!start || !currentBox) return
+      const rootItems = desktopItems.filter((i) => !i.parentId)
+      const boxRect = {
+        left: currentBox.left,
+        top: currentBox.top,
+        right: currentBox.left + currentBox.width,
+        bottom: currentBox.top + currentBox.height,
+      }
+      const ids = rootItems.filter((item) => {
+        const iconLeft = item.x ?? 24
+        const iconTop = item.y ?? 24
+        const iconRect = {
+          left: iconLeft,
+          top: iconTop,
+          right: iconLeft + ICON_WIDTH,
+          bottom: iconTop + ICON_HEIGHT,
+        }
+        return rectsIntersect(boxRect, iconRect)
+      }).map((i) => i.id)
+      if (ids.length > 0 || (currentBox.width > 4 && currentBox.height > 4)) {
+        setSelectedIds(ids)
+      }
+    }
+    document.addEventListener('mousemove', handleMove)
+    document.addEventListener('mouseup', handleUp)
+    return () => {
+      document.removeEventListener('mousemove', handleMove)
+      document.removeEventListener('mouseup', handleUp)
+    }
+  }, [selectionBox, desktopItems])
 
   const handleContextMenu = useCallback((e) => {
     e.preventDefault()
@@ -61,6 +121,10 @@ export default function Desktop({
     setContextMenu({ x: e.clientX, y: e.clientY, customItem: item })
   }, [])
 
+  const handleSelectIcons = useCallback((ids) => {
+    setSelectedIds(Array.isArray(ids) ? ids : [ids])
+  }, [])
+
   return (
     <div
       ref={desktopRef}
@@ -71,8 +135,8 @@ export default function Desktop({
       <div ref={iconsRef} className="desktop__icons-wrap">
         <DesktopCustomIcons
           desktopItems={desktopItems}
-          selectedId={selectedId}
-          onSelectIcon={setSelectedId}
+          selectedIds={selectedIds}
+          onSelectIcons={handleSelectIcons}
           onItemsChange={onItemsChange}
           onOpenFolder={onOpenFolder}
           onOpenApp={onOpenApp}
@@ -81,6 +145,17 @@ export default function Desktop({
           onClearStartRenameId={onClearStartRenameId}
         />
       </div>
+      {selectionBox && (selectionBox.width > 2 || selectionBox.height > 2) && (
+        <div
+          className="desktop__selection-box"
+          style={{
+            left: selectionBox.left,
+            top: selectionBox.top,
+            width: selectionBox.width,
+            height: selectionBox.height,
+          }}
+        />
+      )}
       {contextMenu && (
         <DesktopContextMenu
           x={contextMenu.x}

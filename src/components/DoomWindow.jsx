@@ -8,10 +8,20 @@ const DOOM_BUNDLE_URL = import.meta.env.DEV
   : '/doom.jsdos'
 const DOOM_FALLBACK_URL = 'https://dos.zone/doom-dec-1993'
 
-export default function DoomWindow() {
+export default function DoomWindow({ isMinimized = false, isMinimizing = false }) {
   const containerRef = useRef(null)
+  const dosPropsRef = useRef(null)
   const [error, setError] = useState(false)
   const [retryKey, setRetryKey] = useState(0)
+
+  useEffect(() => {
+    const minimized = isMinimized || isMinimizing
+    const props = dosPropsRef.current
+    if (props) {
+      props.setPaused(minimized)
+      props.setVolume(minimized ? 0 : 1)
+    }
+  }, [isMinimized, isMinimizing])
 
   const runDoom = useCallback(() => {
     const el = containerRef.current
@@ -24,15 +34,17 @@ export default function DoomWindow() {
         window.emulators.pathPrefix = '/js-dos/'
       }
       setError(false)
-      window.Dos(el, {
+      const props = window.Dos(el, {
         withNetworkingApi: false,
         withExperimentalApi: false,
+        mouseCapture: false,
+        thinSidebar: true,
       })
-        .run(DOOM_BUNDLE_URL)
-        .catch((err) => {
-          console.error('Doom init error:', err)
-          setError(true)
-        })
+      dosPropsRef.current = props
+      props.run(DOOM_BUNDLE_URL).catch((err) => {
+        console.error('Doom init error:', err)
+        setError(true)
+      })
     } catch (err) {
       console.error('Doom init error:', err)
       setError(true)

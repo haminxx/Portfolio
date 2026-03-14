@@ -12,8 +12,8 @@
 
 .desktop__selection-box {
   position: fixed;
-  border: 1px solid rgba(59, 130, 246, 0.8);
-  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.1);
   pointer-events: none;
   z-index: 100;
 }

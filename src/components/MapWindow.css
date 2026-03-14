@@ -121,17 +121,16 @@
 }
 
 .map-window__sidebar {
-  width: 260px;
+  width: 280px;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-right: 1px solid rgba(0, 0, 0, 0.06);
+  background: #fff;
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
   padding: 16px 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
   overflow-y: auto;
+  border-radius: 0 0 0 12px;
 }
 
 .map-window__folder {
@@ -206,11 +205,14 @@
 }
 
 .map-window__saved-item--active {
-  background: rgba(0, 122, 255, 0.1);
+  background: rgba(0, 122, 255, 0.12);
+  border-radius: 10px;
+  margin: 0 12px;
 }
 
 .map-window__saved-item--active .map-window__saved-item-name {
   color: #007aff;
+  font-weight: 600;
 }
 
 .map-window__saved-item-text {
@@ -237,7 +239,7 @@
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #e8e8ed;
+  background: #eef0f4;
   border-radius: 0 0 12px 0;
 }
 

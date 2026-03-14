@@ -52,6 +52,12 @@ export const APPS = {
     iconPath: '/dock-icons/doom.png',
     url: 'https://dos.zone/doom-dec-1993',
   },
+  dadnme: {
+    label: "Dad 'n Me",
+    domain: 'dadnme.local',
+    icon: 'dadnme',
+    iconPath: '/dock-icons/dadnme.png',
+  },
 }
 
 export function getDomainForApp(appKey) {

@@ -21,12 +21,16 @@ const APP_ICONS = {
   map: Map,
   youtubeMusic: Film,
   doom: Film,
+  dadnme: Film,
 }
 
 export default function Dock({ onOpenApp, isChromeMaximized, anyMaximized, openAppWindows = [] }) {
   const { t } = useLanguage()
   const doomOpen = openAppWindows.some((w) => w.appKey === 'doom')
-  const dockApps = Object.entries(APPS).filter(([key]) => key !== 'doom' || doomOpen)
+  const dadnmeOpen = openAppWindows.some((w) => w.appKey === 'dadnme')
+  const dockApps = Object.entries(APPS).filter(
+    ([key]) => (key !== 'doom' && key !== 'dadnme') || (key === 'doom' && doomOpen) || (key === 'dadnme' && dadnmeOpen)
+  )
   const isHidden = anyMaximized ?? isChromeMaximized
 
   return (

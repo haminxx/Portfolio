@@ -9,7 +9,12 @@
   display: flex;
   flex-direction: column;
   z-index: 20;
-  transition: box-shadow 0.2s cubic-bezier(0.33, 1, 0.68, 1);
+  transition: box-shadow 0.2s cubic-bezier(0.33, 1, 0.68, 1),
+    top 0.35s cubic-bezier(0.33, 1, 0.68, 1),
+    left 0.35s cubic-bezier(0.33, 1, 0.68, 1),
+    width 0.35s cubic-bezier(0.33, 1, 0.68, 1),
+    height 0.35s cubic-bezier(0.33, 1, 0.68, 1),
+    border-radius 0.35s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
 .app-window--focused {

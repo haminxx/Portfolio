@@ -60,6 +60,7 @@ export const translations = {
       map: 'Map',
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
+      dadnme: "Dad 'n Me",
     },
     desktopContextMenu: {
       open: 'Open',
@@ -138,6 +139,7 @@ export const translations = {
       map: '지도',
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
+      dadnme: "Dad 'n Me",
     },
     desktopContextMenu: {
       open: '열기',
@@ -216,6 +218,7 @@ export const translations = {
       map: 'Mapa',
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
+      dadnme: "Dad 'n Me",
     },
     desktopContextMenu: {
       open: 'Abrir',
@@ -294,6 +297,7 @@ export const translations = {
       map: '地图',
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
+      dadnme: "Dad 'n Me",
     },
     desktopContextMenu: {
       open: '打开',
@@ -372,6 +376,7 @@ export const translations = {
       map: 'Carte',
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
+      dadnme: "Dad 'n Me",
     },
     desktopContextMenu: {
       open: 'Ouvrir',
@@ -450,6 +455,7 @@ export const translations = {
       map: 'マップ',
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
+      dadnme: "Dad 'n Me",
     },
     desktopContextMenu: {
       open: '開く',
@@ -528,6 +534,7 @@ export const translations = {
       map: 'मानचित्र',
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
+      dadnme: "Dad 'n Me",
     },
     desktopContextMenu: {
       open: 'खोलें',
@@ -606,6 +613,7 @@ export const translations = {
       map: 'الخريطة',
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
+      dadnme: "Dad 'n Me",
     },
     desktopContextMenu: {
       open: 'فتح',

@@ -42,11 +42,17 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
   const handleMouseDown = useCallback((e) => {
     if (isMaximized) return
     const target = e.target
-    if (target.closest('button') || target.closest('a') || target.closest('input')) return
-    if (!target.closest('.chrome-frame') && !target.closest('.chrome-window__resize')) return
-    e.preventDefault()
+    const isFrame = target.closest('.chrome-frame')
+    const isResize = target.closest('.chrome-window__resize')
+    const isContent = target.closest('.chrome-landing__content')
+    if (!isFrame && !isResize && !isContent) return
+    if (isFrame || isResize) {
+      if (!target.closest('button') && !target.closest('a') && !target.closest('input')) {
+        e.preventDefault()
+      }
+    }
     onFocus?.()
-    if (target.closest('.chrome-frame')) setIsDragging(true)
+    if (isFrame) setIsDragging(true)
     dragStartRef.current = {
       x: e.clientX,
       y: e.clientY,

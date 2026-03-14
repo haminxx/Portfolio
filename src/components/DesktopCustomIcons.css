@@ -28,6 +28,10 @@
   transform: scale(1.02);
 }
 
+.desktop-custom-icons__item--pending {
+  cursor: grab;
+}
+
 .desktop-custom-icons__item--selected {
   background: rgba(0, 0, 0, 0.25);
   border-radius: 12px;
@@ -61,6 +65,10 @@
   height: 48px;
   object-fit: contain;
   border-radius: 18px;
+}
+
+.desktop-custom-icons__icon-img--round {
+  border-radius: 50%;
 }
 
 .desktop-custom-icons__label {
