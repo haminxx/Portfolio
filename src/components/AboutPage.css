@@ -127,3 +127,16 @@
   margin: 0;
   padding-left: 20px;
 }
+
+.about-page--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.about-page__coming-soon {
+  margin: 0;
+  font-size: 18px;
+  color: #8e8e93;
+}

@@ -62,8 +62,29 @@ export default function DadNMeWindow() {
           <div className="dadnme-window__error">
             <p className="dadnme-window__error-title">Game file not found or invalid</p>
             <p className="dadnme-window__error-msg">
-              Please add a valid dadnme.swf to the public folder. Download from The Behemoth if you have a license.
+              The SWF could not be loaded. You can retry or play on an external site.
             </p>
+            <div className="dadnme-window__error-actions">
+              <button
+                type="button"
+                className="dadnme-window__error-btn"
+                onClick={() => {
+                  setLoadError(false)
+                  setHasStarted(false)
+                  setTimeout(() => setHasStarted(true), 0)
+                }}
+              >
+                Retry
+              </button>
+              <a
+                href="https://www.flashlegacy.com/game/dad-n-me/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="dadnme-window__error-btn dadnme-window__error-btn--primary"
+              >
+                Play on FlashLegacy
+              </a>
+            </div>
             <a
               href="https://thebehemoth.com/games/dad-n-me/"
               target="_blank"

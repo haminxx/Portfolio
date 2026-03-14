@@ -3,12 +3,25 @@ import './YouTubeMusicWindow.css'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
+const REBEL_FALLBACK = {
+  title: 'Rebel',
+  subtitle: 'Rock anthems',
+  items: [
+    { title: 'Moon on the Water', artist: 'Beat Crusaders', videoId: 'KFyiHJz502E' },
+    { title: 'City of God', artist: 'Idaho', videoId: null },
+    { title: "Don't Look Back in Anger", artist: 'Oasis', videoId: 'r8OipmKFDeM' },
+    { title: 'Wonderwall', artist: 'Oasis', videoId: 'vU05Eksc_iM' },
+    { title: 'Judas Syndrome', artist: 'Old English Sheep Dog', videoId: null },
+  ],
+}
+
 export default function YouTubeMusicWindow() {
   const [curated, setCurated] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState(null)
   const [searchLoading, setSearchLoading] = useState(false)
   const [view, setView] = useState('home')
+  const [selectedAlbum, setSelectedAlbum] = useState(null)
   const [playingVideoId, setPlayingVideoId] = useState(null)
 
   const baseUrl = API_URL.replace(/\/$/, '')
@@ -16,7 +29,7 @@ export default function YouTubeMusicWindow() {
   const fetchCurated = useCallback(async () => {
     if (!baseUrl) {
       setCurated([
-        { title: 'Rebel', subtitle: 'Rock anthems', items: [] },
+        REBEL_FALLBACK,
         { title: 'Quick picks', subtitle: 'Based on your listening', items: [] },
         { title: 'Recommended for you', subtitle: null, items: [] },
       ])
@@ -158,10 +171,44 @@ export default function YouTubeMusicWindow() {
               )}
             </div>
           </section>
+        ) : selectedAlbum ? (
+          <section className="ytmusic-window__album-view">
+            <button
+              type="button"
+              className="ytmusic-window__back-btn"
+              onClick={() => setSelectedAlbum(null)}
+            >
+              ← Back
+            </button>
+            <h2 className="ytmusic-window__album-title">{selectedAlbum.title}</h2>
+            <p className="ytmusic-window__album-subtitle">{selectedAlbum.subtitle || ''}</p>
+            <ul className="ytmusic-window__song-list">
+              {(selectedAlbum.items || []).map((item, i) => (
+                <li key={i} className="ytmusic-window__song-item">
+                  <button
+                    type="button"
+                    className="ytmusic-window__song-row"
+                    onClick={() => item.videoId && setPlayingVideoId(item.videoId)}
+                    disabled={!item.videoId}
+                  >
+                    <span className="ytmusic-window__song-play">
+                      {item.videoId ? '▶' : '—'}
+                    </span>
+                    <span className="ytmusic-window__song-title">{item.title}</span>
+                    <span className="ytmusic-window__song-artist">{item.artist}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
         ) : (
           <>
             {sections[0] && (
-              <div className="ytmusic-window__hero">
+              <button
+                type="button"
+                className="ytmusic-window__hero"
+                onClick={() => setSelectedAlbum(sections[0])}
+              >
                 <div className="ytmusic-window__hero-art">
                   <div className="ytmusic-window__play-circle">
                     <span className="ytmusic-window__play-icon">▶</span>
@@ -171,7 +218,7 @@ export default function YouTubeMusicWindow() {
                   <h1 className="ytmusic-window__hero-title">{sections[0].title}</h1>
                   <p className="ytmusic-window__hero-desc">{sections[0].subtitle || 'Your music'}</p>
                 </div>
-              </div>
+              </button>
             )}
             {sections.slice(1).map((section, idx) => (
               <section key={idx} className="ytmusic-window__section">

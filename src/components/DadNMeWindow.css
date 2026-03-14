@@ -74,6 +74,40 @@
   max-width: 320px;
 }
 
+.dadnme-window__error-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.dadnme-window__error-btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.dadnme-window__error-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.dadnme-window__error-btn--primary {
+  background: #0a84ff;
+  border-color: #0a84ff;
+}
+
+.dadnme-window__error-btn--primary:hover {
+  background: #409cff;
+  border-color: #409cff;
+}
+
 .dadnme-window__error-link {
   color: #0a84ff;
   font-size: 14px;

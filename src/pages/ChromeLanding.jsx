@@ -394,14 +394,87 @@ export default function ChromeLanding({ onReboot }) {
           onOpenFolder={handleOpenFolder}
         />
       )}
-      {[...openAppWindows]
-        .filter((w) => !w.isMinimized || w.isMinimizing)
-        .sort((a, b) => {
-          if (a.id === focusedAppWindowId) return 1
-          if (b.id === focusedAppWindowId) return -1
-          return 0
-        })
+      {[
+        ...openAppWindows
+          .filter((w) => !w.isMinimized || w.isMinimizing)
+          .map((w) => ({ ...w, _type: 'app', _isFocused: focusedAppWindowId === w.id })),
+        ...((!chromeMinimized || chromeMinimizing)
+          ? [{ id: 'chrome', _type: 'chrome', _isFocused: chromeFocused }]
+          : []),
+      ]
+        .sort((a, b) => (a._isFocused ? 1 : 0) - (b._isFocused ? 1 : 0))
         .map((win) => {
+        if (win._type === 'chrome') {
+          return (
+            <ChromeWindow
+              key="chrome"
+              isMaximized={chromeMaximized}
+              onMaximize={toggleMaximize}
+              isMinimizing={chromeMinimizing}
+              onOpeningComplete={handleChromeOpeningComplete}
+              isOpening={chromeOpening}
+              onMinimizeComplete={handleChromeMinimizeComplete}
+              onFocus={() => { setChromeFocused(true); setFocusedAppWindowId(null) }}
+              isFocused={chromeFocused}
+            >
+              <ChromeFrame
+                tabs={tabs}
+                activeTabId={activeTabId}
+                onSelectTab={setActiveTab}
+                onCloseTab={closeTab}
+                onNewTab={openNewHomeTab}
+                onReorderTabs={reorderTabs}
+                currentDomain={currentDomain}
+                onGoHome={goHome}
+                onBack={handleBack}
+                onForward={handleForward}
+                onRefresh={handleRefresh}
+                activeTabType={activeTab.type}
+                onMaximize={toggleMaximize}
+                onMinimize={setMinimized}
+                onWindowClose={setMinimized}
+              />
+              <div
+                className="chrome-landing__content"
+                onContextMenu={(e) => {
+                  e.preventDefault()
+                  const url = getUrlForTab(activeTab)
+                  setChromeContextMenu({ x: e.clientX, y: e.clientY, url })
+                }}
+              >
+                {activeTab.type === 'home' ? (
+                  <ChromeHome onShortcut={openShortcutTab} />
+                ) : activeTab.type === 'about' ? (
+                  <AboutPage />
+                ) : activeTab.type === 'project' ? (
+                  <ProjectPage />
+                ) : activeTab.type === 'contact' ? (
+                  <ContactPage />
+                ) : activeTab.type === 'github' ? (
+                  <SocialProfileWindow profileUrl={getUrlForTab(activeTab)} cardOnly>
+                    <GitHubProfileCard profileUrl={getUrlForTab(activeTab)} />
+                  </SocialProfileWindow>
+                ) : activeTab.type === 'linkedin' ? (
+                  <SocialProfileWindow profileUrl={getUrlForTab(activeTab)} cardOnly>
+                    <LinkedInProfileCard profileUrl={getUrlForTab(activeTab)} />
+                  </SocialProfileWindow>
+                ) : (() => {
+                  const url = getUrlForTab(activeTab)
+                  if (url) {
+                    return (
+                      <iframe src={url} className="chrome-landing__iframe" title={activeTab.title} />
+                    )
+                  }
+                  return (
+                    <div className="chrome-landing__empty">
+                      <span>Opened: {activeTab.title}</span>
+                    </div>
+                  )
+                })()}
+              </div>
+            </ChromeWindow>
+          )
+        }
         const app = APPS[win.appKey]
         if (!app) return null
         const Icon = APP_ICONS[win.appKey]
@@ -472,74 +545,6 @@ export default function ChromeLanding({ onReboot }) {
           </AppWindow>
         )
       })}
-      {(!chromeMinimized || chromeMinimizing) && (
-        <ChromeWindow
-          isMaximized={chromeMaximized}
-          onMaximize={toggleMaximize}
-          isMinimizing={chromeMinimizing}
-          isOpening={chromeOpening}
-          onOpeningComplete={handleChromeOpeningComplete}
-          onMinimizeComplete={handleChromeMinimizeComplete}
-          onFocus={() => { setChromeFocused(true); setFocusedAppWindowId(null) }}
-          isFocused={chromeFocused}
-        >
-          <ChromeFrame
-            tabs={tabs}
-            activeTabId={activeTabId}
-            onSelectTab={setActiveTab}
-            onCloseTab={closeTab}
-            onNewTab={openNewHomeTab}
-            onReorderTabs={reorderTabs}
-            currentDomain={currentDomain}
-            onGoHome={goHome}
-            onBack={handleBack}
-            onForward={handleForward}
-            onRefresh={handleRefresh}
-            activeTabType={activeTab.type}
-            onMaximize={toggleMaximize}
-            onMinimize={setMinimized}
-            onWindowClose={setMinimized}
-          />
-          <div
-            className="chrome-landing__content"
-            onContextMenu={(e) => {
-              e.preventDefault()
-              const url = getUrlForTab(activeTab)
-              setChromeContextMenu({ x: e.clientX, y: e.clientY, url })
-            }}
-          >
-          {activeTab.type === 'home' ? (
-            <ChromeHome onShortcut={openShortcutTab} />
-          ) : activeTab.type === 'about' ? (
-            <AboutPage />
-          ) : activeTab.type === 'project' ? (
-            <ProjectPage />
-          ) : activeTab.type === 'contact' ? (
-            <ContactPage />
-          ) : activeTab.type === 'github' ? (
-            <SocialProfileWindow profileUrl={getUrlForTab(activeTab)} cardOnly>
-              <GitHubProfileCard profileUrl={getUrlForTab(activeTab)} />
-            </SocialProfileWindow>
-          ) : activeTab.type === 'linkedin' ? (
-            <SocialProfileWindow profileUrl={getUrlForTab(activeTab)} cardOnly>
-              <LinkedInProfileCard profileUrl={getUrlForTab(activeTab)} />
-            </SocialProfileWindow>
-          ) : (() => {
-            const url = getUrlForTab(activeTab)
-            if (url) {
-              return (
-                <iframe src={url} className="chrome-landing__iframe" title={activeTab.title} />
-              )
-            }
-            return (
-              <div className="chrome-landing__empty">
-                <span>Opened: {activeTab.title}</span>
-              </div>
-            )
-          })()}
-          </div>
-        </ChromeWindow>
-      )}
       {showShutdown && (
         <div
           className="chrome-landing__shutdown"

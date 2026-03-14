@@ -14,7 +14,7 @@
   gap: 4px;
   width: 80px;
   padding: 8px;
-  cursor: pointer;
+  cursor: grab;
   border-radius: 12px;
   transition: background 0.15s cubic-bezier(0.33, 1, 0.68, 1), transform 0.15s cubic-bezier(0.33, 1, 0.68, 1);
   pointer-events: auto;
@@ -40,10 +40,6 @@
   z-index: 10;
   user-select: none;
   -webkit-user-select: none;
-}
-
-.desktop-custom-icons__item {
-  cursor: grab;
 }
 
 .desktop-custom-icons__item:active {

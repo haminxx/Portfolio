@@ -1,9 +1,47 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl } from 'react-leaflet'
 import L from 'leaflet'
-import { Home, GraduationCap, MapPin, Globe, Search, ChevronDown, ChevronRight, Coffee, Utensils } from 'lucide-react'
+if (typeof window !== 'undefined') window.L = L
+import 'leaflet.heat'
+import { Home, GraduationCap, MapPin, Globe, Search, ChevronDown, ChevronRight, Coffee, Utensils, Map, Car, Train, Thermometer, Building2 } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import './MapWindow.css'
+
+const MAP_STYLES = {
+  minimal: {
+    label: 'Minimal',
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  },
+  standard: {
+    label: 'Standard',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  },
+  satellite: {
+    label: 'Satellite',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; <a href="https://www.esri.com/">Esri</a>',
+  },
+  terrain: {
+    label: 'Terrain',
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
+  },
+}
+
+// Sample heatmap points (Aliso Viejo / SoCal area)
+const HEATMAP_POINTS = [
+  [33.575, -117.726, 0.8],
+  [33.58, -117.72, 0.6],
+  [33.57, -117.73, 0.5],
+  [33.56, -117.74, 0.4],
+  [33.59, -117.71, 0.3],
+  [32.88, -117.234, 0.7],
+  [32.89, -117.23, 0.4],
+  [41.8781, -87.6298, 0.5],
+  [37.5665, 126.978, 0.6],
+]
 
 const SAVED_LOCATIONS = {
   home: {
@@ -58,6 +96,17 @@ function MapFlyTo({ coords, zoom }) {
   return null
 }
 
+function HeatmapLayer({ enabled }) {
+  const map = useMap()
+  useEffect(() => {
+    if (!enabled || !L.heatLayer) return
+    const layer = L.heatLayer(HEATMAP_POINTS, { radius: 25, blur: 15, maxZoom: 17 })
+    layer.addTo(map)
+    return () => map.removeLayer(layer)
+  }, [map, enabled])
+  return null
+}
+
 const homeIcon = L.divIcon({
   className: 'map-window__custom-marker',
   html: '<div class="map-window__pin-outer"><div class="map-window__pin-inner"><span class="map-window__pin-arrow">▲</span></div></div>',
@@ -99,6 +148,12 @@ export default function MapWindow() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
   const suggestionsDebounceRef = useRef(null)
+  const [mapStyle, setMapStyle] = useState('minimal')
+  const [layers, setLayers] = useState({ traffic: false, transit: false, heatmap: false, buildings3d: false })
+
+  const toggleLayer = useCallback((key) => {
+    setLayers((prev) => ({ ...prev, [key]: !prev[key] }))
+  }, [])
 
   const flyToCoords = searchCoords ?? (activeLocation ? ALL_LOCATIONS[activeLocation]?.coords : null)
   const flyToZoom = searchCoords ? 14 : (activeLocation ? ALL_LOCATIONS[activeLocation]?.zoom : null)
@@ -194,6 +249,8 @@ export default function MapWindow() {
     markersToShow.push({ key: 'search', coords: searchCoords, address: searchResult?.address ?? 'Searched location' })
   }
 
+  const currentStyle = MAP_STYLES[mapStyle] ?? MAP_STYLES.minimal
+
   return (
     <div className="map-window">
       <div className="map-window__map map-window__map--full-bleed">
@@ -202,18 +259,67 @@ export default function MapWindow() {
           zoom={10}
           className="map-window__leaflet"
           style={{ height: '100%', width: '100%' }}
+          zoomControl={false}
         >
           <MapFlyTo coords={flyToCoords} zoom={flyToZoom} />
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          <ZoomControl position="topright" />
+          <TileLayer attribution={currentStyle.attribution} url={currentStyle.url} />
+          <HeatmapLayer enabled={layers.heatmap} />
           {markersToShow.map((m) => (
             <Marker key={m.key} position={m.coords} icon={homeIcon}>
               <Popup>{m.address}</Popup>
             </Marker>
           ))}
         </MapContainer>
+      </div>
+      <div className="map-window__view-options">
+        <div className="map-window__view-dropdown">
+          <Map size={16} strokeWidth={1.5} />
+          <select
+            value={mapStyle}
+            onChange={(e) => setMapStyle(e.target.value)}
+            className="map-window__view-select"
+            aria-label="Map style"
+          >
+            {Object.entries(MAP_STYLES).map(([key, s]) => (
+              <option key={key} value={key}>{s.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="map-window__layer-controls">
+        <button
+          type="button"
+          className={`map-window__layer-btn ${layers.traffic ? 'map-window__layer-btn--active' : ''}`}
+          onClick={() => toggleLayer('traffic')}
+          title="Traffic (placeholder)"
+        >
+          <Car size={18} strokeWidth={1.5} />
+        </button>
+        <button
+          type="button"
+          className={`map-window__layer-btn ${layers.transit ? 'map-window__layer-btn--active' : ''}`}
+          onClick={() => toggleLayer('transit')}
+          title="Transit (placeholder)"
+        >
+          <Train size={18} strokeWidth={1.5} />
+        </button>
+        <button
+          type="button"
+          className={`map-window__layer-btn ${layers.heatmap ? 'map-window__layer-btn--active' : ''}`}
+          onClick={() => toggleLayer('heatmap')}
+          title="Heatmap"
+        >
+          <Thermometer size={18} strokeWidth={1.5} />
+        </button>
+        <button
+          type="button"
+          className={`map-window__layer-btn ${layers.buildings3d ? 'map-window__layer-btn--active' : ''}`}
+          onClick={() => toggleLayer('buildings3d')}
+          title="3D Buildings (placeholder)"
+        >
+          <Building2 size={18} strokeWidth={1.5} />
+        </button>
       </div>
       <div className="map-window__search-overlay">
         <div className="map-window__search-wrap map-window__search-wrap--relative">

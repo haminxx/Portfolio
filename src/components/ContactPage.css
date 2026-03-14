@@ -202,3 +202,16 @@
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(255, 105, 180, 0.4);
 }
+
+.contact-page--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.contact-page__coming-soon {
+  margin: 0;
+  font-size: 18px;
+  color: #8e8e93;
+}
