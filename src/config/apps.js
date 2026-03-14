@@ -6,11 +6,13 @@ export const APPS = {
     label: 'Chrome',
     domain: 'portfolio.local',
     icon: 'chrome',
+    iconPath: '/dock-icons/chrome.png',
   },
   instagram: {
     label: 'Instagram',
     domain: 'instagram.com/85liez',
     icon: 'instagram',
+    iconPath: '/dock-icons/instagram.png',
   },
   netflix: {
     label: 'Netflix',
@@ -18,10 +20,17 @@ export const APPS = {
     icon: 'netflix',
     iconPath: '/dock-icons/netflix.png',
   },
-  gallery: {
-    label: 'Gallery',
-    domain: 'gallery.local',
-    icon: 'gallery',
+  photos: {
+    label: 'Photos',
+    domain: 'photos.local',
+    icon: 'photos',
+    iconPath: '/dock-icons/photos.png',
+  },
+  facetime: {
+    label: 'FaceTime',
+    domain: 'facetime.local',
+    icon: 'facetime',
+    iconPath: '/dock-icons/facetime.png',
   },
   appStore: {
     label: 'App Store',
@@ -32,6 +41,7 @@ export const APPS = {
     label: 'Settings',
     domain: 'settings.local',
     icon: 'settings',
+    iconPath: '/dock-icons/settings.png',
   },
   map: {
     label: 'Map',

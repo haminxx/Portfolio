@@ -231,7 +231,7 @@ export default function DesktopCustomIcons({
           >
             <span className="desktop-custom-icons__icon">
               {isShortcut && item.appKey === 'doom' ? (
-                <img src="/dock-icons/doom.png" alt="Doom" className="desktop-custom-icons__icon-img" />
+                <img src="/dock-icons/doom.png" alt="DOOM" className="desktop-custom-icons__icon-img" />
               ) : isShortcut && item.appKey === 'dadnme' ? (
                 <img src="/dock-icons/dadnme.png" alt="Dad n Me" className="desktop-custom-icons__icon-img desktop-custom-icons__icon-img--rounded-square" />
               ) : (

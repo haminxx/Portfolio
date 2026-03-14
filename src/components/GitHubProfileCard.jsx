@@ -5,6 +5,18 @@ import './GitHubProfileCard.css'
 const API_URL = import.meta.env.VITE_API_URL || ''
 const GITHUB_USER = 'haminxx'
 
+const LANG_COLORS = {
+  JavaScript: '#f1e05a',
+  TypeScript: '#3178c6',
+  Python: '#3572A5',
+  HTML: '#e34c26',
+  CSS: '#563d7c',
+  Java: '#b07219',
+  Go: '#00ADD8',
+  Rust: '#dea584',
+  Ruby: '#701516',
+}
+
 export default function GitHubProfileCard({ profileUrl }) {
   const [profile, setProfile] = useState(null)
   const [error, setError] = useState(null)
@@ -42,6 +54,7 @@ export default function GitHubProfileCard({ profileUrl }) {
                 name: r.name,
                 html_url: r.html_url,
                 description: r.description,
+                language: r.language,
               })),
             })
           }
@@ -57,15 +70,10 @@ export default function GitHubProfileCard({ profileUrl }) {
 
   if (error) {
     return (
-      <div className="social-profile-card social-profile-card--error">
+      <div className="github-card github-card--error">
         <p>Could not load GitHub profile.</p>
         {profileUrl && (
-          <a
-            href={profileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="social-profile-card__link"
-          >
+          <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="github-card__link">
             View on GitHub
           </a>
         )}
@@ -75,54 +83,57 @@ export default function GitHubProfileCard({ profileUrl }) {
 
   if (!profile) {
     return (
-      <div className="social-profile-card social-profile-card--loading">
-        <div className="social-profile-card__spinner" aria-hidden />
+      <div className="github-card github-card--loading">
+        <div className="github-card__spinner" aria-hidden />
         <p>Loading GitHub profile...</p>
       </div>
     )
   }
 
   return (
-    <div className="social-profile-card social-profile-card--github">
-      <div className="social-profile-card__header">
+    <div className="github-card">
+      <div className="github-card__header">
         <img
           src={profile.avatar_url}
           alt={`${profile.name || profile.login} avatar`}
-          className="social-profile-card__avatar"
+          className="github-card__avatar"
         />
-        <div className="social-profile-card__info">
-          <h2 className="social-profile-card__name">{profile.name || profile.login}</h2>
-          <span className="social-profile-card__username">@{profile.login}</span>
-          {profile.bio && <p className="social-profile-card__bio">{profile.bio}</p>}
+        <div className="github-card__info">
+          <h2 className="github-card__name">{profile.name || profile.login}</h2>
+          <span className="github-card__username">@{profile.login}</span>
+          {profile.bio && <p className="github-card__bio">{profile.bio}</p>}
         </div>
       </div>
-      <div className="social-profile-card__stats">
-        <span>
-          <strong>{profile.public_repos}</strong> repos
-        </span>
-        <span>
-          <strong>{profile.followers}</strong> followers
-        </span>
-        <span>
-          <strong>{profile.following}</strong> following
-        </span>
+      <div className="github-card__stats">
+        <span><strong>{profile.public_repos}</strong> repos</span>
+        <span><strong>{profile.followers}</strong> followers</span>
+        <span><strong>{profile.following}</strong> following</span>
       </div>
       {profile.repos && profile.repos.length > 0 && (
-        <div className="social-profile-card__repos">
-          <h3 className="social-profile-card__repos-title">Recent Repositories</h3>
-          <ul className="social-profile-card__repos-list">
+        <div className="github-card__repos">
+          <h3 className="github-card__repos-title">Pinned</h3>
+          <ul className="github-card__repos-list">
             {profile.repos.map((repo) => (
-              <li key={repo.name} className="social-profile-card__repo-item">
+              <li key={repo.name} className="github-repo-item">
                 <a
                   href={repo.html_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="social-profile-card__repo-link"
+                  className="github-repo-item__link"
                 >
-                  {repo.name}
+                  <span className="github-repo-item__name">{repo.name}</span>
+                  {repo.language && (
+                    <span className="github-repo-item__lang">
+                      <span
+                        className="github-repo-item__lang-dot"
+                        style={{ backgroundColor: LANG_COLORS[repo.language] || '#8b949e' }}
+                      />
+                      {repo.language}
+                    </span>
+                  )}
                 </a>
                 {repo.description && (
-                  <span className="social-profile-card__repo-desc">{repo.description}</span>
+                  <span className="github-repo-item__desc">{repo.description}</span>
                 )}
               </li>
             ))}
@@ -134,10 +145,10 @@ export default function GitHubProfileCard({ profileUrl }) {
           href={profileUrl || profile.html_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="social-profile-card__link"
+          className="github-card__link"
         >
           <Github size={16} />
-          View full profile on GitHub
+          View on GitHub
           <ExternalLink size={14} />
         </a>
       )}

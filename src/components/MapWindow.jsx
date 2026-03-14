@@ -196,7 +196,25 @@ export default function MapWindow() {
 
   return (
     <div className="map-window">
-      <div className="map-window__search">
+      <div className="map-window__map map-window__map--full-bleed">
+        <MapContainer
+          center={[33.575, -117.726]}
+          zoom={10}
+          className="map-window__leaflet"
+        >
+          <MapFlyTo coords={flyToCoords} zoom={flyToZoom} />
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          {markersToShow.map((m) => (
+            <Marker key={m.key} position={m.coords} icon={homeIcon}>
+              <Popup>{m.address}</Popup>
+            </Marker>
+          ))}
+        </MapContainer>
+      </div>
+      <div className="map-window__search-overlay">
         <div className="map-window__search-wrap map-window__search-wrap--relative">
           <Search size={18} strokeWidth={1.5} className="map-window__search-icon" />
           <input
@@ -240,8 +258,7 @@ export default function MapWindow() {
           </button>
         </div>
       </div>
-      <div className="map-window__layout">
-        <aside className="map-window__sidebar">
+      <aside className="map-window__sidebar map-window__sidebar--overlay">
           {FOLDERS.map((folder) => {
             const Icon = folder.icon
             const entries = Object.entries(folder.locations)
@@ -313,25 +330,6 @@ export default function MapWindow() {
             </>
           )}
         </aside>
-        <div className="map-window__map">
-          <MapContainer
-            center={[33.575, -117.726]}
-            zoom={10}
-            className="map-window__leaflet"
-          >
-            <MapFlyTo coords={flyToCoords} zoom={flyToZoom} />
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            {markersToShow.map((m) => (
-              <Marker key={m.key} position={m.coords} icon={homeIcon}>
-                <Popup>{m.address}</Popup>
-              </Marker>
-            ))}
-          </MapContainer>
-        </div>
-      </div>
     </div>
   )
 }

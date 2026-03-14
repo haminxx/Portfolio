@@ -21,6 +21,7 @@ import YouTubeMusicWindow from '../components/YouTubeMusicWindow'
 import SettingsWindow from '../components/SettingsWindow'
 import AppStoreWindow from '../components/AppStoreWindow'
 import GalleryWindow from '../components/GalleryWindow'
+import FaceTimeWindow from '../components/FaceTimeWindow'
 import MenuBar from '../components/MenuBar'
 import Dock from '../components/Dock'
 import AppWindow from '../components/AppWindow'
@@ -28,14 +29,15 @@ import { APPS, getDomainForApp } from '../config/apps'
 import { SHORTCUTS } from '../config/shortcuts'
 import { useLanguage } from '../context/LanguageContext'
 import { useTheme } from '../context/ThemeContext'
-import { Globe, Image, Film, Images, ShoppingBag, Settings, Map } from 'lucide-react'
+import { Globe, Image, Film, Images, Video, ShoppingBag, Settings, Map } from 'lucide-react'
 import './ChromeLanding.css'
 
 const APP_ICONS = {
   chrome: Globe,
   instagram: Image,
   netflix: Film,
-  gallery: Images,
+  photos: Images,
+  facetime: Video,
   appStore: ShoppingBag,
   settings: Settings,
   map: Map,
@@ -44,6 +46,7 @@ const APP_ICONS = {
 
 const HOME_TAB = { id: 'home', title: 'Home', type: 'home' }
 const DESKTOP_ITEMS_KEY = 'desktop-items'
+const DOCK_ORDER_KEY = 'dock-order'
 
 function loadDesktopItems() {
   try {
@@ -59,6 +62,28 @@ function loadDesktopItems() {
 function saveDesktopItems(items) {
   try {
     localStorage.setItem(DESKTOP_ITEMS_KEY, JSON.stringify(items))
+  } catch {
+    // ignore
+  }
+}
+
+function loadDockOrder() {
+  try {
+    const raw = localStorage.getItem(DOCK_ORDER_KEY)
+    if (!raw) return Object.keys(APPS)
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return Object.keys(APPS)
+    const valid = parsed.filter((k) => k in APPS)
+    const missing = Object.keys(APPS).filter((k) => !valid.includes(k))
+    return [...valid, ...missing]
+  } catch {
+    return Object.keys(APPS)
+  }
+}
+
+function saveDockOrder(order) {
+  try {
+    localStorage.setItem(DOCK_ORDER_KEY, JSON.stringify(order))
   } catch {
     // ignore
   }
@@ -97,7 +122,7 @@ export default function ChromeLanding({ onReboot }) {
     const hasDadnme = loaded.some((i) => i.type === 'shortcut' && i.appKey === 'dadnme')
     let next = [...loaded]
     if (!hasDoom) {
-      next = [...next, { id: 'doom-shortcut', type: 'shortcut', name: 'Doom', appKey: 'doom', parentId: null, x: 24, y: 24 }]
+      next = [...next, { id: 'doom-shortcut', type: 'shortcut', name: 'DOOM', appKey: 'doom', parentId: null, x: 24, y: 24 }]
     }
     if (!hasDadnme) {
       next = [...next, { id: 'dadnme-shortcut', type: 'shortcut', name: "Dad 'n Me", appKey: 'dadnme', parentId: null, x: 120, y: 24 }]
@@ -113,6 +138,7 @@ export default function ChromeLanding({ onReboot }) {
   const [showShutdown, setShowShutdown] = useState(false)
   const [shutdownAction, setShutdownAction] = useState(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [dockOrder, setDockOrder] = useState(loadDockOrder)
   const { nightMode, setNightMode } = useTheme()
   const { isCapturing, takeScreenshot } = useScreenshot()
   const { t } = useLanguage()
@@ -347,6 +373,11 @@ export default function ChromeLanding({ onReboot }) {
       />
       <Dock
         onOpenApp={openAppTab}
+        dockOrder={dockOrder}
+        onDockReorder={(order) => {
+          setDockOrder(order)
+          saveDockOrder(order)
+        }}
         isChromeMaximized={chromeMaximized}
         anyMaximized={chromeMaximized || openAppWindows.some((w) => w.isMaximized)}
         openAppWindows={openAppWindows}
@@ -398,8 +429,10 @@ export default function ChromeLanding({ onReboot }) {
           content = <SettingsWindow />
         } else if (win.appKey === 'appStore') {
           content = <AppStoreWindow />
-        } else if (win.appKey === 'gallery') {
+        } else if (win.appKey === 'photos') {
           content = <GalleryWindow />
+        } else if (win.appKey === 'facetime') {
+          content = <FaceTimeWindow />
         } else if (win.appKey === 'doom') {
           content = <DoomWindow isMinimized={win.isMinimized} isMinimizing={win.isMinimizing} />
         } else if (win.appKey === 'dadnme') {
@@ -480,11 +513,11 @@ export default function ChromeLanding({ onReboot }) {
           ) : activeTab.type === 'contact' ? (
             <ContactPage />
           ) : activeTab.type === 'github' ? (
-            <SocialProfileWindow profileUrl={getUrlForTab(activeTab)}>
+            <SocialProfileWindow profileUrl={getUrlForTab(activeTab)} cardOnly>
               <GitHubProfileCard profileUrl={getUrlForTab(activeTab)} />
             </SocialProfileWindow>
           ) : activeTab.type === 'linkedin' ? (
-            <SocialProfileWindow profileUrl={getUrlForTab(activeTab)}>
+            <SocialProfileWindow profileUrl={getUrlForTab(activeTab)} cardOnly>
               <LinkedInProfileCard profileUrl={getUrlForTab(activeTab)} />
             </SocialProfileWindow>
           ) : (() => {

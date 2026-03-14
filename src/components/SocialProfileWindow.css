@@ -45,8 +45,16 @@
 .social-profile-window__card {
   flex-shrink: 0;
   padding: 16px;
-  background: #fff;
+  background: #f8f9fa;
   border-top: 1px solid #e8e8ed;
   max-height: 30%;
   overflow: auto;
+}
+
+.social-profile-window--card-only .social-profile-window__card {
+  flex: 1;
+  max-height: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

@@ -45,6 +45,24 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.dock__item-wrap {
+  cursor: grab;
+  border-radius: 12px;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.dock__item-wrap:active {
+  cursor: grabbing;
+}
+
+.dock__item-wrap--dragging {
+  opacity: 0.5;
+}
+
+.dock__item-wrap--drag-over {
+  transform: scale(1.1);
+}
+
 .dock__item {
   display: flex;
   flex-direction: column;
