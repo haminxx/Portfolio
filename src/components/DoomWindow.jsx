@@ -53,6 +53,10 @@ export default function DoomWindow({ isMinimized = false, isMinimizing = false }
 
   useEffect(() => {
     runDoom()
+    return () => {
+      dosPropsRef.current?.stop?.()
+      dosPropsRef.current = null
+    }
   }, [runDoom, retryKey])
 
   const handleRetry = useCallback(() => {

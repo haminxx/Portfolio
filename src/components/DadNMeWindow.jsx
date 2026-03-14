@@ -60,9 +60,9 @@ export default function DadNMeWindow() {
           </button>
         ) : loadError ? (
           <div className="dadnme-window__error">
-            <p className="dadnme-window__error-title">Game file not found</p>
+            <p className="dadnme-window__error-title">Game file not found or invalid</p>
             <p className="dadnme-window__error-msg">
-              Please add dadnme.swf to the public folder. The game &quot;Dad &#39;n Me&quot; by The Behemoth can be played via Ruffle when a valid SWF file is provided.
+              Please add a valid dadnme.swf to the public folder. Download from The Behemoth if you have a license.
             </p>
             <a
               href="https://thebehemoth.com/games/dad-n-me/"

@@ -36,6 +36,7 @@ export const APPS = {
     label: 'App Store',
     domain: 'appstore.local',
     icon: 'appStore',
+    iconPath: '/dock-icons/appstore.png',
   },
   settings: {
     label: 'Settings',

@@ -2,14 +2,21 @@ import { useState, useCallback } from 'react'
 import { Search, Grid3X3, LayoutGrid, Heart } from 'lucide-react'
 import './GalleryWindow.css'
 
-const GALLERY_SIZE = 25
+const GALLERY_SIZE = 24
 const getImagePath = (i) => `/gallery/photo-${i + 1}.png`
+
+const PHOTO_METADATA = Object.fromEntries(
+  Array.from({ length: GALLERY_SIZE }, (_, i) => [
+    i,
+    { name: `Photo ${i + 1}`, dateTaken: `2024-0${(i % 9) + 1}-${String((i % 28) + 1).padStart(2, '0')}` },
+  ])
+)
 
 const ALBUMS = ['Vacation', 'Screenshots', 'Portraits']
 const ALBUM_ASSIGNMENTS = {
   Vacation: [0, 1, 2, 3, 4, 5, 6, 7],
   Screenshots: [8, 9, 10, 11, 12, 13, 14],
-  Portraits: [15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+  Portraits: [15, 16, 17, 18, 19, 20, 21, 22, 23],
 }
 
 const FAVORITES_KEY = 'gallery-favorites'
@@ -63,6 +70,7 @@ export default function GalleryWindow() {
   const [activeAlbum, setActiveAlbum] = useState(null)
   const [viewMode, setViewMode] = useState('grid')
   const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState('date')
   const [favorites, setFavoritesState] = useState(loadFavorites)
 
   const setFavorites = useCallback((fn) => {
@@ -97,9 +105,22 @@ export default function GalleryWindow() {
     return Array.from({ length: GALLERY_SIZE }, (_, i) => i)
   })()
 
-  const filteredIndices = searchQuery.trim()
-    ? indices.filter((i) => `photo-${i + 1}`.toLowerCase().includes(searchQuery.toLowerCase()))
-    : indices
+  let filteredIndices = searchQuery.trim()
+    ? indices.filter((i) => {
+        const meta = PHOTO_METADATA[i]
+        const name = meta?.name ?? `photo-${i + 1}`
+        return name.toLowerCase().includes(searchQuery.toLowerCase()) || `photo-${i + 1}`.includes(searchQuery)
+      })
+    : [...indices]
+
+  filteredIndices = [...filteredIndices].sort((a, b) => {
+    const metaA = PHOTO_METADATA[a]
+    const metaB = PHOTO_METADATA[b]
+    if (sortBy === 'name') {
+      return (metaA?.name ?? '').localeCompare(metaB?.name ?? '')
+    }
+    return (metaB?.dateTaken ?? '').localeCompare(metaA?.dateTaken ?? '')
+  })
 
   return (
     <div className="gallery-window">
@@ -155,6 +176,15 @@ export default function GalleryWindow() {
             />
           </div>
           <div className="gallery-window__view-options">
+            <select
+              className="gallery-window__sort"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              aria-label="Sort by"
+            >
+              <option value="date">Date</option>
+              <option value="name">Name</option>
+            </select>
             <button
               type="button"
               className={`gallery-window__view-btn ${viewMode === 'grid' ? 'gallery-window__view-btn--active' : ''}`}

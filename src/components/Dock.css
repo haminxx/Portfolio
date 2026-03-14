@@ -90,19 +90,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   transition: transform 0.22s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
 .dock__icon-img {
-  width: 40px;
-  height: 40px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
 }
 
 .dock__icon-img--rounded-square {
-  border-radius: 10px;
+  border-radius: 6px;
 }
 
 .dock__item:hover .dock__icon,

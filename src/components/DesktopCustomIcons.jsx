@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { Folder, FileText, Gamepad2 } from 'lucide-react'
 import './DesktopCustomIcons.css'
 
-const DRAG_THRESHOLD = 1
+const MOVE_THRESHOLD = 2
 const ICON_WIDTH = 80
 const ICON_HEIGHT = 96
 
@@ -20,11 +20,10 @@ export default function DesktopCustomIcons({
   const [renamingId, setRenamingId] = useState(null)
   const [renameValue, setRenameValue] = useState('')
   const [draggingId, setDraggingId] = useState(null)
-  const [draggingIds, setDraggingIds] = useState([])
+  const [dragOffset, setDragOffset] = useState({ dx: 0, dy: 0 })
   const [dropTargetId, setDropTargetId] = useState(null)
-  const [pendingDragId, setPendingDragId] = useState(null)
-  const dragStartRef = useRef({ x: 0, y: 0, item: null, element: null, selectedItems: [] })
-  const lastClickRef = useRef({ id: null, time: 0 })
+  const [pointerDownId, setPointerDownId] = useState(null)
+  const dragStartRef = useRef({ x: 0, y: 0, item: null })
 
   const rootItems = desktopItems.filter((i) => !i.parentId)
 
@@ -80,135 +79,91 @@ export default function DesktopCustomIcons({
   const handleMouseDown = useCallback((e, item) => {
     if (e.button !== 0) return
     e.stopPropagation()
-    const roots = desktopItems.filter((i) => !i.parentId)
-    const isInSelection = selectedIds.includes(item.id)
-    const itemsToMove = isInSelection
-      ? roots.filter((i) => selectedIds.includes(i.id))
-      : [item]
-    dragStartRef.current = {
-      x: e.clientX,
-      y: e.clientY,
-      item,
-      element: e.currentTarget,
-      selectedItems: itemsToMove,
-    }
-    setPendingDragId(item.id)
-  }, [selectedIds, desktopItems])
+    dragStartRef.current = { x: e.clientX, y: e.clientY, item }
+    setPointerDownId(item.id)
+  }, [])
 
-  const handleMouseMove = useCallback(
-    (e) => {
-      const { x, y, item, element } = dragStartRef.current
-      const dx = e.clientX - x
-      const dy = e.clientY - y
-      const distance = Math.sqrt(dx * dx + dy * dy)
-      const isDragging = draggingId === item.id || (pendingDragId === item.id && distance >= DRAG_THRESHOLD)
-      if (pendingDragId && distance >= DRAG_THRESHOLD) {
-        const { selectedItems } = dragStartRef.current
-        setPendingDragId(null)
-        setDraggingId(item.id)
-        setDraggingIds(selectedItems.map((i) => i.id))
-      }
-      if (isDragging) {
-        const { selectedItems } = dragStartRef.current
-        selectedItems.forEach((it) => {
-          const el = document.querySelector(`[data-desktop-item-id="${it.id}"]`)
-          if (el) el.style.transform = `translate(${dx}px, ${dy}px) scale(1.05)`
-        })
-        const el = document.elementFromPoint(e.clientX, e.clientY)
-        const folderEl = el?.closest('[data-folder-id]')
-        setDropTargetId(folderEl ? folderEl.dataset.folderId : null)
-      }
-    },
-    [draggingId, pendingDragId]
-  )
+  const handleMouseMove = useCallback((e) => {
+    const { x, y, item } = dragStartRef.current
+    if (!item || pointerDownId !== item.id) return
+    const dx = e.clientX - x
+    const dy = e.clientY - y
+    const distance = Math.sqrt(dx * dx + dy * dy)
+
+    setDraggingId((prev) => {
+      if (!prev && distance >= MOVE_THRESHOLD) return item.id
+      return prev
+    })
+    setDragOffset({ dx, dy })
+    if (distance >= MOVE_THRESHOLD) {
+      const el = document.elementFromPoint(e.clientX, e.clientY)
+      const folderEl = el?.closest('[data-folder-id]')
+      setDropTargetId(folderEl ? folderEl.dataset.folderId : null)
+    }
+  }, [pointerDownId])
 
   const handleMouseUp = useCallback(
     (e) => {
-      if (!draggingId) return
-      const { x, y, item, element } = dragStartRef.current
-      const dx = e.clientX - x
-      const dy = e.clientY - y
-      const distance = Math.sqrt(dx * dx + dy * dy)
+      const { item } = dragStartRef.current
+      if (!item || pointerDownId !== item.id) return
+      setPointerDownId(null)
+
+      const dx = e.clientX - dragStartRef.current.x
+      const dy = e.clientY - dragStartRef.current.y
+      const wasDragging = draggingId === item.id
 
       setDraggingId(null)
-      setDraggingIds([])
+      setDragOffset({ dx: 0, dy: 0 })
       setDropTargetId(null)
 
-      if (distance >= DRAG_THRESHOLD) {
-        const { selectedItems } = dragStartRef.current
-        selectedItems.forEach((it) => {
-          const el = document.querySelector(`[data-desktop-item-id="${it.id}"]`)
-          if (el) el.style.transform = ''
-        })
-        let targetFolderId = null
-        if (element) {
-          element.style.pointerEvents = 'none'
-          element.style.visibility = 'hidden'
-          const el = document.elementFromPoint(e.clientX, e.clientY)
-          const folderEl = el?.closest('[data-folder-id]')
-          targetFolderId = folderEl?.dataset.folderId
-          element.style.pointerEvents = ''
-          element.style.visibility = ''
-        }
-        if (targetFolderId && item.type !== 'folder') {
-          onItemsChange?.((prev) =>
-            prev.map((i) =>
-              i.id === item.id ? { ...i, parentId: targetFolderId } : i
-            )
-          )
-        } else if (targetFolderId && item.type === 'folder' && item.id !== targetFolderId) {
-          onItemsChange?.((prev) =>
-            prev.map((i) =>
-              i.id === item.id ? { ...i, parentId: targetFolderId } : i
-            )
-          )
-        } else {
-          const vw = window.innerWidth
-          const vh = window.innerHeight
-          onItemsChange?.((prev) =>
-            prev.map((i) => {
-              if (!selectedItems.some((s) => s.id === i.id)) return i
-              const rawX = (i.x ?? 24) + dx
-              const rawY = (i.y ?? 24) + dy
-              const newX = Math.max(0, Math.min(vw - ICON_WIDTH, rawX))
-              const newY = Math.max(0, Math.min(vh - ICON_HEIGHT, rawY))
-              return { ...i, x: newX, y: newY }
-            })
-          )
-        }
-      } else {
-        lastClickRef.current = { id: item.id, time: Date.now() }
-        onSelectIcons?.([item.id])
-      }
-    },
-    [draggingId, onItemsChange, onSelectIcons]
-  )
+      if (!wasDragging) return
 
-  const handleDocMouseUp = useCallback(
-    (e) => {
-      if (pendingDragId && !draggingId) {
-        const { item } = dragStartRef.current
-        lastClickRef.current = { id: item.id, time: Date.now() }
-        onSelectIcons?.([item.id])
-        setPendingDragId(null)
+      let targetFolderId = null
+      const el = document.querySelector(`[data-desktop-item-id="${item.id}"]`)
+      if (el) {
+        el.style.pointerEvents = 'none'
+        el.style.visibility = 'hidden'
+        const hitEl = document.elementFromPoint(e.clientX, e.clientY)
+        const folderEl = hitEl?.closest('[data-folder-id]')
+        targetFolderId = folderEl?.dataset.folderId
+        el.style.pointerEvents = ''
+        el.style.visibility = ''
+      }
+
+      if (targetFolderId && item.type !== 'folder' && item.id !== targetFolderId) {
+        onItemsChange?.((prev) =>
+          prev.map((i) => (i.id === item.id ? { ...i, parentId: targetFolderId } : i))
+        )
+      } else if (targetFolderId && item.type === 'folder' && item.id !== targetFolderId) {
+        onItemsChange?.((prev) =>
+          prev.map((i) => (i.id === item.id ? { ...i, parentId: targetFolderId } : i))
+        )
+      } else {
+        const vw = window.innerWidth
+        const vh = window.innerHeight
+        const rawX = (item.x ?? 24) + dx
+        const rawY = (item.y ?? 24) + dy
+        const newX = Math.max(0, Math.min(vw - ICON_WIDTH, rawX))
+        const newY = Math.max(0, Math.min(vh - ICON_HEIGHT, rawY))
+        onItemsChange?.((prev) =>
+          prev.map((i) => (i.id === item.id ? { ...i, x: newX, y: newY } : i))
+        )
       }
     },
-    [pendingDragId, draggingId, onSelectIcons]
+    [draggingId, pointerDownId, onItemsChange]
   )
 
   useEffect(() => {
-    if (!draggingId && !pendingDragId) return
-    const up = (e) => {
-      if (draggingId) handleMouseUp(e)
-      else if (pendingDragId) handleDocMouseUp(e)
-    }
-    document.addEventListener('mousemove', handleMouseMove)
+    if (!pointerDownId) return
+    const move = (e) => handleMouseMove(e)
+    const up = (e) => handleMouseUp(e)
+    document.addEventListener('mousemove', move)
     document.addEventListener('mouseup', up)
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mousemove', move)
       document.removeEventListener('mouseup', up)
     }
-  }, [draggingId, pendingDragId, handleMouseMove, handleMouseUp, handleDocMouseUp])
+  }, [pointerDownId, handleMouseMove, handleMouseUp])
 
   return (
     <div className="desktop-custom-icons">
@@ -217,12 +172,18 @@ export default function DesktopCustomIcons({
         const isShortcut = item.type === 'shortcut'
         const Icon = isFolder ? Folder : isShortcut ? Gamepad2 : FileText
         const isDropTarget = dropTargetId === item.id && draggingId !== item.id
+        const isDragging = draggingId === item.id
+        const offset = isDragging ? dragOffset : { dx: 0, dy: 0 }
 
         return (
           <div
             key={item.id}
-            className={`desktop-custom-icons__item ${(draggingId === item.id || draggingIds.includes(item.id)) ? 'desktop-custom-icons__item--dragging' : ''} ${pendingDragId === item.id ? 'desktop-custom-icons__item--pending' : ''} ${selectedIds.includes(item.id) ? 'desktop-custom-icons__item--selected' : ''} ${isDropTarget ? 'desktop-custom-icons__item--drop-target' : ''}`}
-            style={{ left: item.x ?? 24, top: item.y ?? 24 }}
+            className={`desktop-custom-icons__item ${isDragging ? 'desktop-custom-icons__item--dragging' : ''} ${selectedIds.includes(item.id) ? 'desktop-custom-icons__item--selected' : ''} ${isDropTarget ? 'desktop-custom-icons__item--drop-target' : ''}`}
+            style={{
+              left: item.x ?? 24,
+              top: item.y ?? 24,
+              transform: `translate(${offset.dx}px, ${offset.dy}px)${isDragging ? ' scale(1.05)' : ''}`,
+            }}
             data-desktop-item-id={item.id}
             data-folder-id={isFolder ? item.id : undefined}
             onMouseDown={(e) => handleMouseDown(e, item)}
