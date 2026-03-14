@@ -3,6 +3,7 @@ import { Folder, FileText, Gamepad2 } from 'lucide-react'
 import './DesktopCustomIcons.css'
 
 const DRAG_THRESHOLD = 10
+const GRID_SIZE = 80
 
 export default function DesktopCustomIcons({
   desktopItems = [],
@@ -136,11 +137,13 @@ export default function DesktopCustomIcons({
             )
           )
         } else {
-          const newX = (item.x ?? 0) + dx
-          const newY = (item.y ?? 0) + dy
+          const rawX = (item.x ?? 0) + dx
+          const rawY = (item.y ?? 0) + dy
+          const newX = Math.round(rawX / GRID_SIZE) * GRID_SIZE
+          const newY = Math.round(rawY / GRID_SIZE) * GRID_SIZE
           onItemsChange?.((prev) =>
             prev.map((i) =>
-              i.id === item.id ? { ...i, x: newX, y: newY } : i
+              i.id === item.id ? { ...i, x: Math.max(0, newX), y: Math.max(0, newY) } : i
             )
           )
         }

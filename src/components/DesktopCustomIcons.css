@@ -15,7 +15,7 @@
   padding: 8px;
   cursor: pointer;
   border-radius: 6px;
-  transition: background 0.15s ease, transform 0.15s ease;
+  transition: background 0.15s cubic-bezier(0.33, 1, 0.68, 1), transform 0.15s cubic-bezier(0.33, 1, 0.68, 1);
   pointer-events: auto;
   color: rgba(255, 255, 255, 0.9);
   background: transparent;
@@ -28,8 +28,11 @@
 }
 
 .desktop-custom-icons__item--dragging {
-  opacity: 0.85;
+  opacity: 0.9;
   cursor: grabbing;
+  transform: scale(1.08);
+  z-index: 10;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .desktop-custom-icons__item--drop-target {

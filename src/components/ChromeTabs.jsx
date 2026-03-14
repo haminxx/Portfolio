@@ -21,13 +21,25 @@ export default function ChromeTabs({ tabs, activeTabId, onSelectTab, onCloseTab,
   }, [tabs])
 
   const closedForTabRef = useRef(null)
+  const lastCloseTimeRef = useRef(0)
   const handleCloseTab = useCallback(
     (e, tabId) => {
       e.stopPropagation()
+      e.preventDefault()
       closedForTabRef.current = null
+      lastCloseTimeRef.current = Date.now()
       setClosingTabId(tabId)
     },
     []
+  )
+
+  const handleNewTabClick = useCallback(
+    (e) => {
+      e.stopPropagation()
+      if (Date.now() - lastCloseTimeRef.current < 300) return
+      onNewTab?.()
+    },
+    [onNewTab]
   )
 
   const handleCloseAnimationEnd = useCallback(
@@ -120,7 +132,7 @@ export default function ChromeTabs({ tabs, activeTabId, onSelectTab, onCloseTab,
       <button
         type="button"
         className="chrome-tabs__new chrome-tabs__new--animate"
-        onClick={(e) => { e.stopPropagation(); onNewTab?.(); }}
+        onClick={handleNewTabClick}
         aria-label="New tab"
       >
         <Plus size={16} strokeWidth={2.5} />

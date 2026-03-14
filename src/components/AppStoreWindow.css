@@ -42,6 +42,14 @@
   padding: 8px 12px;
   color: #8e8e93;
   font-size: 14px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.app-store-window__search-wrap:hover {
+  background: #f0f0f5;
 }
 
 .app-store-window__search-label {
@@ -101,6 +109,55 @@
   height: 100px;
   background: #e5e5ea;
   border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.app-store-window__card:hover {
+  background: #d1d1d6;
+}
+
+.app-store-window__modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.app-store-window__modal-inner {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  position: relative;
+}
+
+.app-store-window__modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #e5e5ea;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.app-store-window__modal-close:hover {
+  background: #d1d1d6;
+}
+
+.app-store-window__modal-placeholder {
+  color: #8e8e93;
+  font-size: 14px;
+  margin: 0;
 }
 
 .app-store-window__card--large {

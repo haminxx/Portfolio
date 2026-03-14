@@ -62,6 +62,27 @@
   padding: 8px 0;
   font-size: 13px;
   color: #e5e5ea;
+  cursor: pointer;
+}
+
+.gallery-window__album-item:hover {
+  color: #fff;
+}
+
+.gallery-window__album-item--active {
+  color: #0a84ff;
+}
+
+.gallery-window__section-hint {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  color: #8e8e93;
+  margin: 0 0 8px;
+}
+
+.gallery-window__grid--list .gallery-window__cell {
+  aspect-ratio: auto;
+  height: 48px;
 }
 
 .gallery-window__main {
@@ -159,4 +180,10 @@
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.gallery-window__cell-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #2c2c2e;
 }

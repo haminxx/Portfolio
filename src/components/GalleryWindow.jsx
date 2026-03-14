@@ -1,29 +1,87 @@
+import { useState } from 'react'
 import { Search, Grid3X3, LayoutGrid } from 'lucide-react'
 import './GalleryWindow.css'
 
-const GALLERY_IMAGES = Array.from({ length: 24 }, (_, i) => `/gallery/photo-${i + 1}.png`)
+// Supports mixed formats: place your 24 images in public/gallery/ as photo-1.png, photo-2.jpg, etc.
+const getImagePaths = (i) => [`/gallery/photo-${i + 1}.png`, `/gallery/photo-${i + 1}.jpg`, `/gallery/photo-${i + 1}.jpeg`]
+
+const ALBUMS = ['Vacation', 'Screenshots', 'Portraits']
+
+function GalleryImage({ paths }) {
+  const [currentIdx, setCurrentIdx] = useState(0)
+  const [hasError, setHasError] = useState(false)
+  const src = paths[currentIdx]
+
+  const handleError = () => {
+    if (currentIdx < paths.length - 1) {
+      setCurrentIdx((prev) => prev + 1)
+    } else {
+      setHasError(true)
+    }
+  }
+
+  if (hasError) {
+    return <div className="gallery-window__cell-placeholder" />
+  }
+
+  return (
+    <img
+      src={src}
+      alt=""
+      className="gallery-window__cell-img"
+      onError={handleError}
+    />
+  )
+}
 
 export default function GalleryWindow() {
+  const [activeSection, setActiveSection] = useState('recents')
+  const [activeAlbum, setActiveAlbum] = useState(null)
+  const [viewMode, setViewMode] = useState('grid')
+
+  const handleAlbumClick = (album) => {
+    setActiveSection('albums')
+    setActiveAlbum(album)
+  }
+
   return (
     <div className="gallery-window">
       <aside className="gallery-window__sidebar">
         <nav className="gallery-window__nav">
-          <button type="button" className="gallery-window__nav-item gallery-window__nav-item--active">
+          <button
+            type="button"
+            className={`gallery-window__nav-item ${activeSection === 'recents' ? 'gallery-window__nav-item--active' : ''}`}
+            onClick={() => { setActiveSection('recents'); setActiveAlbum(null) }}
+          >
             Recents
           </button>
-          <button type="button" className="gallery-window__nav-item">
+          <button
+            type="button"
+            className={`gallery-window__nav-item ${activeSection === 'favorites' ? 'gallery-window__nav-item--active' : ''}`}
+            onClick={() => { setActiveSection('favorites'); setActiveAlbum(null) }}
+          >
             Favorites
           </button>
-          <button type="button" className="gallery-window__nav-item">
+          <button
+            type="button"
+            className={`gallery-window__nav-item ${activeSection === 'albums' ? 'gallery-window__nav-item--active' : ''}`}
+            onClick={() => { setActiveSection('albums'); setActiveAlbum(null) }}
+          >
             Albums
           </button>
         </nav>
         <div className="gallery-window__albums">
           <h3 className="gallery-window__sidebar-title">My Albums</h3>
           <ul className="gallery-window__album-list">
-            <li className="gallery-window__album-item">Vacation</li>
-            <li className="gallery-window__album-item">Screenshots</li>
-            <li className="gallery-window__album-item">Portraits</li>
+            {ALBUMS.map((album) => (
+              <li
+                key={album}
+                className={`gallery-window__album-item ${activeAlbum === album ? 'gallery-window__album-item--active' : ''}`}
+                onClick={() => handleAlbumClick(album)}
+              >
+                {album}
+              </li>
+            ))}
           </ul>
         </div>
       </aside>
@@ -39,18 +97,37 @@ export default function GalleryWindow() {
             />
           </div>
           <div className="gallery-window__view-options">
-            <button type="button" className="gallery-window__view-btn gallery-window__view-btn--active" aria-label="Grid view">
+            <button
+              type="button"
+              className={`gallery-window__view-btn ${viewMode === 'grid' ? 'gallery-window__view-btn--active' : ''}`}
+              aria-label="Grid view"
+              onClick={() => setViewMode('grid')}
+            >
               <Grid3X3 size={18} />
             </button>
-            <button type="button" className="gallery-window__view-btn" aria-label="List view">
+            <button
+              type="button"
+              className={`gallery-window__view-btn ${viewMode === 'list' ? 'gallery-window__view-btn--active' : ''}`}
+              aria-label="List view"
+              onClick={() => setViewMode('list')}
+            >
               <LayoutGrid size={18} />
             </button>
           </div>
         </header>
-        <div className="gallery-window__grid">
-          {GALLERY_IMAGES.map((src, i) => (
+        <div className={`gallery-window__grid ${viewMode === 'list' ? 'gallery-window__grid--list' : ''}`}>
+          {activeSection === 'recents' && (
+            <p className="gallery-window__section-hint">Showing recent photos</p>
+          )}
+          {activeSection === 'favorites' && (
+            <p className="gallery-window__section-hint">Favorites — tap heart on photos to add</p>
+          )}
+          {activeSection === 'albums' && activeAlbum && (
+            <p className="gallery-window__section-hint">Album: {activeAlbum}</p>
+          )}
+          {Array.from({ length: 24 }, (_, i) => (
             <div key={i} className="gallery-window__cell">
-              <img src={src} alt="" className="gallery-window__cell-img" />
+              <GalleryImage paths={getImagePaths(i)} />
             </div>
           ))}
         </div>

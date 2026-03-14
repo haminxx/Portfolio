@@ -3,16 +3,18 @@ import { Search } from 'lucide-react'
 import './SettingsWindow.css'
 
 const SECTIONS = [
-  { id: 'general', label: 'General' },
-  { id: 'appearance', label: 'Appearance' },
-  { id: 'notifications', label: 'Notifications' },
-  { id: 'privacy', label: 'Privacy & Security' },
-  { id: 'desktop', label: 'Desktop & Dock' },
-  { id: 'displays', label: 'Displays' },
+  { id: 'general', label: 'General', content: 'General settings for your portfolio. Configure default behaviors and preferences.' },
+  { id: 'appearance', label: 'Appearance', content: 'Customize the look and feel. Theme, accent colors, and display options.' },
+  { id: 'notifications', label: 'Notifications', content: 'Manage notification preferences. Choose what alerts you receive.' },
+  { id: 'privacy', label: 'Privacy & Security', content: 'Privacy and security settings. Control data and access.' },
+  { id: 'desktop', label: 'Desktop & Dock', content: 'Desktop background, icon size, and dock behavior.' },
+  { id: 'displays', label: 'Displays', content: 'Display resolution, brightness, and multiple monitor settings.' },
 ]
 
 export default function SettingsWindow() {
   const [activeSection, setActiveSection] = useState('general')
+
+  const section = SECTIONS.find((s) => s.id === activeSection)
 
   return (
     <div className="settings-window">
@@ -43,11 +45,9 @@ export default function SettingsWindow() {
           </nav>
         </aside>
         <main className="settings-window__main">
-          <h2 className="settings-window__section-title">
-            {SECTIONS.find((s) => s.id === activeSection)?.label}
-          </h2>
+          <h2 className="settings-window__section-title">{section?.label}</h2>
           <div className="settings-window__section-content">
-            <p>Configure your preferences for this section.</p>
+            <p>{section?.content}</p>
             <div className="settings-window__option">
               <span className="settings-window__option-label">Option 1</span>
               <div className="settings-window__option-control" />

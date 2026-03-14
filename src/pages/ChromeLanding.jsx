@@ -327,6 +327,12 @@ export default function ChromeLanding() {
         onNightModeToggle={() => setNightMode((m) => !m)}
         isCapturing={isCapturing}
         onScreenshot={takeScreenshot}
+        onNewTab={openNewHomeTab}
+        onCloseTab={() => closeTab(activeTabId)}
+        onReload={() => window.location.reload()}
+        onGoHome={goHome}
+        onMinimize={setMinimized}
+        onZoom={toggleMaximize}
       />
       <Dock
         onOpenApp={openAppTab}
