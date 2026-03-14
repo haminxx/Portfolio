@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { ExternalLink } from 'lucide-react'
 import './DoomWindow.css'
 
-const DOOM_BUNDLE_URL = 'https://cdn.dos.zone/custom/dos/doom.jsdos'
+// Use proxy in dev (avoids CORS); in production use self-hosted /doom.jsdos (add to public/)
+const DOOM_BUNDLE_URL = import.meta.env.DEV
+  ? '/api/dos-proxy/custom/dos/doom.jsdos'
+  : '/doom.jsdos'
 const DOOM_FALLBACK_URL = 'https://dos.zone/doom-dec-1993'
 
 export default function DoomWindow() {
@@ -22,7 +25,12 @@ export default function DoomWindow() {
       window.Dos(el, {
         withNetworkingApi: false,
         withExperimentalApi: false,
-      }).run(DOOM_BUNDLE_URL)
+      })
+        .run(DOOM_BUNDLE_URL)
+        .catch((err) => {
+          console.error('Doom init error:', err)
+          setError(true)
+        })
     } catch (err) {
       console.error('Doom init error:', err)
       setError(true)

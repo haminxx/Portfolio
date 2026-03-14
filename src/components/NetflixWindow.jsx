@@ -21,8 +21,6 @@ export default function NetflixWindow() {
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
-    video.muted = true
-    setIsMuted(true)
     video.play().catch(() => {})
   }, [])
 
@@ -51,10 +49,9 @@ export default function NetflixWindow() {
         <video
           ref={videoRef}
           className="netflix-window__video"
-          src="/videos/walter-mitty-trailer.mp4"
+          src="/videos/timeline-trailer.mp4"
           autoPlay
           loop
-          muted
           playsInline
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}

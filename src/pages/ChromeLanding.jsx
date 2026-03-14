@@ -169,10 +169,10 @@ export default function ChromeLanding() {
           w.id === existing.id ? { ...w, isMinimizing: true } : w
         )
       }
-      const winWidth = 880
-      const winHeight = 660
       const vw = typeof window !== 'undefined' ? window.innerWidth : 1200
       const vh = typeof window !== 'undefined' ? window.innerHeight : 800
+      const winWidth = Math.min(880, Math.max(400, vw * 0.85))
+      const winHeight = Math.min(660, Math.max(400, vh * 0.8))
       const x = Math.max(0, (vw - winWidth) / 2 + prev.length * 24)
       const y = Math.max(0, (vh - winHeight) / 2 + prev.length * 24 - 36)
       const id = `app-${appKey}-${Date.now()}`
@@ -180,7 +180,7 @@ export default function ChromeLanding() {
         id,
         appKey,
         position: { x, y },
-        size: { width: 640, height: 480 },
+        size: { width: winWidth, height: winHeight },
         isMaximized: false,
         isMinimized: false,
         isOpening: true,

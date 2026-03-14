@@ -104,12 +104,18 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .app-window--opening {
+  transform-origin: center bottom;
   transition: left 0.55s cubic-bezier(0.33, 1, 0.68, 1),
     top 0.55s cubic-bezier(0.33, 1, 0.68, 1),
-    transform 0.55s cubic-bezier(0.33, 1, 0.68, 1);
+    transform 0.55s cubic-bezier(0.33, 1, 0.68, 1),
+    opacity 0.55s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
 .app-window--closing,

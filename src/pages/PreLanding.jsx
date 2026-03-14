@@ -1,32 +1,44 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { Globe, ChevronRight } from 'lucide-react'
+import { useLanguage, LANGUAGES } from '../context/LanguageContext'
 import './PreLanding.css'
 
-const PHASES = ['hello', 'welcome', 'swipePrompt', 'transitioning']
+const PHASES = ['language', 'hello', 'welcome', 'swipePrompt', 'transitioning']
 
 export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
   const [phaseIndex, setPhaseIndex] = useState(0)
   const [showMobileButton, setShowMobileButton] = useState(false)
   const touchStartY = useRef(0)
+  const { language, setLanguage, languages } = useLanguage()
 
   const phase = PHASES[phaseIndex]
+
+  const handleLanguageSelect = useCallback((id) => {
+    setLanguage(id)
+  }, [setLanguage])
+
+  const handleLanguageContinue = useCallback(() => {
+    if (phase !== 'language') return
+    setPhaseIndex(1)
+  }, [phase])
 
   // Hello animation: 2.5s, then welcome
   useEffect(() => {
     if (phase !== 'hello') return
-    const t = setTimeout(() => setPhaseIndex(1), 2500)
+    const t = setTimeout(() => setPhaseIndex(2), 2500)
     return () => clearTimeout(t)
   }, [phase])
 
   // Welcome: show after 0.5s, then swipe prompt after 1.5s
   useEffect(() => {
     if (phase !== 'welcome') return
-    const t1 = setTimeout(() => setPhaseIndex(2), 2000)
+    const t1 = setTimeout(() => setPhaseIndex(3), 2000)
     return () => clearTimeout(t1)
   }, [phase])
 
   const handleSwipeUp = useCallback(() => {
     if (phase !== 'swipePrompt') return
-    setPhaseIndex(3)
+    setPhaseIndex(4)
   }, [phase])
 
   const handleTouchStart = useCallback((e) => {
@@ -46,7 +58,7 @@ export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
   }, [phase, handleSwipeUp])
 
   useEffect(() => {
-    if (phaseIndex !== 3) return
+    if (phaseIndex !== 4) return
     const t = setTimeout(() => onEnterDesktop?.(), 1200)
     return () => clearTimeout(t)
   }, [phaseIndex, onEnterDesktop])
@@ -58,7 +70,9 @@ export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
         if (phase === 'swipePrompt') {
           handleSwipeUp()
         } else if (phase === 'hello' || phase === 'welcome') {
-          setPhaseIndex(2)
+          setPhaseIndex(3)
+        } else if (phase === 'language') {
+          setPhaseIndex(1)
         } else if (phase !== 'transitioning') {
           onEnterDesktop?.()
         }
@@ -87,6 +101,34 @@ export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
       onWheel={handleWheel}
     >
       <div className="pre-landing__bg" />
+      {phase === 'language' && (
+        <div className="pre-landing__language-modal">
+          <div className="pre-landing__language-icon">
+            <Globe size={48} strokeWidth={1.5} />
+          </div>
+          <h2 className="pre-landing__language-title">Language</h2>
+          <div className="pre-landing__language-list">
+            {languages.map((lang) => (
+              <button
+                key={lang.id}
+                type="button"
+                className={`pre-landing__language-item ${language === lang.id ? 'pre-landing__language-item--selected' : ''}`}
+                onClick={() => handleLanguageSelect(lang.id)}
+              >
+                {lang.label}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="pre-landing__language-continue"
+            onClick={handleLanguageContinue}
+            aria-label="Continue"
+          >
+            <ChevronRight size={24} strokeWidth={2} />
+          </button>
+        </div>
+      )}
       <div className="pre-landing__content">
         {phase === 'hello' && (
           <div className="pre-landing__hello-wrap">

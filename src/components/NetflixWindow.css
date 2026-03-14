@@ -138,6 +138,10 @@
   z-index: 1;
 }
 
+.netflix-window__row:first-child {
+  margin-top: 32px;
+}
+
 .netflix-window__row {
   margin-bottom: 32px;
 }

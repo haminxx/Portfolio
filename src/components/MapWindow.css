@@ -134,6 +134,44 @@
   overflow-y: auto;
 }
 
+.map-window__folder {
+  margin-bottom: 4px;
+}
+
+.map-window__folder-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  color: #1d1d1f;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.15s ease;
+}
+
+.map-window__folder-header:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.map-window__folder-label {
+  flex: 1;
+}
+
+.map-window__folder-items {
+  padding-left: 8px;
+}
+
+.map-window__folder-empty {
+  padding: 12px 20px;
+  font-size: 13px;
+  color: #8e8e93;
+}
+
 .map-window__sidebar-title {
   font-size: 11px;
   font-weight: 600;

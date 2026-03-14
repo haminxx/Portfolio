@@ -1,7 +1,7 @@
 .doom-window {
   width: 100%;
   height: 100%;
-  min-height: 400px;
+  min-height: 0;
   background: #000;
   position: relative;
   display: flex;
@@ -13,11 +13,13 @@
   flex: 1;
   min-height: 0;
   width: 100%;
+  height: 100%;
 }
 
 .doom-window__container canvas {
   width: 100% !important;
   height: 100% !important;
+  object-fit: contain;
 }
 
 .doom-window--fallback {

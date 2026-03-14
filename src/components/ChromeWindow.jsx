@@ -144,13 +144,14 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
     ? undefined
     : showOpening
       ? {
-          left: (typeof window !== 'undefined' ? window.innerWidth : 1200) / 2 - winWidth / 2,
-          top: typeof window !== 'undefined' ? window.innerHeight : 800,
+          left: position.x,
+          top: position.y,
           width: winWidth,
           height: winHeight,
-          transform: 'translateY(-20px) scale(0.92)',
+          transform: 'scale(0.05) translateY(40vh)',
+          opacity: 0,
         }
-      : { left: position.x, top: position.y, width: size.width, height: size.height, transform: 'none' }
+      : { left: position.x, top: position.y, width: size.width, height: size.height, transform: 'none', opacity: 1 }
 
   return (
     <div

@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
-import { Home, GraduationCap, MapPin, Globe, Search } from 'lucide-react'
+import { Home, GraduationCap, MapPin, Globe, Search, ChevronDown, ChevronRight, Coffee, Utensils } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import './MapWindow.css'
 
-const LOCATIONS = {
+const SAVED_LOCATIONS = {
   home: {
     name: 'Home',
     address: 'Aliso Viejo, CA',
@@ -35,6 +35,18 @@ const LOCATIONS = {
     icon: Globe,
   },
 }
+
+// Placeholder - add locations later
+const CAFE_LOCATIONS = {}
+const FOOD_LOCATIONS = {}
+
+const FOLDERS = [
+  { id: 'savedLocations', label: 'Saved Locations', icon: MapPin, locations: SAVED_LOCATIONS },
+  { id: 'cafe', label: 'Cafe', icon: Coffee, locations: CAFE_LOCATIONS },
+  { id: 'food', label: 'Food', icon: Utensils, locations: FOOD_LOCATIONS },
+]
+
+const ALL_LOCATIONS = { ...SAVED_LOCATIONS, ...CAFE_LOCATIONS, ...FOOD_LOCATIONS }
 
 function MapFlyTo({ coords, zoom }) {
   const map = useMap()
@@ -77,6 +89,7 @@ async function geocode(query, limit = 1) {
 
 export default function MapWindow() {
   const [activeLocation, setActiveLocation] = useState(null)
+  const [expandedFolders, setExpandedFolders] = useState(new Set(['savedLocations']))
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResult, setSearchResult] = useState(null)
   const [searchCoords, setSearchCoords] = useState(null)
@@ -87,8 +100,17 @@ export default function MapWindow() {
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
   const suggestionsDebounceRef = useRef(null)
 
-  const flyToCoords = searchCoords ?? (activeLocation ? LOCATIONS[activeLocation]?.coords : null)
-  const flyToZoom = searchCoords ? 14 : (activeLocation ? LOCATIONS[activeLocation]?.zoom : null)
+  const flyToCoords = searchCoords ?? (activeLocation ? ALL_LOCATIONS[activeLocation]?.coords : null)
+  const flyToZoom = searchCoords ? 14 : (activeLocation ? ALL_LOCATIONS[activeLocation]?.zoom : null)
+
+  const toggleFolder = useCallback((id) => {
+    setExpandedFolders((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
 
   const goToLocation = useCallback((key) => {
     setActiveLocation(key)
@@ -164,6 +186,14 @@ export default function MapWindow() {
     })
   }, [])
 
+  const markersToShow = []
+  if (activeLocation && !searchCoords && ALL_LOCATIONS[activeLocation]) {
+    markersToShow.push({ key: activeLocation, ...ALL_LOCATIONS[activeLocation] })
+  }
+  if (searchCoords) {
+    markersToShow.push({ key: 'search', coords: searchCoords, address: searchResult?.address ?? 'Searched location' })
+  }
+
   return (
     <div className="map-window">
       <div className="map-window__search">
@@ -212,22 +242,51 @@ export default function MapWindow() {
       </div>
       <div className="map-window__layout">
         <aside className="map-window__sidebar">
-          <h3 className="map-window__sidebar-title">Saved Location</h3>
-          {Object.entries(LOCATIONS).map(([key, loc]) => {
-            const Icon = loc.icon ?? MapPin
+          {FOLDERS.map((folder) => {
+            const Icon = folder.icon
+            const entries = Object.entries(folder.locations)
+            const isExpanded = expandedFolders.has(folder.id)
             return (
-              <button
-                key={key}
-                type="button"
-                className={`map-window__saved-item ${activeLocation === key && !searchCoords ? 'map-window__saved-item--active' : ''}`}
-                onClick={() => goToLocation(key)}
-              >
-                <Icon size={20} strokeWidth={1.5} />
-                <div className="map-window__saved-item-text">
-                  <span className="map-window__saved-item-name">{loc.name}</span>
-                  <span className="map-window__saved-item-address">{loc.address}</span>
-                </div>
-              </button>
+              <div key={folder.id} className="map-window__folder">
+                <button
+                  type="button"
+                  className="map-window__folder-header"
+                  onClick={() => toggleFolder(folder.id)}
+                >
+                  {isExpanded ? (
+                    <ChevronDown size={18} strokeWidth={1.5} />
+                  ) : (
+                    <ChevronRight size={18} strokeWidth={1.5} />
+                  )}
+                  <Icon size={18} strokeWidth={1.5} />
+                  <span className="map-window__folder-label">{folder.label}</span>
+                </button>
+                {isExpanded && (
+                  <div className="map-window__folder-items">
+                    {entries.length > 0 ? (
+                      entries.map(([key, loc]) => {
+                        const LocIcon = loc.icon ?? MapPin
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            className={`map-window__saved-item ${activeLocation === key && !searchCoords ? 'map-window__saved-item--active' : ''}`}
+                            onClick={() => goToLocation(key)}
+                          >
+                            <LocIcon size={20} strokeWidth={1.5} />
+                            <div className="map-window__saved-item-text">
+                              <span className="map-window__saved-item-name">{loc.name}</span>
+                              <span className="map-window__saved-item-address">{loc.address}</span>
+                            </div>
+                          </button>
+                        )
+                      })
+                    ) : (
+                      <div className="map-window__folder-empty">No locations yet</div>
+                    )}
+                  </div>
+                )}
+              </div>
             )
           })}
           {recentSearches.length > 0 && (
@@ -265,16 +324,11 @@ export default function MapWindow() {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            {activeLocation && !searchCoords && (
-              <Marker position={LOCATIONS[activeLocation].coords} icon={homeIcon}>
-                <Popup>{LOCATIONS[activeLocation].address}</Popup>
+            {markersToShow.map((m) => (
+              <Marker key={m.key} position={m.coords} icon={homeIcon}>
+                <Popup>{m.address}</Popup>
               </Marker>
-            )}
-            {searchCoords && (
-              <Marker position={searchCoords} icon={homeIcon}>
-                <Popup>{searchResult?.address ?? 'Searched location'}</Popup>
-              </Marker>
-            )}
+            ))}
           </MapContainer>
         </div>
       </div>

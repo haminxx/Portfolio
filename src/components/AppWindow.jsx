@@ -151,7 +151,7 @@ export default function AppWindow({
   const openingCompleteRef = useRef(false)
   const handleOpeningTransitionEnd = (e) => {
     if (!isOpening || openingCompleteRef.current) return
-    if (e.propertyName === 'transform' || e.propertyName === 'top' || e.propertyName === 'left') {
+    if (e.propertyName === 'transform' || e.propertyName === 'opacity' || e.propertyName === 'top' || e.propertyName === 'left') {
       openingCompleteRef.current = true
       onOpeningComplete?.()
     }
@@ -162,11 +162,12 @@ export default function AppWindow({
     ? undefined
     : showOpening
       ? {
-          left: 'calc(50vw - 320px)',
-          top: '100vh',
-          width: 640,
-          height: 480,
-          transform: 'translateY(-20px) scale(0.92)',
+          left: position.x,
+          top: position.y,
+          width: size.width,
+          height: size.height,
+          transform: 'scale(0.05) translateY(40vh)',
+          opacity: 0,
         }
       : {
           left: position.x,
@@ -174,6 +175,7 @@ export default function AppWindow({
           width: size.width,
           height: size.height,
           transform: 'scale(1)',
+          opacity: 1,
         }
 
   return (

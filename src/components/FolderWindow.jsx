@@ -23,7 +23,7 @@ export default function FolderWindow({
     if (typeof window === 'undefined') return { x: 0, y: 0 }
     const w = Math.min(700, window.innerWidth * 0.9)
     const h = Math.min(450, window.innerHeight * 0.7)
-    return { x: (window.innerWidth - w) / 2, y: (window.innerHeight - h) / 2 }
+    return { x: (window.innerWidth - w) / 2, y: Math.max(0, (window.innerHeight - h) / 2) }
   })
   const [isDragging, setIsDragging] = useState(false)
   const [isOpening, setIsOpening] = useState(true)
@@ -41,7 +41,7 @@ export default function FolderWindow({
 
   const handleOpeningTransitionEnd = useCallback((e) => {
     if (!isOpening || openingPhase !== 'final') return
-    if (e.propertyName === 'transform' || e.propertyName === 'top' || e.propertyName === 'left') {
+    if (e.propertyName === 'transform' || e.propertyName === 'opacity' || e.propertyName === 'top' || e.propertyName === 'left') {
       setIsOpening(false)
     }
   }, [isOpening, openingPhase])
@@ -99,14 +99,15 @@ export default function FolderWindow({
   const folderStyle = showOpening
     ? {
         left: finalX,
-        top: typeof window !== 'undefined' ? window.innerHeight : 800,
+        top: finalY,
         width: winWidth,
         height: winHeight,
-        transform: 'translateY(-20px) scale(0.92)',
+        transform: 'scale(0.05) translateY(40vh)',
+        opacity: 0,
       }
     : isClosing
       ? { left: position.x, top: position.y, width: winWidth, height: winHeight }
-      : { left: position.x, top: position.y, width: winWidth, height: winHeight }
+      : { left: position.x, top: position.y, width: winWidth, height: winHeight, opacity: 1 }
 
   const children = desktopItems.filter((i) => i.parentId === folderId)
   const subfolders = desktopItems.filter((i) => i.type === 'folder')
