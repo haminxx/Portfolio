@@ -7,7 +7,7 @@ import ChromeContextMenu from '../components/ChromeContextMenu'
 import Desktop from '../components/Desktop'
 import GitHubProfileCard from '../components/GitHubProfileCard'
 import LinkedInProfileCard from '../components/LinkedInProfileCard'
-import InstagramProfileCard from '../components/InstagramProfileCard'
+import InstagramWindow from '../components/InstagramWindow'
 import AboutPage from '../components/AboutPage'
 import ProjectPage from '../components/ProjectPage'
 import ContactPage from '../components/ContactPage'
@@ -162,7 +162,7 @@ export default function ChromeLanding() {
         setFocusedAppWindowId(existing.id)
         if (existing.isMinimized) {
           return prev.map((w) =>
-            w.id === existing.id ? { ...w, isMinimized: false } : w
+            w.id === existing.id ? { ...w, isMinimized: false, isOpening: true } : w
           )
         }
         return prev.map((w) =>
@@ -364,11 +364,7 @@ export default function ChromeLanding() {
         } else if (win.appKey === 'youtubeMusic') {
           content = <YouTubeMusicWindow />
         } else if (win.appKey === 'instagram') {
-          content = (
-            <SocialProfileWindow profileUrl={profileUrl}>
-              <InstagramProfileCard profileUrl={profileUrl} />
-            </SocialProfileWindow>
-          )
+          content = <InstagramWindow />
         } else if (win.appKey === 'github') {
           content = (
             <SocialProfileWindow profileUrl={profileUrl}>

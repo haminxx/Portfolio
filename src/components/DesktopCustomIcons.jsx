@@ -145,37 +145,21 @@ export default function DesktopCustomIcons({
           )
         }
       } else {
-        const now = Date.now()
-        const last = lastClickRef.current
-        if (last.id === item.id && now - last.time < 400) {
-          if (item.type === 'folder') onOpenFolder?.(item.id)
-          else if (item.type === 'shortcut' && item.appKey) onOpenApp?.(item.appKey)
-          lastClickRef.current = { id: null, time: 0 }
-        } else {
-          lastClickRef.current = { id: item.id, time: now }
-        }
+        lastClickRef.current = { id: item.id, time: Date.now() }
       }
     },
-    [draggingId, handleMouseMove, onItemsChange, onOpenFolder, onOpenApp]
+    [draggingId, onItemsChange]
   )
 
   const handleDocMouseUp = useCallback(
     (e) => {
       if (pendingDragId && !draggingId) {
         const { item } = dragStartRef.current
-        const now = Date.now()
-        const last = lastClickRef.current
-        if (last.id === item.id && now - last.time < 400) {
-          if (item.type === 'folder') onOpenFolder?.(item.id)
-          else if (item.type === 'shortcut' && item.appKey) onOpenApp?.(item.appKey)
-          lastClickRef.current = { id: null, time: 0 }
-        } else {
-          lastClickRef.current = { id: item.id, time: now }
-        }
+        lastClickRef.current = { id: item.id, time: Date.now() }
         setPendingDragId(null)
       }
     },
-    [pendingDragId, draggingId, onOpenFolder, onOpenApp]
+    [pendingDragId, draggingId]
   )
 
   useEffect(() => {

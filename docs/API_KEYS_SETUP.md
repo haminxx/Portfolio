@@ -4,7 +4,6 @@ This guide explains how to set up third-party API keys for your portfolio websit
 
 **Official documentation:**
 - [GitHub REST API – Users](https://docs.github.com/en/rest/users/users)
-- [Instagram Platform](https://developers.facebook.com/docs/instagram-platform)
 - [Verified on LinkedIn](https://learn.microsoft.com/en-us/linkedin/consumer/integrations/verified-on-linkedin/overview)
 
 ---
@@ -24,7 +23,6 @@ Your backend runs on [Render](https://render.com). For production, add all secre
 |----------|---------|----------|-------|
 | `GITHUB_TOKEN` | GitHub | Optional | Higher rate limit (5,000/hr vs 60/hr) |
 | `GITHUB_USER` | GitHub | Optional | Default: haminxx |
-| `INSTAGRAM_ACCESS_TOKEN` | Instagram | If using API | Long-lived token (60 days) |
 | `LINKEDIN_CLIENT_ID` | LinkedIn | If using Verified API | OAuth |
 | `LINKEDIN_CLIENT_SECRET` | LinkedIn | If using Verified API | OAuth |
 | `YOUTUBE_API_KEY` | YouTube Data API v3 | Optional | For search + Rebel album playback |
@@ -75,27 +73,7 @@ Your backend runs on [Render](https://render.com). For production, add all secre
 
 ---
 
-## 3. Instagram
-
-**What it could do:** Show your recent posts, follower count, profile info.
-
-**Docs:** [Instagram Platform](https://developers.facebook.com/docs/instagram-platform)
-
-**Requirements:** Instagram **Business** or **Creator** account linked to a Facebook Page. Personal accounts are not supported.
-
-**How to get it:**
-1. Create a [Meta for Developers](https://developers.facebook.com/) account
-2. Create an app → add **Instagram Graph API** (or **Instagram API with Facebook Login**)
-3. Connect your Instagram Business/Creator account to a Facebook Page
-4. Get a **Long-Lived Access Token** (60 days, renewable)
-
-**Variable:** `INSTAGRAM_ACCESS_TOKEN`
-
-**Note:** If you only have a personal account, keep the current static card/embed.
-
----
-
-## 4. LinkedIn
+## 3. LinkedIn
 
 **What it could do:** Display profile or verification badges.
 
@@ -115,7 +93,6 @@ Your backend runs on [Render](https://render.com). For production, add all secre
 |---------|-------------|---------------|------------|
 | **GitHub** | `GITHUB_TOKEN` | `server/.env`, Render | Easy |
 | **YouTube Music** | `YOUTUBE_API_KEY` | Render (optional) | Easy |
-| **Instagram** | `INSTAGRAM_ACCESS_TOKEN` | Render | Hard (Business/Creator account) |
 | **LinkedIn** | `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET` | Render (if Verified API) | Medium |
 
 ---
