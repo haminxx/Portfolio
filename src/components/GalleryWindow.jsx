@@ -1,6 +1,8 @@
 import { Search, Grid3X3, LayoutGrid } from 'lucide-react'
 import './GalleryWindow.css'
 
+const GALLERY_IMAGES = Array.from({ length: 24 }, (_, i) => `/gallery/photo-${i + 1}.png`)
+
 export default function GalleryWindow() {
   return (
     <div className="gallery-window">
@@ -46,8 +48,10 @@ export default function GalleryWindow() {
           </div>
         </header>
         <div className="gallery-window__grid">
-          {Array.from({ length: 24 }, (_, i) => (
-            <div key={i} className="gallery-window__cell" />
+          {GALLERY_IMAGES.map((src, i) => (
+            <div key={i} className="gallery-window__cell">
+              <img src={src} alt="" className="gallery-window__cell-img" />
+            </div>
           ))}
         </div>
       </main>

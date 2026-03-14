@@ -169,8 +169,8 @@ export default function ChromeLanding() {
           w.id === existing.id ? { ...w, isMinimizing: true } : w
         )
       }
-      const winWidth = 640
-      const winHeight = 480
+      const winWidth = 880
+      const winHeight = 660
       const vw = typeof window !== 'undefined' ? window.innerWidth : 1200
       const vh = typeof window !== 'undefined' ? window.innerHeight : 800
       const x = Math.max(0, (vw - winWidth) / 2 + prev.length * 24)
@@ -331,6 +331,8 @@ export default function ChromeLanding() {
       <Dock
         onOpenApp={openAppTab}
         isChromeMaximized={chromeMaximized}
+        anyMaximized={chromeMaximized || openAppWindows.some((w) => w.isMaximized)}
+        openAppWindows={openAppWindows}
       />
       {openFolderId && (
         <FolderWindow
@@ -401,7 +403,7 @@ export default function ChromeLanding() {
             position={win.position}
             isOpening={win.isOpening}
             onOpeningComplete={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isOpening: false } : w)))}
-            size={win.size ?? { width: 640, height: 480 }}
+            size={win.size ?? { width: 880, height: 660 }}
             onPositionChange={(pos) => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, position: pos } : w)))}
             onSizeChange={(size) => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, size } : w)))}
             onClose={() => setOpenAppWindows((prev) => prev.filter((w) => w.id !== win.id))}

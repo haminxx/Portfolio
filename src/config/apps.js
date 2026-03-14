@@ -50,7 +50,8 @@ export const APPS = {
     label: 'Doom',
     domain: 'doom.local',
     icon: 'doom',
-    url: 'https://dos.zone/player/doom/',
+    iconPath: '/dock-icons/doom.png',
+    url: 'https://dos.zone/doom-dec-1993',
   },
 }
 

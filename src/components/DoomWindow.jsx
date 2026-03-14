@@ -1,6 +1,6 @@
 import './DoomWindow.css'
 
-const DOOM_PLAY_URL = 'https://dos.zone/player/doom/'
+const DOOM_PLAY_URL = 'https://dos.zone/doom-dec-1993'
 
 export default function DoomWindow() {
   return (

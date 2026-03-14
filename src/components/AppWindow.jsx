@@ -9,7 +9,7 @@ export default function AppWindow({
   title,
   icon,
   position,
-  size = { width: 640, height: 480 },
+  size = { width: 880, height: 660 },
   isOpening,
   onOpeningComplete,
   onPositionChange,

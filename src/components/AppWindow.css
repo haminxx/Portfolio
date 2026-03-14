@@ -18,10 +18,10 @@
 }
 
 .app-window--maximized {
-  top: 0;
+  top: 32px;
   left: 0;
   width: 100vw;
-  height: 100vh;
+  height: calc(100vh - 32px - 72px);
   min-width: 0;
   min-height: 0;
   border-radius: 0;

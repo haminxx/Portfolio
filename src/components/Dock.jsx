@@ -19,16 +19,20 @@ const APP_ICONS = {
   settings: Settings,
   map: Map,
   youtubeMusic: Film,
+  doom: Film,
 }
 
-export default function Dock({ onOpenApp, isChromeMaximized }) {
+export default function Dock({ onOpenApp, isChromeMaximized, anyMaximized, openAppWindows = [] }) {
+  const doomOpen = openAppWindows.some((w) => w.appKey === 'doom')
+  const dockApps = Object.entries(APPS).filter(([key]) => key !== 'doom' || doomOpen)
+  const isHidden = anyMaximized ?? isChromeMaximized
+
   return (
-    <footer className={`dock ${isChromeMaximized ? 'dock--fullscreen-hidden' : ''}`}>
+    <div className={`dock-wrapper ${isHidden ? 'dock-wrapper--fullscreen-hidden' : ''}`}>
+      <footer className="dock">
       <div className="dock__inner">
-        {Object.entries(APPS)
-          .filter(([key]) => key !== 'doom')
-          .map(([key, app]) => {
-          const Icon = APP_ICONS[key]
+        {dockApps.map(([key, app]) => {
+          const Icon = APP_ICONS[key] ?? Film
           return (
             <button
               key={key}
@@ -51,5 +55,6 @@ export default function Dock({ onOpenApp, isChromeMaximized }) {
         })}
       </div>
     </footer>
+    </div>
   )
 }
