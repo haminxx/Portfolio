@@ -101,10 +101,10 @@ function MapControls({ mapStyle, onMapStyleChange }) {
       </div>
       <div className="map-window__zoom-buttons">
         <button type="button" className="map-window__zoom-btn" onClick={() => map.zoomIn()} aria-label="Zoom in">
-          <ZoomIn size={18} strokeWidth={1.5} />
+          <ZoomIn size={16} strokeWidth={1.5} />
         </button>
         <button type="button" className="map-window__zoom-btn" onClick={() => map.zoomOut()} aria-label="Zoom out">
-          <ZoomOut size={18} strokeWidth={1.5} />
+          <ZoomOut size={16} strokeWidth={1.5} />
         </button>
       </div>
     </div>

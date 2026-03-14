@@ -83,12 +83,12 @@
 .map-window__zoom-buttons {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-radius: 12px;
-  padding: 6px;
+  border-radius: 8px;
+  padding: 4px;
   border: 1px solid rgba(255, 255, 255, 0.6);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
@@ -97,11 +97,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   border: none;
   background: transparent;
-  border-radius: 8px;
+  border-radius: 6px;
   color: #1d1d1f;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
