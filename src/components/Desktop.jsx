@@ -38,6 +38,7 @@ export default function Desktop({
   onClearStartRenameId,
 }) {
   const [contextMenu, setContextMenu] = useState(null)
+  const [selectedId, setSelectedId] = useState(null)
   const desktopRef = useRef(null)
   const iconsRef = useRef(null)
 
@@ -45,6 +46,7 @@ export default function Desktop({
     if (e.button !== 0) return
     if (e.target.closest('.desktop-custom-icons__item')) return
     setContextMenu(null)
+    setSelectedId(null)
   }, [])
 
   const handleContextMenu = useCallback((e) => {
@@ -69,6 +71,8 @@ export default function Desktop({
       <div ref={iconsRef} className="desktop__icons-wrap">
         <DesktopCustomIcons
           desktopItems={desktopItems}
+          selectedId={selectedId}
+          onSelectIcon={setSelectedId}
           onItemsChange={onItemsChange}
           onOpenFolder={onOpenFolder}
           onOpenApp={onOpenApp}

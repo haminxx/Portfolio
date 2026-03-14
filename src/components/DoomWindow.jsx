@@ -21,7 +21,7 @@ export default function DoomWindow() {
     }
     try {
       if (window.emulators) {
-        window.emulators.pathPrefix = 'https://cdn.jsdelivr.net/npm/js-dos@7.4.7/dist/'
+        window.emulators.pathPrefix = '/js-dos/'
       }
       setError(false)
       window.Dos(el, {

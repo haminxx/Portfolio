@@ -3,12 +3,13 @@ import { Folder, FileText, Gamepad2 } from 'lucide-react'
 import './DesktopCustomIcons.css'
 
 const DRAG_THRESHOLD = 8
-const GRID_SIZE = 40
 const ICON_WIDTH = 80
 const ICON_HEIGHT = 96
 
 export default function DesktopCustomIcons({
   desktopItems = [],
+  selectedId,
+  onSelectIcon,
   onItemsChange,
   onOpenFolder,
   onOpenApp,
@@ -93,13 +94,14 @@ export default function DesktopCustomIcons({
       const dx = e.clientX - x
       const dy = e.clientY - y
       const distance = Math.sqrt(dx * dx + dy * dy)
+      const isDragging = draggingId === item.id || (pendingDragId === item.id && distance >= DRAG_THRESHOLD)
       if (pendingDragId && distance >= DRAG_THRESHOLD) {
         setPendingDragId(null)
         setDraggingId(item.id)
       }
-      if (draggingId) {
+      if (isDragging) {
         if (element) {
-          element.style.transform = `translate(${dx}px, ${dy}px)`
+          element.style.transform = `translate(${dx}px, ${dy}px) scale(1.05)`
         }
         const el = document.elementFromPoint(e.clientX, e.clientY)
         const folderEl = el?.closest('[data-folder-id]')
@@ -149,10 +151,8 @@ export default function DesktopCustomIcons({
           const vh = window.innerHeight
           const rawX = (item.x ?? 24) + dx
           const rawY = (item.y ?? 24) + dy
-          const snappedX = Math.round(rawX / GRID_SIZE) * GRID_SIZE
-          const snappedY = Math.round(rawY / GRID_SIZE) * GRID_SIZE
-          const newX = Math.max(0, Math.min(vw - ICON_WIDTH, snappedX))
-          const newY = Math.max(0, Math.min(vh - ICON_HEIGHT, snappedY))
+          const newX = Math.max(0, Math.min(vw - ICON_WIDTH, rawX))
+          const newY = Math.max(0, Math.min(vh - ICON_HEIGHT, rawY))
           onItemsChange?.((prev) =>
             prev.map((i) =>
               i.id === item.id ? { ...i, x: newX, y: newY } : i
@@ -161,9 +161,10 @@ export default function DesktopCustomIcons({
         }
       } else {
         lastClickRef.current = { id: item.id, time: Date.now() }
+        onSelectIcon?.(item.id)
       }
     },
-    [draggingId, onItemsChange]
+    [draggingId, onItemsChange, onSelectIcon]
   )
 
   const handleDocMouseUp = useCallback(
@@ -171,10 +172,11 @@ export default function DesktopCustomIcons({
       if (pendingDragId && !draggingId) {
         const { item } = dragStartRef.current
         lastClickRef.current = { id: item.id, time: Date.now() }
+        onSelectIcon?.(item.id)
         setPendingDragId(null)
       }
     },
-    [pendingDragId, draggingId]
+    [pendingDragId, draggingId, onSelectIcon]
   )
 
   useEffect(() => {
@@ -202,7 +204,7 @@ export default function DesktopCustomIcons({
         return (
           <div
             key={item.id}
-            className={`desktop-custom-icons__item ${draggingId === item.id ? 'desktop-custom-icons__item--dragging' : ''} ${isDropTarget ? 'desktop-custom-icons__item--drop-target' : ''}`}
+            className={`desktop-custom-icons__item ${draggingId === item.id ? 'desktop-custom-icons__item--dragging' : ''} ${selectedId === item.id ? 'desktop-custom-icons__item--selected' : ''} ${isDropTarget ? 'desktop-custom-icons__item--drop-target' : ''}`}
             style={{ left: item.x ?? 24, top: item.y ?? 24 }}
             data-folder-id={isFolder ? item.id : undefined}
             onMouseDown={(e) => handleMouseDown(e, item)}
