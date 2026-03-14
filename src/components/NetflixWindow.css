@@ -155,7 +155,7 @@
 
 .netflix-window__cards {
   display: flex;
-  gap: 8px;
+  gap: clamp(6px, 1vw, 12px);
   overflow-x: auto;
   padding-bottom: 8px;
 }
@@ -176,7 +176,7 @@
 
 .netflix-window__card {
   flex-shrink: 0;
-  width: 160px;
+  width: clamp(100px, 12vw, 240px);
   aspect-ratio: 2/3;
   padding: 0;
   border: none;

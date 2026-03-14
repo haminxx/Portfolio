@@ -1,9 +1,19 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { X, Plus } from 'lucide-react'
+import { useLanguage } from '../context/LanguageContext'
+import { SHORTCUTS } from '../config/shortcuts'
 import './ChromeTabs.css'
 
 export default function ChromeTabs({ tabs, activeTabId, onSelectTab, onCloseTab, onNewTab, onReorderTabs }) {
+  const { t } = useLanguage()
   const [closingTabId, setClosingTabId] = useState(null)
+
+  const getTabTitle = useCallback((tab) => {
+    if (tab.type === 'home') return t('chrome.home')
+    const shortcut = SHORTCUTS.find((s) => s.type === tab.type)
+    if (shortcut) return t(`shortcuts.${tab.type}`)
+    return tab.title
+  }, [t])
   const [addedTabIds, setAddedTabIds] = useState(new Set())
   const [draggedTabId, setDraggedTabId] = useState(null)
   const [dragOverTabId, setDragOverTabId] = useState(null)
@@ -118,12 +128,12 @@ export default function ChromeTabs({ tabs, activeTabId, onSelectTab, onCloseTab,
           tabIndex={0}
           aria-selected={tab.id === activeTabId}
         >
-          <span className="chrome-tabs__title">{tab.title}</span>
+          <span className="chrome-tabs__title">{getTabTitle(tab)}</span>
           <button
             type="button"
             className="chrome-tabs__close"
             onClick={(e) => handleCloseTab(e, tab.id)}
-            aria-label={`Close ${tab.title}`}
+            aria-label={`Close ${getTabTitle(tab)}`}
           >
             <X size={12} strokeWidth={2.5} />
           </button>

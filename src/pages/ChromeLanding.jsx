@@ -25,6 +25,7 @@ import Dock from '../components/Dock'
 import AppWindow from '../components/AppWindow'
 import { APPS, getDomainForApp } from '../config/apps'
 import { SHORTCUTS } from '../config/shortcuts'
+import { useLanguage } from '../context/LanguageContext'
 import { Globe, Image, Film, Images, ShoppingBag, Settings, Map } from 'lucide-react'
 import './ChromeLanding.css'
 
@@ -115,6 +116,7 @@ export default function ChromeLanding() {
   const [showShutdown, setShowShutdown] = useState(false)
   const [nightMode, setNightMode] = useState(true)
   const { isCapturing, takeScreenshot } = useScreenshot()
+  const { t } = useLanguage()
 
   const setDesktopItems = useCallback((fnOrValue) => {
     setDesktopItemsState((prev) => {
@@ -400,7 +402,7 @@ export default function ChromeLanding() {
           <AppWindow
             key={win.id}
             id={win.id}
-            title={app.label}
+            title={t(`apps.${win.appKey}`)}
             icon={Icon ? <Icon size={16} strokeWidth={1.5} /> : null}
             position={win.position}
             isOpening={win.isOpening}

@@ -2,8 +2,10 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { Folder, FileText, Gamepad2 } from 'lucide-react'
 import './DesktopCustomIcons.css'
 
-const DRAG_THRESHOLD = 10
-const GRID_SIZE = 80
+const DRAG_THRESHOLD = 8
+const GRID_SIZE = 40
+const ICON_WIDTH = 80
+const ICON_HEIGHT = 96
 
 export default function DesktopCustomIcons({
   desktopItems = [],
@@ -110,7 +112,7 @@ export default function DesktopCustomIcons({
   const handleMouseUp = useCallback(
     (e) => {
       if (!draggingId) return
-      const { x, y, item } = dragStartRef.current
+      const { x, y, item, element } = dragStartRef.current
       const dx = e.clientX - x
       const dy = e.clientY - y
       const distance = Math.sqrt(dx * dx + dy * dy)
@@ -119,11 +121,17 @@ export default function DesktopCustomIcons({
       setDropTargetId(null)
 
       if (distance >= DRAG_THRESHOLD) {
-        const { element } = dragStartRef.current
         if (element) element.style.transform = ''
-        const el = document.elementFromPoint(e.clientX, e.clientY)
-        const folderEl = el?.closest('[data-folder-id]')
-        const targetFolderId = folderEl?.dataset.folderId
+        let targetFolderId = null
+        if (element) {
+          element.style.pointerEvents = 'none'
+          element.style.visibility = 'hidden'
+          const el = document.elementFromPoint(e.clientX, e.clientY)
+          const folderEl = el?.closest('[data-folder-id]')
+          targetFolderId = folderEl?.dataset.folderId
+          element.style.pointerEvents = ''
+          element.style.visibility = ''
+        }
         if (targetFolderId && item.type !== 'folder') {
           onItemsChange?.((prev) =>
             prev.map((i) =>
@@ -137,13 +145,17 @@ export default function DesktopCustomIcons({
             )
           )
         } else {
-          const rawX = (item.x ?? 0) + dx
-          const rawY = (item.y ?? 0) + dy
-          const newX = Math.round(rawX / GRID_SIZE) * GRID_SIZE
-          const newY = Math.round(rawY / GRID_SIZE) * GRID_SIZE
+          const vw = window.innerWidth
+          const vh = window.innerHeight
+          const rawX = (item.x ?? 24) + dx
+          const rawY = (item.y ?? 24) + dy
+          const snappedX = Math.round(rawX / GRID_SIZE) * GRID_SIZE
+          const snappedY = Math.round(rawY / GRID_SIZE) * GRID_SIZE
+          const newX = Math.max(0, Math.min(vw - ICON_WIDTH, snappedX))
+          const newY = Math.max(0, Math.min(vh - ICON_HEIGHT, snappedY))
           onItemsChange?.((prev) =>
             prev.map((i) =>
-              i.id === item.id ? { ...i, x: Math.max(0, newX), y: Math.max(0, newY) } : i
+              i.id === item.id ? { ...i, x: newX, y: newY } : i
             )
           )
         }

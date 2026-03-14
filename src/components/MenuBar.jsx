@@ -1,50 +1,51 @@
 import { useState, useRef, useEffect } from 'react'
 import SystemTray from './SystemTray'
+import { useLanguage } from '../context/LanguageContext'
 import './MenuBar.css'
 
 const MENUS = [
-  { id: 'file', label: 'File', items: [
-    { id: 'newTab', label: 'New Tab' },
-    { id: 'newWindow', label: 'New Window' },
-    { id: 'open', label: 'Open…' },
+  { id: 'file', labelKey: 'menuBar.file', items: [
+    { id: 'newTab', labelKey: 'menuBar.newTab' },
+    { id: 'newWindow', labelKey: 'menuBar.newWindow' },
+    { id: 'open', labelKey: 'menuBar.open' },
     { type: 'divider' },
-    { id: 'closeTab', label: 'Close Tab' },
-    { id: 'quit', label: 'Quit' },
+    { id: 'closeTab', labelKey: 'menuBar.closeTab' },
+    { id: 'quit', labelKey: 'menuBar.quit' },
   ]},
-  { id: 'edit', label: 'Edit', items: [
-    { id: 'undo', label: 'Undo' },
-    { id: 'redo', label: 'Redo' },
+  { id: 'edit', labelKey: 'menuBar.edit', items: [
+    { id: 'undo', labelKey: 'menuBar.undo' },
+    { id: 'redo', labelKey: 'menuBar.redo' },
     { type: 'divider' },
-    { id: 'cut', label: 'Cut' },
-    { id: 'copy', label: 'Copy' },
-    { id: 'paste', label: 'Paste' },
+    { id: 'cut', labelKey: 'menuBar.cut' },
+    { id: 'copy', labelKey: 'menuBar.copy' },
+    { id: 'paste', labelKey: 'menuBar.paste' },
   ]},
-  { id: 'view', label: 'View', items: [
-    { id: 'reload', label: 'Reload' },
-    { id: 'zoomIn', label: 'Zoom In' },
-    { id: 'zoomOut', label: 'Zoom Out' },
+  { id: 'view', labelKey: 'menuBar.view', items: [
+    { id: 'reload', labelKey: 'menuBar.reload' },
+    { id: 'zoomIn', labelKey: 'menuBar.zoomIn' },
+    { id: 'zoomOut', labelKey: 'menuBar.zoomOut' },
     { type: 'divider' },
-    { id: 'fullScreen', label: 'Enter Full Screen' },
+    { id: 'fullScreen', labelKey: 'menuBar.fullScreen' },
   ]},
-  { id: 'go', label: 'Go', items: [
-    { id: 'back', label: 'Back' },
-    { id: 'forward', label: 'Forward' },
-    { id: 'home', label: 'Home' },
+  { id: 'go', labelKey: 'menuBar.go', items: [
+    { id: 'back', labelKey: 'menuBar.back' },
+    { id: 'forward', labelKey: 'menuBar.forward' },
+    { id: 'home', labelKey: 'menuBar.home' },
   ]},
-  { id: 'window', label: 'Window', items: [
-    { id: 'minimize', label: 'Minimize' },
-    { id: 'zoom', label: 'Zoom' },
-    { id: 'bringAll', label: 'Bring All to Front' },
+  { id: 'window', labelKey: 'menuBar.window', items: [
+    { id: 'minimize', labelKey: 'menuBar.minimize' },
+    { id: 'zoom', labelKey: 'menuBar.zoom' },
+    { id: 'bringAll', labelKey: 'menuBar.bringAll' },
   ]},
-  { id: 'help', label: 'Help', items: [
-    { id: 'portfolioHelp', label: 'Portfolio Help' },
+  { id: 'help', labelKey: 'menuBar.help', items: [
+    { id: 'portfolioHelp', labelKey: 'menuBar.portfolioHelp' },
   ]},
 ]
 
 const CNL_ITEMS = [
-  { id: 'sleep', label: 'Sleep' },
-  { id: 'restart', label: 'Restart…' },
-  { id: 'turnOff', label: 'Turn Off…' },
+  { id: 'sleep', labelKey: 'menuBar.sleep' },
+  { id: 'restart', labelKey: 'menuBar.restart' },
+  { id: 'turnOff', labelKey: 'menuBar.turnOff' },
 ]
 
 export default function MenuBar({
@@ -62,6 +63,7 @@ export default function MenuBar({
   onMinimize,
   onZoom,
 }) {
+  const { t } = useLanguage()
   const [openMenu, setOpenMenu] = useState(null)
   const [openCnl, setOpenCnl] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
@@ -166,7 +168,7 @@ export default function MenuBar({
                     className="menu-bar__item"
                     onClick={() => handleCnlItem(item.id)}
                   >
-                    {item.label}
+                    {t(item.labelKey)}
                   </button>
                 ))}
               </div>
@@ -184,7 +186,7 @@ export default function MenuBar({
                 className={`menu-bar__menu-trigger ${openMenu === menu.id ? 'menu-bar__menu-trigger--open' : ''}`}
                 aria-expanded={openMenu === menu.id}
               >
-                {menu.label}
+                {t(menu.labelKey)}
               </button>
               {openMenu === menu.id && (
                 <div
@@ -202,7 +204,7 @@ export default function MenuBar({
                         className="menu-bar__item"
                         onClick={() => handleMenuItem(item)}
                       >
-                        {item.label}
+                        {t(item.labelKey)}
                       </button>
                     )
                   )}
@@ -236,10 +238,9 @@ export default function MenuBar({
             >
               ×
             </button>
-            <h2 className="menu-bar__help-title">Portfolio Help</h2>
+            <h2 className="menu-bar__help-title">{t('menuBar.portfolioHelp')}</h2>
             <p className="menu-bar__help-text">
-              Welcome to my portfolio! Explore the dock to open apps like Chrome, Netflix, Gallery, and more.
-              Double-click desktop icons to launch apps. Use the menu bar for additional options.
+              {t('menuBar.helpText')}
             </p>
           </div>
         </div>

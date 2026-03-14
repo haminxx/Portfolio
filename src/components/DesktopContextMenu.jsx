@@ -1,11 +1,12 @@
 import { useEffect, useRef } from 'react'
+import { useLanguage } from '../context/LanguageContext'
 import './DesktopContextMenu.css'
 
 const SORT_OPTIONS = [
-  { id: 'name', label: 'Name' },
-  { id: 'size', label: 'Size' },
-  { id: 'type', label: 'Type' },
-  { id: 'date', label: 'Date modified' },
+  { id: 'name', labelKey: 'desktopContextMenu.name' },
+  { id: 'size', labelKey: 'desktopContextMenu.size' },
+  { id: 'type', labelKey: 'desktopContextMenu.type' },
+  { id: 'date', labelKey: 'desktopContextMenu.dateModified' },
 ]
 
 export default function DesktopContextMenu({
@@ -22,6 +23,7 @@ export default function DesktopContextMenu({
   onOpenFolder,
   onStartRename,
 }) {
+  const { t } = useLanguage()
   const menuRef = useRef(null)
 
   useEffect(() => {
@@ -64,13 +66,13 @@ export default function DesktopContextMenu({
               onClose?.()
             }}
           >
-            Open
+            {t('desktopContextMenu.open')}
           </button>
           <button type="button" className="desktop-context-menu__item">
-            Rename
+            {t('desktopContextMenu.rename')}
           </button>
           <button type="button" className="desktop-context-menu__item">
-            Properties
+            {t('desktopContextMenu.properties')}
           </button>
           <div className="desktop-context-menu__divider" />
         </>
@@ -85,7 +87,7 @@ export default function DesktopContextMenu({
                 onClose?.()
               }}
             >
-              Open
+              {t('desktopContextMenu.open')}
             </button>
           ) : null}
           <button
@@ -96,13 +98,13 @@ export default function DesktopContextMenu({
               onClose?.()
             }}
           >
-            Rename
+            {t('desktopContextMenu.rename')}
           </button>
           <div className="desktop-context-menu__divider" />
         </>
       ) : null}
       <div className="desktop-context-menu__submenu">
-        <span className="desktop-context-menu__label">Sort by</span>
+        <span className="desktop-context-menu__label">{t('desktopContextMenu.sortBy')}</span>
         {SORT_OPTIONS.map((opt) => (
           <button
             key={opt.id}
@@ -110,26 +112,26 @@ export default function DesktopContextMenu({
             className={`desktop-context-menu__item ${sortBy === opt.id ? 'desktop-context-menu__item--active' : ''}`}
             onClick={() => handleSortBy(opt.id)}
           >
-            {opt.label}
+            {t(opt.labelKey)}
           </button>
         ))}
       </div>
       <div className="desktop-context-menu__divider" />
       <button type="button" className="desktop-context-menu__item">
-        Refresh
+        {t('desktopContextMenu.refresh')}
       </button>
       <button type="button" className="desktop-context-menu__item">
-        Personalize
+        {t('desktopContextMenu.personalize')}
       </button>
       <button type="button" className="desktop-context-menu__item" onClick={() => { onNewFolder?.(x, y); onClose?.(); }}>
-        New folder
+        {t('desktopContextMenu.newFolder')}
       </button>
       <button type="button" className="desktop-context-menu__item" onClick={() => { onNewFile?.(x, y); onClose?.(); }}>
-        Add file
+        {t('desktopContextMenu.addFile')}
       </button>
       <div className="desktop-context-menu__divider" />
       <button type="button" className="desktop-context-menu__item">
-        Inspect
+        {t('desktopContextMenu.inspect')}
       </button>
     </div>
   )

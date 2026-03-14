@@ -69,6 +69,13 @@
   line-height: 1.5;
 }
 
+.doom-window__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
 .doom-window__play-btn {
   display: inline-flex;
   align-items: center;
@@ -81,8 +88,26 @@
   text-decoration: none;
   border-radius: 8px;
   transition: background 0.2s ease;
+  border: none;
+  cursor: pointer;
 }
 
 .doom-window__play-btn:hover {
   background: #e02545;
+}
+
+.doom-window__play-btn--retry {
+  background: #2a7d3e;
+}
+
+.doom-window__play-btn--retry:hover {
+  background: #339950;
+}
+
+.doom-window__play-btn--link {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.doom-window__play-btn--link:hover {
+  background: rgba(255, 255, 255, 0.25);
 }

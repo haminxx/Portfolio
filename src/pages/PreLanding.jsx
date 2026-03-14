@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Globe, ChevronRight } from 'lucide-react'
-import { useLanguage, LANGUAGES } from '../context/LanguageContext'
+import { useLanguage } from '../context/LanguageContext'
 import './PreLanding.css'
 
 const PHASES = ['language', 'hello', 'welcome', 'swipePrompt', 'transitioning']
@@ -9,7 +9,7 @@ export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
   const [phaseIndex, setPhaseIndex] = useState(0)
   const [showMobileButton, setShowMobileButton] = useState(false)
   const touchStartY = useRef(0)
-  const { language, setLanguage, languages } = useLanguage()
+  const { language, setLanguage, languages, t } = useLanguage()
 
   const phase = PHASES[phaseIndex]
 
@@ -102,12 +102,13 @@ export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
     >
       <div className="pre-landing__bg" />
       {phase === 'language' && (
-        <div className="pre-landing__language-modal">
-          <div className="pre-landing__language-icon">
-            <Globe size={48} strokeWidth={1.5} />
-          </div>
-          <h2 className="pre-landing__language-title">Language</h2>
-          <div className="pre-landing__language-list">
+        <div className="pre-landing__language-wrap">
+          <div className="pre-landing__language-modal">
+            <div className="pre-landing__language-icon">
+              <Globe size={48} strokeWidth={1.5} />
+            </div>
+            <h2 className="pre-landing__language-title">{t('preLanding.language')}</h2>
+            <div className="pre-landing__language-list">
             {languages.map((lang) => (
               <button
                 key={lang.id}
@@ -118,15 +119,16 @@ export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
                 {lang.label}
               </button>
             ))}
+            </div>
+            <button
+              type="button"
+              className="pre-landing__language-continue"
+              onClick={handleLanguageContinue}
+              aria-label="Continue"
+            >
+              <ChevronRight size={24} strokeWidth={2} />
+            </button>
           </div>
-          <button
-            type="button"
-            className="pre-landing__language-continue"
-            onClick={handleLanguageContinue}
-            aria-label="Continue"
-          >
-            <ChevronRight size={24} strokeWidth={2} />
-          </button>
         </div>
       )}
       <div className="pre-landing__content">
@@ -160,15 +162,15 @@ export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
         )}
         {(phase === 'welcome' || phase === 'swipePrompt') && (
           <>
-            <p className="pre-landing__welcome">Welcome to CNL</p>
+            <p className="pre-landing__welcome">{t('preLanding.welcome')}</p>
             {phase === 'swipePrompt' && (
               <>
                 <p className="pre-landing__swipe-hint" onClick={handleSwipeUp} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && handleSwipeUp()}>
-                  Swipe up or click to enter
+                  {t('preLanding.swipeHint')}
                 </p>
                 <div className={`pre-landing__mobile-wrap ${showMobileButton ? 'pre-landing__mobile-wrap--visible' : ''}`}>
                   <button type="button" className="pre-landing__mobile-btn" onClick={handleMobileEnter}>
-                    Mobile User
+                    {t('preLanding.mobileUser')}
                   </button>
                 </div>
               </>

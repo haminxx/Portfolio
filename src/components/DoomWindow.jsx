@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { ExternalLink } from 'lucide-react'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { ExternalLink, RotateCcw } from 'lucide-react'
 import './DoomWindow.css'
 
 // Use proxy in dev (avoids CORS); in production use self-hosted /doom.jsdos (add to public/)
@@ -11,8 +11,9 @@ const DOOM_FALLBACK_URL = 'https://dos.zone/doom-dec-1993'
 export default function DoomWindow() {
   const containerRef = useRef(null)
   const [error, setError] = useState(false)
+  const [retryKey, setRetryKey] = useState(0)
 
-  useEffect(() => {
+  const runDoom = useCallback(() => {
     const el = containerRef.current
     if (!el || typeof window.Dos !== 'function') {
       setError(true)
@@ -22,6 +23,7 @@ export default function DoomWindow() {
       if (window.emulators) {
         window.emulators.pathPrefix = 'https://cdn.jsdelivr.net/npm/js-dos@7.4.7/dist/'
       }
+      setError(false)
       window.Dos(el, {
         withNetworkingApi: false,
         withExperimentalApi: false,
@@ -37,6 +39,15 @@ export default function DoomWindow() {
     }
   }, [])
 
+  useEffect(() => {
+    runDoom()
+  }, [runDoom, retryKey])
+
+  const handleRetry = useCallback(() => {
+    setError(false)
+    setRetryKey((k) => k + 1)
+  }, [])
+
   if (error) {
     return (
       <div className="doom-window doom-window--fallback">
@@ -46,15 +57,25 @@ export default function DoomWindow() {
           <p className="doom-window__desc">
             Play classic DOOM in your browser.
           </p>
-          <a
-            href={DOOM_FALLBACK_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="doom-window__play-btn"
-          >
-            <ExternalLink size={18} />
-            Play DOOM
-          </a>
+          <div className="doom-window__actions">
+            <button
+              type="button"
+              className="doom-window__play-btn doom-window__play-btn--retry"
+              onClick={handleRetry}
+            >
+              <RotateCcw size={18} />
+              Retry
+            </button>
+            <a
+              href={DOOM_FALLBACK_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="doom-window__play-btn doom-window__play-btn--link"
+            >
+              <ExternalLink size={18} />
+              Play on dos.zone
+            </a>
+          </div>
         </div>
       </div>
     )
@@ -62,7 +83,7 @@ export default function DoomWindow() {
 
   return (
     <div className="doom-window">
-      <div ref={containerRef} className="doom-window__container" />
+      <div key={retryKey} ref={containerRef} className="doom-window__container" />
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { APPS } from '../config/apps'
+import { useLanguage } from '../context/LanguageContext'
 import {
   Globe,
   Image,
@@ -23,6 +24,7 @@ const APP_ICONS = {
 }
 
 export default function Dock({ onOpenApp, isChromeMaximized, anyMaximized, openAppWindows = [] }) {
+  const { t } = useLanguage()
   const doomOpen = openAppWindows.some((w) => w.appKey === 'doom')
   const dockApps = Object.entries(APPS).filter(([key]) => key !== 'doom' || doomOpen)
   const isHidden = anyMaximized ?? isChromeMaximized
@@ -39,8 +41,8 @@ export default function Dock({ onOpenApp, isChromeMaximized, anyMaximized, openA
               type="button"
               className="dock__item"
               onClick={() => onOpenApp(key)}
-              title={app.label}
-              aria-label={app.label}
+              title={t(`apps.${key}`)}
+              aria-label={t(`apps.${key}`)}
             >
               <span className="dock__icon">
                 {app.iconPath ? (
@@ -49,7 +51,7 @@ export default function Dock({ onOpenApp, isChromeMaximized, anyMaximized, openA
                   <Icon size={26} strokeWidth={1.6} />
                 ) : null}
               </span>
-              <span className="dock__label">{app.label}</span>
+              <span className="dock__label">{t(`apps.${key}`)}</span>
             </button>
           )
         })}

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { getTranslation } from '../i18n/translations'
 
 const LANG_KEY = 'portfolio-language'
 
@@ -30,8 +31,13 @@ export function LanguageProvider({ children }) {
     setLanguageState(id)
   }, [])
 
+  const t = useCallback(
+    (key) => getTranslation(language, key),
+    [language]
+  )
+
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, languages: LANGUAGES }}>
+    <LanguageContext.Provider value={{ language, setLanguage, languages: LANGUAGES, t }}>
       {children}
     </LanguageContext.Provider>
   )
@@ -39,5 +45,6 @@ export function LanguageProvider({ children }) {
 
 export function useLanguage() {
   const ctx = useContext(LanguageContext)
-  return ctx || { language: 'en', setLanguage: () => {}, languages: LANGUAGES }
+  const fallbackT = (key) => getTranslation('en', key)
+  return ctx || { language: 'en', setLanguage: () => {}, languages: LANGUAGES, t: fallbackT }
 }
