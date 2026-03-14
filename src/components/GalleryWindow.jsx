@@ -38,7 +38,7 @@ function saveFavorites(set) {
   } catch {}
 }
 
-function GalleryImage({ index, src, isFavorite, onToggleFavorite, searchMatch }) {
+function GalleryImage({ index, src, isFavorite, onToggleFavorite, onClick }) {
   const [hasError, setHasError] = useState(false)
 
   if (hasError) {
@@ -46,7 +46,7 @@ function GalleryImage({ index, src, isFavorite, onToggleFavorite, searchMatch })
   }
 
   return (
-    <div className="gallery-window__cell-wrap">
+    <div className="gallery-window__cell-wrap" onClick={() => onClick?.(index)} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onClick?.(index)}>
       <img
         src={src}
         alt=""
@@ -72,6 +72,7 @@ export default function GalleryWindow() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('date')
   const [favorites, setFavoritesState] = useState(loadFavorites)
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(null)
 
   const setFavorites = useCallback((fn) => {
     setFavoritesState((prev) => {
@@ -225,11 +226,30 @@ export default function GalleryWindow() {
                 src={getImagePath(i)}
                 isFavorite={favorites.has(i)}
                 onToggleFavorite={toggleFavorite}
+                onClick={setSelectedPhotoIndex}
               />
             </div>
           ))}
         </div>
       </main>
+      {selectedPhotoIndex != null && (
+        <div
+          className="gallery-window__lightbox"
+          onClick={() => setSelectedPhotoIndex(null)}
+          onKeyDown={(e) => e.key === 'Escape' && setSelectedPhotoIndex(null)}
+          role="button"
+          tabIndex={0}
+          aria-label="Close"
+        >
+          <div className="gallery-window__lightbox-inner" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={getImagePath(selectedPhotoIndex)}
+              alt={PHOTO_METADATA[selectedPhotoIndex]?.name ?? `Photo ${selectedPhotoIndex + 1}`}
+              className="gallery-window__lightbox-img"
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

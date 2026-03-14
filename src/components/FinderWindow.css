@@ -189,6 +189,12 @@
   color: #007aff;
 }
 
+.finder-window__empty {
+  padding: 24px;
+  color: #8e8e93;
+  font-size: 14px;
+}
+
 .finder-window__item-label {
   text-align: center;
   word-break: break-word;

@@ -18,11 +18,14 @@
   min-height: 300px;
 }
 
-.map-window__view-options {
+.map-window__controls-strip {
   position: absolute;
   right: 16px;
-  top: 16px;
-  z-index: 10;
+  top: 88px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   pointer-events: auto;
 }
 
@@ -30,13 +33,28 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 10px;
-  padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.25s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.map-window__view-dropdown:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  border-color: rgba(0, 122, 255, 0.2);
+}
+
+.map-window__view-dropdown:focus-within {
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.35);
+  border-color: #007aff;
+}
+
+.map-window__view-dropdown--animated select {
+  transition: color 0.2s ease;
 }
 
 .map-window__view-select {
@@ -47,26 +65,35 @@
   color: #1d1d1f;
   cursor: pointer;
   outline: none;
+  appearance: none;
+  padding-right: 20px;
 }
 
-.map-window__layer-controls {
-  position: absolute;
-  right: 16px;
-  top: 72px;
-  z-index: 10;
+.map-window__view-chevron {
+  color: #8e8e93;
+  pointer-events: none;
+  margin-left: -4px;
+  transition: transform 0.2s ease;
+}
+
+.map-window__view-dropdown:focus-within .map-window__view-chevron {
+  transform: rotate(180deg);
+}
+
+.map-window__zoom-buttons {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 10px;
-  padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
-.map-window__layer-btn {
+.map-window__zoom-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -77,16 +104,15 @@
   border-radius: 8px;
   color: #1d1d1f;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
-.map-window__layer-btn:hover {
+.map-window__zoom-btn:hover {
   background: rgba(0, 0, 0, 0.06);
 }
 
-.map-window__layer-btn--active {
-  background: rgba(0, 122, 255, 0.15);
-  color: #007aff;
+.map-window__zoom-btn:active {
+  transform: scale(0.95);
 }
 
 .map-window__search-overlay {

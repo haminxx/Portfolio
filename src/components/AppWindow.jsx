@@ -15,7 +15,9 @@ export default function AppWindow({
   onPositionChange,
   onSizeChange,
   onClose,
+  onClosingStart,
   onMinimize,
+  onMinimizeStart,
   onMinimizeComplete,
   onMaximize,
   isMaximized,
@@ -197,6 +199,7 @@ export default function AppWindow({
             onClick={(e) => {
               e.stopPropagation()
               if (isClosing) return
+              onClosingStart?.()
               setIsClosing(true)
             }}
             aria-label="Close"
@@ -204,7 +207,11 @@ export default function AppWindow({
           <button
             type="button"
             className="app-window__traffic app-window__traffic--minimize"
-            onClick={(e) => { e.stopPropagation(); onMinimize?.(); }}
+            onClick={(e) => {
+              e.stopPropagation()
+              onMinimizeStart?.()
+              onMinimize?.()
+            }}
             aria-label="Minimize"
           />
           <button

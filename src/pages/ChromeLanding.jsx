@@ -507,7 +507,7 @@ export default function ChromeLanding({ onReboot }) {
         } else if (win.appKey === 'photos') {
           content = <GalleryWindow />
         } else if (win.appKey === 'finder') {
-          content = <FinderWindow />
+          content = <FinderWindow onOpenApp={openAppTab} />
         } else if (win.appKey === 'facetime') {
           content = <FaceTimeWindow />
         } else if (win.appKey === 'doom') {
@@ -531,7 +531,17 @@ export default function ChromeLanding({ onReboot }) {
             size={win.size ?? { width: 880, height: 660 }}
             onPositionChange={(pos) => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, position: pos } : w)))}
             onSizeChange={(size) => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, size } : w)))}
+            onClosingStart={() => {
+              const nextApp = openAppWindows.find((w) => w.id !== win.id && !w.isMinimized)
+              setFocusedAppWindowId(nextApp?.id ?? null)
+              setChromeFocused(!nextApp)
+            }}
             onClose={() => setOpenAppWindows((prev) => prev.filter((w) => w.id !== win.id))}
+            onMinimizeStart={() => {
+              const nextApp = openAppWindows.find((w) => w.id !== win.id && !w.isMinimized)
+              setFocusedAppWindowId(nextApp?.id ?? null)
+              setChromeFocused(!nextApp)
+            }}
             onMinimize={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isMinimizing: true } : w)))}
             onMinimizeComplete={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isMinimized: true, isMinimizing: false } : w)))}
             onMaximize={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isMaximized: !w.isMaximized } : w)))}
