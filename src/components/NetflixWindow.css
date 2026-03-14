@@ -197,32 +197,6 @@
   margin: 0 0 12px;
 }
 
-.netflix-window__top5-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.netflix-window__top5-item {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.netflix-window__top5-num {
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #e50914;
-  color: #fff;
-  font-size: 18px;
-  font-weight: 700;
-  border-radius: 50%;
-}
-
 .netflix-window__cards {
   display: flex;
   gap: clamp(6px, min(1vw, 1.5vh), 16px);
@@ -235,17 +209,10 @@
   display: none;
 }
 
-.netflix-window__cards--horizontal {
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.netflix-window__cards--horizontal::-webkit-scrollbar {
-  display: none;
-}
-
 .netflix-window__card {
   flex-shrink: 0;
+  width: clamp(80px, min(12vw, 14vh), 280px);
+  aspect-ratio: 2/3;
   padding: 0;
   border: none;
   background: transparent;
@@ -258,16 +225,6 @@
 
 .netflix-window__card:hover {
   transform: scale(1.05);
-}
-
-.netflix-window__card--vertical {
-  width: clamp(80px, min(12vw, 14vh), 180px);
-  aspect-ratio: 2/3;
-}
-
-.netflix-window__card--horizontal {
-  width: clamp(120px, min(18vw, 20vh), 320px);
-  aspect-ratio: 16/9;
 }
 
 .netflix-window__card-poster {

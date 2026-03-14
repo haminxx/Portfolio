@@ -201,6 +201,7 @@ export default function MapWindow() {
           center={[33.575, -117.726]}
           zoom={10}
           className="map-window__leaflet"
+          style={{ height: '100%', width: '100%' }}
         >
           <MapFlyTo coords={flyToCoords} zoom={flyToZoom} />
           <TileLayer

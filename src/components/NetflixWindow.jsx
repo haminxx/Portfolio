@@ -4,45 +4,12 @@ import './NetflixWindow.css'
 
 const WALTER_MITTY_SUMMARY = `A daydreamer escapes his anonymous life by disappearing into a world of fantasies filled with heroism, romance and action. When his job along with that of his co-worker are threatened, he takes action in the real world embarking on a global journey that turns into an adventure more extraordinary than anything he could have ever imagined.`
 
-const MOST_IMPACTFUL = [
-  { title: 'The Secret Life of Walter Mitty', poster: '/videos/timeline-trailer.mp4' },
-  { title: 'Title 2', poster: null },
-  { title: 'Title 3', poster: null },
-  { title: 'Title 4', poster: null },
-  { title: 'Title 5', poster: null },
-]
-
-const TOP_5_MOVIES = [
-  { title: 'Movie 1', trailerUrl: null },
-  { title: 'Movie 2', trailerUrl: null },
-  { title: 'Movie 3', trailerUrl: null },
-  { title: 'Movie 4', trailerUrl: null },
-  { title: 'Movie 5', trailerUrl: null },
-]
-
-const TOP_5_TV_SERIES = [
-  { title: 'TV Series 1', trailerUrl: null },
-  { title: 'TV Series 2', trailerUrl: null },
-  { title: 'TV Series 3', trailerUrl: null },
-  { title: 'TV Series 4', trailerUrl: null },
-  { title: 'TV Series 5', trailerUrl: null },
-]
-
-const MY_TOP_5_ANIMES = [
-  { title: 'Anime 1', trailerUrl: null },
-  { title: 'Anime 2', trailerUrl: null },
-  { title: 'Anime 3', trailerUrl: null },
-  { title: 'Anime 4', trailerUrl: null },
-  { title: 'Anime 5', trailerUrl: null },
-]
-
-const RECOMMENDED = Array.from({ length: 6 }, (_, i) => ({ title: `Recommended ${i + 1}` }))
-
-const NAV_ITEMS = [
-  { id: 'home', label: 'Home' },
-  { id: 'movies', label: 'Movies' },
-  { id: 'anime', label: 'Anime' },
-  { id: 'tv', label: 'TV Series' },
+const ROWS = [
+  { id: 'most-impactful', title: 'Most Impactful', count: 6 },
+  { id: 'movies', title: 'Top 5 Movies', count: 6 },
+  { id: 'tv', title: 'Top 5 TV Series', count: 6 },
+  { id: 'anime', title: 'My Top 5 Animes', count: 5 },
+  { id: 'recommended', title: 'Recommended Watch List', count: 6 },
 ]
 
 export default function NetflixWindow() {
@@ -109,16 +76,34 @@ export default function NetflixWindow() {
       <nav className="netflix-window__nav">
         <div className="netflix-window__nav-logo">NETFLIX</div>
         <div className="netflix-window__nav-links">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`netflix-window__nav-link ${activeNav === item.id ? 'netflix-window__nav-link--active' : ''}`}
-              onClick={() => setActiveNav(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
+          <button
+            type="button"
+            className={`netflix-window__nav-link ${activeNav === 'home' ? 'netflix-window__nav-link--active' : ''}`}
+            onClick={() => setActiveNav('home')}
+          >
+            Home
+          </button>
+          <button
+            type="button"
+            className={`netflix-window__nav-link ${activeNav === 'movies' ? 'netflix-window__nav-link--active' : ''}`}
+            onClick={() => setActiveNav('movies')}
+          >
+            Movies
+          </button>
+          <button
+            type="button"
+            className={`netflix-window__nav-link ${activeNav === 'anime' ? 'netflix-window__nav-link--active' : ''}`}
+            onClick={() => setActiveNav('anime')}
+          >
+            Anime
+          </button>
+          <button
+            type="button"
+            className={`netflix-window__nav-link ${activeNav === 'tv' ? 'netflix-window__nav-link--active' : ''}`}
+            onClick={() => setActiveNav('tv')}
+          >
+            TV Series
+          </button>
         </div>
       </nav>
       <div className="netflix-window__hero">
@@ -170,107 +155,29 @@ export default function NetflixWindow() {
         </div>
       </div>
       <main className="netflix-window__content">
-        <section className="netflix-window__row netflix-window__row--top5">
-          <h2 className="netflix-window__row-title">Most Impactful</h2>
-          <div className="netflix-window__top5-cards">
-            {MOST_IMPACTFUL.map((item, i) => (
-              <div key={i} className="netflix-window__top5-item">
-                <span className="netflix-window__top5-num">{i + 1}</span>
+        {ROWS.map((row) => (
+          <section key={row.id} className="netflix-window__row">
+            <h2 className="netflix-window__row-title">{row.title}</h2>
+            <div className="netflix-window__cards">
+              {Array.from({ length: row.count }, (_, i) => (
                 <button
+                  key={i}
                   type="button"
-                  className="netflix-window__card netflix-window__card--vertical"
-                  onClick={() => setSelectedCard({ key: 'most-impactful', index: i, item })}
-                  onMouseEnter={(e) => handleCardMouseEnter('most-impactful', item, e)}
+                  className="netflix-window__card"
+                  onClick={() => setSelectedCard({ row: row.id, index: i })}
+                  onMouseEnter={(e) => handleCardMouseEnter(row.id, { title: row.title }, e)}
                   onMouseLeave={handleCardMouseLeave}
                 >
                   <div className="netflix-window__card-poster">
-                    {i === 0 && (
+                    {row.id === 'most-impactful' && i === 0 && (
                       <span className="netflix-window__card-title-overlay">The Secret Life of Walter Mitty</span>
                     )}
                   </div>
                 </button>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="netflix-window__row netflix-window__row--top5">
-          <h2 className="netflix-window__row-title">Top 5 Movies</h2>
-          <div className="netflix-window__top5-cards">
-            {TOP_5_MOVIES.map((item, i) => (
-              <div key={i} className="netflix-window__top5-item">
-                <span className="netflix-window__top5-num">{i + 1}</span>
-                <button
-                  type="button"
-                  className="netflix-window__card netflix-window__card--vertical"
-                  onClick={() => setSelectedCard({ key: 'movies', index: i, item })}
-                  onMouseEnter={(e) => handleCardMouseEnter('movies', item, e)}
-                  onMouseLeave={handleCardMouseLeave}
-                >
-                  <div className="netflix-window__card-poster" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="netflix-window__row netflix-window__row--top5">
-          <h2 className="netflix-window__row-title">Top 5 TV Series</h2>
-          <div className="netflix-window__top5-cards">
-            {TOP_5_TV_SERIES.map((item, i) => (
-              <div key={i} className="netflix-window__top5-item">
-                <span className="netflix-window__top5-num">{i + 1}</span>
-                <button
-                  type="button"
-                  className="netflix-window__card netflix-window__card--vertical"
-                  onClick={() => setSelectedCard({ key: 'tv', index: i, item })}
-                  onMouseEnter={(e) => handleCardMouseEnter('tv', item, e)}
-                  onMouseLeave={handleCardMouseLeave}
-                >
-                  <div className="netflix-window__card-poster" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="netflix-window__row netflix-window__row--top5">
-          <h2 className="netflix-window__row-title">My Top 5 Animes</h2>
-          <div className="netflix-window__top5-cards">
-            {MY_TOP_5_ANIMES.map((item, i) => (
-              <div key={i} className="netflix-window__top5-item">
-                <span className="netflix-window__top5-num">{i + 1}</span>
-                <button
-                  type="button"
-                  className="netflix-window__card netflix-window__card--vertical"
-                  onClick={() => setSelectedCard({ key: 'anime', index: i, item })}
-                  onMouseEnter={(e) => handleCardMouseEnter('anime', item, e)}
-                  onMouseLeave={handleCardMouseLeave}
-                >
-                  <div className="netflix-window__card-poster" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="netflix-window__row">
-          <h2 className="netflix-window__row-title">Recommended Watch List</h2>
-          <div className="netflix-window__cards netflix-window__cards--horizontal">
-            {RECOMMENDED.map((item, i) => (
-              <button
-                key={i}
-                type="button"
-                className="netflix-window__card netflix-window__card--horizontal"
-                onClick={() => setSelectedCard({ key: 'recommended', index: i, item })}
-                onMouseEnter={(e) => handleCardMouseEnter('recommended', item, e)}
-                onMouseLeave={handleCardMouseLeave}
-              >
-                <div className="netflix-window__card-poster" />
-              </button>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        ))}
       </main>
 
       {hoverCard && (
@@ -295,19 +202,9 @@ export default function NetflixWindow() {
           }}
         >
           <div className="netflix-window__hover-video">
-            {hoverCard.item?.trailerUrl || hoverCard.item?.poster ? (
-              <video
-                src={hoverCard.item.trailerUrl || hoverCard.item.poster}
-                autoPlay
-                muted
-                loop
-                playsInline
-              />
-            ) : (
-              <div className="netflix-window__hover-placeholder">
-                <span>Trailer placeholder — add video URL</span>
-              </div>
-            )}
+            <div className="netflix-window__hover-placeholder">
+              <span>Trailer placeholder — add video URL</span>
+            </div>
           </div>
         </div>
       )}
@@ -350,7 +247,7 @@ export default function NetflixWindow() {
               ×
             </button>
             <div className="netflix-window__modal-placeholder">
-              <p>{selectedCard.item?.title ?? 'Summary placeholder — add movies/TV via data array.'}</p>
+              <p>Summary placeholder — add movies/TV via data array.</p>
             </div>
           </div>
         </div>

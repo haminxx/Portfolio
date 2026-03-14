@@ -1,0 +1,196 @@
+.finder-window {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #f5f5f7;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', sans-serif;
+}
+
+.finder-window__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  background: #fff;
+  border-bottom: 1px solid #e5e5e7;
+  flex-shrink: 0;
+}
+
+.finder-window__nav-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.finder-window__nav-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #1d1d1f;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.finder-window__nav-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.finder-window__search-wrap {
+  flex: 1;
+  max-width: 280px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #e8e8ed;
+  border-radius: 8px;
+}
+
+.finder-window__search-icon {
+  color: #8e8e93;
+  flex-shrink: 0;
+}
+
+.finder-window__search {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: #1d1d1f;
+  font-size: 14px;
+  outline: none;
+}
+
+.finder-window__search::placeholder {
+  color: #8e8e93;
+}
+
+.finder-window__view-buttons {
+  display: flex;
+  gap: 2px;
+}
+
+.finder-window__view-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #8e8e93;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.finder-window__view-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #1d1d1f;
+}
+
+.finder-window__view-btn--active {
+  background: rgba(0, 0, 0, 0.08);
+  color: #1d1d1f;
+}
+
+.finder-window__body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.finder-window__sidebar {
+  width: 200px;
+  padding: 12px 0;
+  background: #f5f5f7;
+  border-right: 1px solid #e5e5e7;
+  flex-shrink: 0;
+}
+
+.finder-window__sidebar-section {
+  padding: 0 12px;
+}
+
+.finder-window__sidebar-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8e8e93;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 8px 12px;
+  display: block;
+}
+
+.finder-window__sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: #1d1d1f;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.finder-window__sidebar-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.finder-window__sidebar-item--active {
+  background: rgba(0, 122, 255, 0.12);
+  color: #007aff;
+}
+
+.finder-window__content {
+  flex: 1;
+  padding: 24px;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 24px;
+  align-content: start;
+}
+
+.finder-window__content--list {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.finder-window__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: none;
+  background: transparent;
+  color: #1d1d1f;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.finder-window__item:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.finder-window__item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #007aff;
+}
+
+.finder-window__item-label {
+  text-align: center;
+  word-break: break-word;
+  max-width: 100%;
+}

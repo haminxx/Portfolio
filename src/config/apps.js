@@ -2,6 +2,12 @@
  * Dock app icons and URLs. Add real URLs later for opening in new window or iframe.
  */
 export const APPS = {
+  finder: {
+    label: 'Finder',
+    domain: 'finder.local',
+    icon: 'finder',
+    iconPath: '/dock-icons/finder.png',
+  },
   chrome: {
     label: 'Chrome',
     domain: 'portfolio.local',

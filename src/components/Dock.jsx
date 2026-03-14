@@ -10,10 +10,12 @@ import {
   ShoppingBag,
   Settings,
   Map,
+  Folder,
 } from 'lucide-react'
 import './Dock.css'
 
 const APP_ICONS = {
+  finder: Folder,
   chrome: Globe,
   instagram: Image,
   netflix: Film,
@@ -108,7 +110,7 @@ export default function Dock({ onOpenApp, dockOrder = Object.keys(APPS), onDockR
                     <img
                       src={app.iconPath}
                       alt=""
-                      className={`dock__icon-img ${key === 'dadnme' ? 'dock__icon-img--rounded-square' : ''}`}
+                      className={`dock__icon-img ${key === 'dadnme' ? 'dock__icon-img--rounded-square' : ''} ${key === 'finder' ? 'dock__icon-img--rounded-square' : ''}`}
                     />
                   ) : Icon ? (
                     <Icon size={26} strokeWidth={1.6} />

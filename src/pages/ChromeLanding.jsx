@@ -22,6 +22,7 @@ import SettingsWindow from '../components/SettingsWindow'
 import AppStoreWindow from '../components/AppStoreWindow'
 import GalleryWindow from '../components/GalleryWindow'
 import FaceTimeWindow from '../components/FaceTimeWindow'
+import FinderWindow from '../components/FinderWindow'
 import MenuBar from '../components/MenuBar'
 import Dock from '../components/Dock'
 import AppWindow from '../components/AppWindow'
@@ -29,10 +30,11 @@ import { APPS, getDomainForApp } from '../config/apps'
 import { SHORTCUTS } from '../config/shortcuts'
 import { useLanguage } from '../context/LanguageContext'
 import { useTheme } from '../context/ThemeContext'
-import { Globe, Image, Film, Images, Video, ShoppingBag, Settings, Map } from 'lucide-react'
+import { Globe, Image, Film, Images, Video, ShoppingBag, Settings, Map, Folder } from 'lucide-react'
 import './ChromeLanding.css'
 
 const APP_ICONS = {
+  finder: Folder,
   chrome: Globe,
   instagram: Image,
   netflix: Film,
@@ -431,6 +433,8 @@ export default function ChromeLanding({ onReboot }) {
           content = <AppStoreWindow />
         } else if (win.appKey === 'photos') {
           content = <GalleryWindow />
+        } else if (win.appKey === 'finder') {
+          content = <FinderWindow />
         } else if (win.appKey === 'facetime') {
           content = <FaceTimeWindow />
         } else if (win.appKey === 'doom') {

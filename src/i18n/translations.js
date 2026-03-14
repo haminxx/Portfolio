@@ -52,6 +52,7 @@ export const translations = {
       github: 'GitHub',
     },
     apps: {
+      finder: 'Finder',
       chrome: 'Chrome',
       instagram: 'Instagram',
       netflix: 'Netflix',
@@ -133,6 +134,7 @@ export const translations = {
       github: 'GitHub',
     },
     apps: {
+      finder: 'Finder',
       chrome: 'Chrome',
       instagram: 'Instagram',
       netflix: 'Netflix',
@@ -214,6 +216,7 @@ export const translations = {
       github: 'GitHub',
     },
     apps: {
+      finder: 'Finder',
       chrome: 'Chrome',
       instagram: 'Instagram',
       netflix: 'Netflix',
@@ -295,6 +298,7 @@ export const translations = {
       github: 'GitHub',
     },
     apps: {
+      finder: 'Finder',
       chrome: 'Chrome',
       instagram: 'Instagram',
       netflix: 'Netflix',
@@ -376,6 +380,7 @@ export const translations = {
       github: 'GitHub',
     },
     apps: {
+      finder: 'Finder',
       chrome: 'Chrome',
       instagram: 'Instagram',
       netflix: 'Netflix',
@@ -457,6 +462,7 @@ export const translations = {
       github: 'GitHub',
     },
     apps: {
+      finder: 'Finder',
       chrome: 'Chrome',
       instagram: 'Instagram',
       netflix: 'Netflix',
@@ -538,6 +544,7 @@ export const translations = {
       github: 'GitHub',
     },
     apps: {
+      finder: 'Finder',
       chrome: 'Chrome',
       instagram: 'Instagram',
       netflix: 'Netflix',
@@ -619,6 +626,7 @@ export const translations = {
       github: 'GitHub',
     },
     apps: {
+      finder: 'Finder',
       chrome: 'Chrome',
       instagram: 'Instagram',
       netflix: 'Netflix',
