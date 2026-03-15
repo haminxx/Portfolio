@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useLanguage } from '../context/LanguageContext'
 import './YouTubeMusicWindow.css'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -16,6 +17,7 @@ const REBEL_FALLBACK = {
 }
 
 export default function YouTubeMusicWindow() {
+  const { t } = useLanguage()
   const [curated, setCurated] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState(null)
@@ -107,21 +109,21 @@ export default function YouTubeMusicWindow() {
             className={`ytmusic-window__nav-item ${view === 'home' ? 'ytmusic-window__nav-item--active' : ''}`}
             onClick={() => setView('home')}
           >
-            Home
+            {t('ytmusic.home')}
           </button>
           <button
             type="button"
             className={`ytmusic-window__nav-item ${view === 'explore' ? 'ytmusic-window__nav-item--active' : ''}`}
             onClick={() => setView('explore')}
           >
-            Explore
+            {t('ytmusic.explore')}
           </button>
           <button
             type="button"
             className={`ytmusic-window__nav-item ${view === 'library' ? 'ytmusic-window__nav-item--active' : ''}`}
             onClick={() => setView('library')}
           >
-            Library
+            {t('ytmusic.library')}
           </button>
         </nav>
       </aside>
@@ -129,7 +131,7 @@ export default function YouTubeMusicWindow() {
         <div className="ytmusic-window__search-bar">
           <input
             type="text"
-            placeholder="Search for songs, albums, or artists"
+            placeholder={t('ytmusic.searchPlaceholder')}
             className="ytmusic-window__search-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -139,7 +141,7 @@ export default function YouTubeMusicWindow() {
         {showSearch ? (
           <section className="ytmusic-window__section">
             <h2 className="ytmusic-window__section-title">
-              Search results {searchLoading && '(loading...)'}
+              {t('ytmusic.searchResults')} {searchLoading && `(${t('ytmusic.loading')})`}
             </h2>
             <div className="ytmusic-window__grid">
               {searchLoading ? (
@@ -167,7 +169,7 @@ export default function YouTubeMusicWindow() {
                   </button>
                 ))
               ) : (
-                <p className="ytmusic-window__empty">No results found</p>
+                <p className="ytmusic-window__empty">{t('ytmusic.noResults')}</p>
               )}
             </div>
           </section>
@@ -178,10 +180,10 @@ export default function YouTubeMusicWindow() {
               className="ytmusic-window__back-btn"
               onClick={() => setSelectedAlbum(null)}
             >
-              ← Back
+              ← {t('ytmusic.back')}
             </button>
             <h2 className="ytmusic-window__album-title">{selectedAlbum.title}</h2>
-            <p className="ytmusic-window__album-subtitle">{selectedAlbum.subtitle || ''}</p>
+            <p className="ytmusic-window__album-subtitle">{selectedAlbum.subtitle || t('ytmusic.yourMusic')}</p>
             <ul className="ytmusic-window__song-list">
               {(selectedAlbum.items || []).map((item, i) => (
                 <li key={i} className="ytmusic-window__song-item">
@@ -216,7 +218,7 @@ export default function YouTubeMusicWindow() {
                 </div>
                 <div className="ytmusic-window__hero-info">
                   <h1 className="ytmusic-window__hero-title">{sections[0].title}</h1>
-                  <p className="ytmusic-window__hero-desc">{sections[0].subtitle || 'Your music'}</p>
+                  <p className="ytmusic-window__hero-desc">{sections[0].subtitle || t('ytmusic.yourMusic')}</p>
                 </div>
               </button>
             )}

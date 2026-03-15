@@ -3,6 +3,7 @@ import './ChromeWindow.css'
 
 const MIN_WIDTH = 400
 const MIN_HEIGHT = 300
+const MENU_BAR_HEIGHT = 32
 
 export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, isOpening, onOpeningComplete, onMinimizeComplete, onFocus, isFocused, children }) {
   const winRef = useRef(null)
@@ -67,7 +68,7 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
       const dx = e.clientX - dragStartRef.current.x
       const dy = e.clientY - dragStartRef.current.y
       const newX = Math.max(0, dragStartRef.current.left + dx)
-      const newY = Math.max(0, dragStartRef.current.top + dy)
+      const newY = Math.max(MENU_BAR_HEIGHT, dragStartRef.current.top + dy)
       if (winRef.current) {
         winRef.current.style.transform = `translate(${newX - position.x}px, ${newY - position.y}px)`
       }
@@ -76,7 +77,7 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
       const dx = e.clientX - dragStartRef.current.x
       const dy = e.clientY - dragStartRef.current.y
       const newX = Math.max(0, dragStartRef.current.left + dx)
-      const newY = Math.max(0, dragStartRef.current.top + dy)
+      const newY = Math.max(MENU_BAR_HEIGHT, dragStartRef.current.top + dy)
       if (winRef.current) {
         winRef.current.style.transform = ''
       }
@@ -125,14 +126,14 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
         left = startLeft + clampedDx
       }
       if (edge.includes('s')) h = Math.max(MIN_HEIGHT, startH + dy)
-      else if (edge.includes('n')) {
+      else       if (edge.includes('n')) {
         const maxDy = startH - MIN_HEIGHT
         const clampedDy = Math.min(dy, maxDy)
         h = startH - clampedDy
         top = startTop + clampedDy
       }
       setSize({ width: w, height: h })
-      setPosition({ x: left, y: top })
+      setPosition({ x: left, y: Math.max(MENU_BAR_HEIGHT, top) })
     }
     const handleUp = () => setIsResizing(false)
     document.addEventListener('mousemove', handleMove)

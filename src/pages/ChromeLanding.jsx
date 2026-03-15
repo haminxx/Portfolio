@@ -204,7 +204,7 @@ export default function ChromeLanding({ onReboot }) {
       const winWidth = Math.min(880, Math.max(400, vw * 0.85))
       const winHeight = Math.min(660, Math.max(400, vh * 0.8))
       const x = Math.max(0, (vw - winWidth) / 2 + prev.length * 24)
-      const y = Math.max(0, (vh - winHeight) / 2 + prev.length * 24 - 36)
+      const y = Math.max(32, (vh - winHeight) / 2 + prev.length * 24 - 36)
       const id = `app-${appKey}-${Date.now()}`
       const win = {
         id,
@@ -381,7 +381,7 @@ export default function ChromeLanding({ onReboot }) {
           saveDockOrder(order)
         }}
         isChromeMaximized={chromeMaximized}
-        anyMaximized={chromeMaximized || openAppWindows.some((w) => w.isMaximized)}
+        anyMaximized={(chromeMaximized && !chromeMinimized) || openAppWindows.some((w) => w.isMaximized && !w.isMinimized)}
         openAppWindows={openAppWindows}
       />
       {openFolderId && (
@@ -529,7 +529,7 @@ export default function ChromeLanding({ onReboot }) {
             isOpening={win.isOpening}
             onOpeningComplete={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isOpening: false } : w)))}
             size={win.size ?? { width: 880, height: 660 }}
-            onPositionChange={(pos) => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, position: pos } : w)))}
+            onPositionChange={(pos) => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, position: { ...pos, y: Math.max(32, pos.y) } } : w)))}
             onSizeChange={(size) => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, size } : w)))}
             onClosingStart={() => {
               const nextApp = openAppWindows.find((w) => w.id !== win.id && !w.isMinimized)

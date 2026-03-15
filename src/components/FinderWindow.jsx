@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useLanguage } from '../context/LanguageContext'
 import {
   Home,
   Folder,
@@ -23,25 +24,25 @@ import { APPS } from '../config/apps'
 import './FinderWindow.css'
 
 const SIDEBAR_ITEMS = [
-  { id: 'favorites', label: 'Favorites', icon: null, items: [
-    { id: 'desktop', label: 'Desktop', icon: Home },
-    { id: 'documents', label: 'Documents', icon: Folder },
-    { id: 'downloads', label: 'Downloads', icon: Folder },
-    { id: 'pictures', label: 'Pictures', icon: Image },
-    { id: 'music', label: 'Music', icon: Music },
-    { id: 'movies', label: 'Movies', icon: Film },
-    { id: 'applications', label: 'Applications', icon: Folder },
+  { id: 'favorites', labelKey: 'favorites', icon: null, items: [
+    { id: 'desktop', labelKey: 'desktop', icon: Home },
+    { id: 'documents', labelKey: 'documents', icon: Folder },
+    { id: 'downloads', labelKey: 'downloads', icon: Folder },
+    { id: 'pictures', labelKey: 'pictures', icon: Image },
+    { id: 'music', labelKey: 'music', icon: Music },
+    { id: 'movies', labelKey: 'movies', icon: Film },
+    { id: 'applications', labelKey: 'applications', icon: Folder },
   ]},
 ]
 
 const FOLDER_ITEMS = [
-  { id: 'applications', name: 'Applications', type: 'folder', keywords: ['apps', 'applications'] },
-  { id: 'desktop', name: 'Desktop', type: 'folder', keywords: ['desktop'] },
-  { id: 'documents', name: 'Documents', type: 'folder', keywords: ['docs', 'documents', 'files'] },
-  { id: 'downloads', name: 'Downloads', type: 'folder', keywords: ['downloads', 'downloaded'] },
-  { id: 'pictures', name: 'Pictures', type: 'folder', keywords: ['pictures', 'photos', 'images'] },
-  { id: 'music', name: 'Music', type: 'folder', keywords: ['music', 'audio'] },
-  { id: 'movies', name: 'Movies', type: 'folder', keywords: ['movies', 'videos', 'films'] },
+  { id: 'applications', nameKey: 'applications', type: 'folder', keywords: ['apps', 'applications'] },
+  { id: 'desktop', nameKey: 'desktop', type: 'folder', keywords: ['desktop'] },
+  { id: 'documents', nameKey: 'documents', type: 'folder', keywords: ['docs', 'documents', 'files'] },
+  { id: 'downloads', nameKey: 'downloads', type: 'folder', keywords: ['downloads', 'downloaded'] },
+  { id: 'pictures', nameKey: 'pictures', type: 'folder', keywords: ['pictures', 'photos', 'images'] },
+  { id: 'music', nameKey: 'music', type: 'folder', keywords: ['music', 'audio'] },
+  { id: 'movies', nameKey: 'movies', type: 'folder', keywords: ['movies', 'videos', 'films'] },
 ]
 
 const APP_ICONS = {
@@ -60,6 +61,7 @@ const APP_ICONS = {
 }
 
 export default function FinderWindow({ onOpenApp }) {
+  const { t } = useLanguage()
   const [activeLocation, setActiveLocation] = useState('desktop')
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState('grid')
@@ -67,9 +69,8 @@ export default function FinderWindow({ onOpenApp }) {
   const searchableItems = useMemo(() => {
     const apps = Object.entries(APPS).map(([key, app]) => ({
       id: key,
-      name: app.label,
-      type: 'app',
       appKey: key,
+      type: 'app',
       keywords: [app.label.toLowerCase(), key, app.domain?.toLowerCase()].filter(Boolean),
     }))
     return [...FOLDER_ITEMS, ...apps]
@@ -80,21 +81,22 @@ export default function FinderWindow({ onOpenApp }) {
     if (!q) {
       if (activeLocation === 'desktop') {
         const folders = FOLDER_ITEMS.filter((f) => f.id !== 'applications')
-        const apps = Object.entries(APPS).filter(([k]) => k !== 'finder').map(([key, app]) => ({ id: key, name: app.label, type: 'app', appKey: key }))
+        const apps = Object.entries(APPS).filter(([k]) => k !== 'finder').map(([key]) => ({ id: key, type: 'app', appKey: key }))
         return [...folders, ...apps]
       }
       if (activeLocation === 'applications') {
-        return Object.entries(APPS).filter(([k]) => k !== 'finder').map(([key, app]) => ({ id: key, name: app.label, type: 'app', appKey: key }))
+        return Object.entries(APPS).filter(([k]) => k !== 'finder').map(([key]) => ({ id: key, type: 'app', appKey: key }))
       }
       const locFolder = FOLDER_ITEMS.find((f) => f.id === activeLocation)
       return locFolder ? [locFolder, FOLDER_ITEMS.find((f) => f.id === 'applications')].filter(Boolean) : FOLDER_ITEMS
     }
     return searchableItems.filter((item) => {
-      const nameMatch = item.name.toLowerCase().includes(q)
+      const name = item.type === 'app' ? t(`apps.${item.appKey}`) : t(`finder.${item.nameKey}`)
+      const nameMatch = name.toLowerCase().includes(q)
       const keywordMatch = item.keywords?.some((kw) => kw.includes(q))
       return nameMatch || keywordMatch
     })
-  }, [searchQuery, activeLocation, searchableItems])
+  }, [searchQuery, activeLocation, searchableItems, t])
 
   return (
     <div className="finder-window">
@@ -111,7 +113,7 @@ export default function FinderWindow({ onOpenApp }) {
           <Search size={16} className="finder-window__search-icon" />
           <input
             type="search"
-            placeholder="Search files, folders, apps..."
+            placeholder={t('finder.searchPlaceholder')}
             className="finder-window__search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -122,7 +124,7 @@ export default function FinderWindow({ onOpenApp }) {
             type="button"
             className={`finder-window__view-btn ${viewMode === 'grid' ? 'finder-window__view-btn--active' : ''}`}
             onClick={() => setViewMode('grid')}
-            aria-label="Grid view"
+            aria-label={t('finder.gridView')}
           >
             <Grid3X3 size={18} />
           </button>
@@ -130,7 +132,7 @@ export default function FinderWindow({ onOpenApp }) {
             type="button"
             className={`finder-window__view-btn ${viewMode === 'list' ? 'finder-window__view-btn--active' : ''}`}
             onClick={() => setViewMode('list')}
-            aria-label="List view"
+            aria-label={t('finder.listView')}
           >
             <List size={18} />
           </button>
@@ -139,7 +141,7 @@ export default function FinderWindow({ onOpenApp }) {
       <div className="finder-window__body">
         <aside className="finder-window__sidebar">
           <div className="finder-window__sidebar-section">
-            <span className="finder-window__sidebar-label">Favorites</span>
+            <span className="finder-window__sidebar-label">{t('finder.favorites')}</span>
             {SIDEBAR_ITEMS[0].items.map((item) => {
               const Icon = item.icon
               return (
@@ -150,7 +152,7 @@ export default function FinderWindow({ onOpenApp }) {
                   onClick={() => setActiveLocation(item.id)}
                 >
                   {Icon && <Icon size={18} strokeWidth={1.5} />}
-                  <span>{item.label}</span>
+                  <span>{t(`finder.${item.labelKey}`)}</span>
                 </button>
               )
             })}
@@ -158,7 +160,7 @@ export default function FinderWindow({ onOpenApp }) {
         </aside>
         <main className={`finder-window__content finder-window__content--${viewMode}`}>
           {filteredItems.length === 0 ? (
-            <p className="finder-window__empty">No results for &quot;{searchQuery}&quot;</p>
+            <p className="finder-window__empty">{t('finder.noResults')} &quot;{searchQuery}&quot;</p>
           ) : (
             filteredItems.map((item) => (
               <button
@@ -183,7 +185,7 @@ export default function FinderWindow({ onOpenApp }) {
                     })()
                   )}
                 </span>
-                <span className="finder-window__item-label">{item.name}</span>
+                <span className="finder-window__item-label">{item.type === 'app' ? t(`apps.${item.appKey}`) : t(`finder.${item.nameKey}`)}</span>
               </button>
             ))
           )}

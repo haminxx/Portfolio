@@ -2,27 +2,28 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { Home, GraduationCap, MapPin, Globe, Search, ChevronDown, ChevronRight, Coffee, Utensils, Map, ZoomIn, ZoomOut } from 'lucide-react'
+import { useLanguage } from '../context/LanguageContext'
 import 'leaflet/dist/leaflet.css'
 import './MapWindow.css'
 
-const MAP_STYLES = {
+const MAP_STYLE_KEYS = {
   minimal: {
-    label: 'Minimal',
+    key: 'minimal',
     url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
   },
   standard: {
-    label: 'Standard',
+    key: 'standard',
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   },
   satellite: {
-    label: 'Satellite',
+    key: 'satellite',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     attribution: '&copy; <a href="https://www.esri.com/">Esri</a>',
   },
   terrain: {
-    label: 'Terrain',
+    key: 'terrain',
     url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
   },
@@ -30,28 +31,28 @@ const MAP_STYLES = {
 
 const SAVED_LOCATIONS = {
   home: {
-    name: 'Home',
+    nameKey: 'home',
     address: 'Aliso Viejo, CA',
     coords: [33.575, -117.726],
     zoom: 12,
     icon: Home,
   },
   school: {
-    name: 'School',
+    nameKey: 'school',
     address: 'UC San Diego, 9500 Gilman Dr, La Jolla, CA',
     coords: [32.8801, -117.234],
     zoom: 15,
     icon: GraduationCap,
   },
   chicago: {
-    name: 'Home Town',
+    nameKey: 'homeTown',
     address: 'Chicago, IL',
     coords: [41.8781, -87.6298],
     zoom: 11,
     icon: MapPin,
   },
   seoul: {
-    name: 'Second Home Town',
+    nameKey: 'secondHomeTown',
     address: 'Seoul, South Korea',
     coords: [37.5665, 126.978],
     zoom: 11,
@@ -64,9 +65,9 @@ const CAFE_LOCATIONS = {}
 const FOOD_LOCATIONS = {}
 
 const FOLDERS = [
-  { id: 'savedLocations', label: 'Saved Locations', icon: MapPin, locations: SAVED_LOCATIONS },
-  { id: 'cafe', label: 'Cafe', icon: Coffee, locations: CAFE_LOCATIONS },
-  { id: 'food', label: 'Food', icon: Utensils, locations: FOOD_LOCATIONS },
+  { id: 'savedLocations', labelKey: 'savedLocations', icon: MapPin, locations: SAVED_LOCATIONS },
+  { id: 'cafe', labelKey: 'cafe', icon: Coffee, locations: CAFE_LOCATIONS },
+  { id: 'food', labelKey: 'food', icon: Utensils, locations: FOOD_LOCATIONS },
 ]
 
 const ALL_LOCATIONS = { ...SAVED_LOCATIONS, ...CAFE_LOCATIONS, ...FOOD_LOCATIONS }
@@ -81,7 +82,7 @@ function MapFlyTo({ coords, zoom }) {
   return null
 }
 
-function MapControls({ mapStyle, onMapStyleChange }) {
+function MapControls({ mapStyle, onMapStyleChange, t }) {
   const map = useMap()
   return (
     <div className="map-window__controls-strip">
@@ -93,8 +94,8 @@ function MapControls({ mapStyle, onMapStyleChange }) {
           className="map-window__view-select"
           aria-label="Map style"
         >
-          {Object.entries(MAP_STYLES).map(([key, s]) => (
-            <option key={key} value={key}>{s.label}</option>
+          {Object.entries(MAP_STYLE_KEYS).map(([key, s]) => (
+            <option key={key} value={key}>{t(`map.${s.key}`)}</option>
           ))}
         </select>
         <ChevronDown size={16} strokeWidth={1.5} className="map-window__view-chevron" />
@@ -141,6 +142,7 @@ async function geocode(query, limit = 1) {
 }
 
 export default function MapWindow() {
+  const { t } = useLanguage()
   const [activeLocation, setActiveLocation] = useState(null)
   const [expandedFolders, setExpandedFolders] = useState(new Set())
   const [searchQuery, setSearchQuery] = useState('')
@@ -248,7 +250,7 @@ export default function MapWindow() {
     markersToShow.push({ key: 'search', coords: searchCoords, address: searchResult?.address ?? 'Searched location' })
   }
 
-  const currentStyle = MAP_STYLES[mapStyle] ?? MAP_STYLES.minimal
+  const currentStyle = MAP_STYLE_KEYS[mapStyle] ?? MAP_STYLE_KEYS.minimal
 
   return (
     <div className="map-window">
@@ -262,7 +264,7 @@ export default function MapWindow() {
         >
           <MapFlyTo coords={flyToCoords} zoom={flyToZoom} />
           <TileLayer attribution={currentStyle.attribution} url={currentStyle.url} />
-          <MapControls mapStyle={mapStyle} onMapStyleChange={setMapStyle} />
+          <MapControls mapStyle={mapStyle} onMapStyleChange={setMapStyle} t={t} />
           {markersToShow.map((m) => (
             <Marker key={m.key} position={m.coords} icon={homeIcon}>
               <Popup>{m.address}</Popup>
@@ -275,7 +277,7 @@ export default function MapWindow() {
           <Search size={18} strokeWidth={1.5} className="map-window__search-icon" />
           <input
             type="text"
-            placeholder="Search for a place"
+            placeholder={t('map.searchPlaceholder')}
             className="map-window__search-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -286,7 +288,7 @@ export default function MapWindow() {
           {showSuggestions && (suggestions.length > 0 || suggestionsLoading) && (
             <div className="map-window__suggestions">
               {suggestionsLoading ? (
-                <div className="map-window__suggestion-item map-window__suggestion-item--loading">Searching...</div>
+                <div className="map-window__suggestion-item map-window__suggestion-item--loading">{t('map.searching')}</div>
               ) : (
                 suggestions.map((s, i) => (
                   <button
@@ -310,7 +312,7 @@ export default function MapWindow() {
             onClick={handleSearch}
             disabled={isSearching || !searchQuery.trim()}
           >
-            {isSearching ? 'Searching...' : 'Search'}
+            {isSearching ? t('map.searching') : t('map.search')}
           </button>
         </div>
       </div>
@@ -332,7 +334,7 @@ export default function MapWindow() {
                     <ChevronRight size={18} strokeWidth={1.5} />
                   )}
                   <Icon size={18} strokeWidth={1.5} />
-                  <span className="map-window__folder-label">{folder.label}</span>
+                  <span className="map-window__folder-label">{t(`map.${folder.labelKey}`)}</span>
                 </button>
                 {isExpanded && (
                   <div className="map-window__folder-items">
@@ -348,14 +350,14 @@ export default function MapWindow() {
                           >
                             <LocIcon size={20} strokeWidth={1.5} />
                             <div className="map-window__saved-item-text">
-                              <span className="map-window__saved-item-name">{loc.name}</span>
+                              <span className="map-window__saved-item-name">{t(`map.${loc.nameKey}`)}</span>
                               <span className="map-window__saved-item-address">{loc.address}</span>
                             </div>
                           </button>
                         )
                       })
                     ) : (
-                      <div className="map-window__folder-empty">No locations yet</div>
+                      <div className="map-window__folder-empty">{t('map.noLocationsYet')}</div>
                     )}
                   </div>
                 )}
@@ -364,7 +366,7 @@ export default function MapWindow() {
           })}
           {recentSearches.length > 0 && (
             <>
-              <h3 className="map-window__sidebar-title map-window__sidebar-title--mt">Recent searches</h3>
+              <h3 className="map-window__sidebar-title map-window__sidebar-title--mt">{t('map.recentSearches')}</h3>
               {recentSearches.map((r, i) => (
                 <button
                   key={`${r.query}-${i}`}

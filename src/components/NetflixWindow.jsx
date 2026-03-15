@@ -1,18 +1,31 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Play, Info, Volume2, VolumeX } from 'lucide-react'
+import { collection, addDoc, getDocs, serverTimestamp } from 'firebase/firestore'
+import { useLanguage } from '../context/LanguageContext'
+import { getFirebaseDb } from '../lib/firebase'
 import './NetflixWindow.css'
+
+const CATEGORIES = [
+  { value: 'movie', key: 'categoryMovie' },
+  { value: 'tv', key: 'categoryTV' },
+  { value: 'anime', key: 'categoryAnime' },
+  { value: 'other', key: 'categoryOther' },
+]
+
+const CATEGORY_KEYS = { movie: 'categoryMovie', tv: 'categoryTV', anime: 'categoryAnime', other: 'categoryOther' }
 
 const WALTER_MITTY_SUMMARY = `A daydreamer escapes his anonymous life by disappearing into a world of fantasies filled with heroism, romance and action. When his job along with that of his co-worker are threatened, he takes action in the real world embarking on a global journey that turns into an adventure more extraordinary than anything he could have ever imagined.`
 
-const ROWS = [
-  { id: 'most-impactful', title: 'Most Impactful', count: 6 },
-  { id: 'movies', title: 'Top 5 Movies', count: 6 },
-  { id: 'tv', title: 'Top 5 TV Series', count: 6 },
-  { id: 'anime', title: 'My Top 5 Animes', count: 5 },
-  { id: 'recommended', title: 'Recommended Watch List', count: 6 },
+const ROW_KEYS = [
+  { id: 'most-impactful', key: 'mostImpactful', count: 6 },
+  { id: 'movies', key: 'top5Movies', count: 6 },
+  { id: 'tv', key: 'top5TVSeries', count: 6 },
+  { id: 'anime', key: 'myTop5Animes', count: 5 },
+  { id: 'recommended', key: 'recommendedWatchList', count: 6 },
 ]
 
 export default function NetflixWindow() {
+  const { t } = useLanguage()
   const [selectedCard, setSelectedCard] = useState(null)
   const [showDetail, setShowDetail] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
@@ -22,6 +35,61 @@ export default function NetflixWindow() {
   const [hoverRect, setHoverRect] = useState(null)
   const hoverTimerRef = useRef(null)
   const videoRef = useRef(null)
+  const [recommendations, setRecommendations] = useState([])
+  const [recommendForm, setRecommendForm] = useState({ title: '', category: 'movie' })
+  const [submitStatus, setSubmitStatus] = useState(null)
+
+  const fetchRecommendations = useCallback(async () => {
+    const db = getFirebaseDb()
+    if (!db) return
+    try {
+      const snap = await getDocs(collection(db, 'recommendations'))
+      const docs = snap.docs.map((d) => ({ ...d.data(), id: d.id }))
+      const counts = {}
+      docs.forEach((doc) => {
+        const key = `${doc.title}|${doc.category}`
+        counts[key] = (counts[key] || 0) + 1
+      })
+      const top = Object.entries(counts)
+        .map(([key, count]) => {
+          const [title, category] = key.split('|')
+          return { title, category, count }
+        })
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10)
+      setRecommendations(top)
+    } catch {
+      setRecommendations([])
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchRecommendations()
+  }, [fetchRecommendations])
+
+  const handleRecommendSubmit = async (e) => {
+    e.preventDefault()
+    const db = getFirebaseDb()
+    if (!db) {
+      setSubmitStatus('error')
+      return
+    }
+    const title = recommendForm.title.trim()
+    if (!title) return
+    try {
+      await addDoc(collection(db, 'recommendations'), {
+        title,
+        category: recommendForm.category,
+        createdAt: serverTimestamp(),
+      })
+      setRecommendForm({ title: '', category: 'movie' })
+      setSubmitStatus('success')
+      fetchRecommendations()
+      setTimeout(() => setSubmitStatus(null), 3000)
+    } catch {
+      setSubmitStatus('error')
+    }
+  }
 
   useEffect(() => {
     const video = videoRef.current
@@ -81,31 +149,39 @@ export default function NetflixWindow() {
             className={`netflix-window__nav-link ${activeNav === 'home' ? 'netflix-window__nav-link--active' : ''}`}
             onClick={() => setActiveNav('home')}
           >
-            Home
+            {t('netflix.home')}
           </button>
           <button
             type="button"
             className={`netflix-window__nav-link ${activeNav === 'movies' ? 'netflix-window__nav-link--active' : ''}`}
             onClick={() => setActiveNav('movies')}
           >
-            Movies
+            {t('netflix.movies')}
           </button>
           <button
             type="button"
             className={`netflix-window__nav-link ${activeNav === 'anime' ? 'netflix-window__nav-link--active' : ''}`}
             onClick={() => setActiveNav('anime')}
           >
-            Anime
+            {t('netflix.anime')}
           </button>
           <button
             type="button"
             className={`netflix-window__nav-link ${activeNav === 'tv' ? 'netflix-window__nav-link--active' : ''}`}
             onClick={() => setActiveNav('tv')}
           >
-            TV Series
+            {t('netflix.tvSeries')}
+          </button>
+          <button
+            type="button"
+            className={`netflix-window__nav-link ${activeNav === 'recommend' ? 'netflix-window__nav-link--active' : ''}`}
+            onClick={() => setActiveNav('recommend')}
+          >
+            {t('netflix.recommendMe')}
           </button>
         </div>
       </nav>
+      {activeNav !== 'recommend' && (
       <div className="netflix-window__hero">
         <video
           ref={videoRef}
@@ -132,7 +208,7 @@ export default function NetflixWindow() {
                 onClick={handlePlayPause}
               >
                 <Play size={20} fill="currentColor" />
-                {isPlaying ? 'Pause' : 'Play'}
+                {isPlaying ? t('netflix.pause') : t('netflix.play')}
               </button>
               <button
                 type="button"
@@ -140,7 +216,7 @@ export default function NetflixWindow() {
                 onClick={() => setShowDetail(true)}
               >
                 <Info size={20} />
-                Detail
+                {t('netflix.detail')}
               </button>
             </div>
           </div>
@@ -154,31 +230,108 @@ export default function NetflixWindow() {
           </button>
         </div>
       </div>
-      <main className="netflix-window__content">
-        {ROWS.map((row) => (
-          <section key={row.id} className="netflix-window__row">
-            <h2 className="netflix-window__row-title">{row.title}</h2>
-            <div className="netflix-window__cards">
-              {Array.from({ length: row.count }, (_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  className="netflix-window__card"
-                  onClick={() => setSelectedCard({ row: row.id, index: i })}
-                  onMouseEnter={(e) => handleCardMouseEnter(row.id, { title: row.title }, e)}
-                  onMouseLeave={handleCardMouseLeave}
-                >
-                  <div className="netflix-window__card-poster">
-                    {row.id === 'most-impactful' && i === 0 && (
-                      <span className="netflix-window__card-title-overlay">The Secret Life of Walter Mitty</span>
-                    )}
+      )}
+      {activeNav === 'recommend' ? (
+        <div className="netflix-window__recommend">
+          <form className="netflix-window__recommend-form" onSubmit={handleRecommendSubmit}>
+            <h2 className="netflix-window__recommend-title">{t('netflix.formTitle')}</h2>
+            <label className="netflix-window__recommend-label">
+              {t('netflix.titleLabel')}
+              <input
+                type="text"
+                className="netflix-window__recommend-input"
+                value={recommendForm.title}
+                onChange={(e) => setRecommendForm((prev) => ({ ...prev, title: e.target.value }))}
+                placeholder="e.g. The Secret Life of Walter Mitty"
+              />
+            </label>
+            <label className="netflix-window__recommend-label">
+              {t('netflix.categoryLabel')}
+              <select
+                className="netflix-window__recommend-select"
+                value={recommendForm.category}
+                onChange={(e) => setRecommendForm((prev) => ({ ...prev, category: e.target.value }))}
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c.value} value={c.value}>{t(`netflix.${c.key}`)}</option>
+                ))}
+              </select>
+            </label>
+            <button type="submit" className="netflix-window__btn netflix-window__btn--play">
+              {t('netflix.submit')}
+            </button>
+            {submitStatus === 'success' && (
+              <p className="netflix-window__recommend-success">{t('netflix.submitSuccess')}</p>
+            )}
+            {submitStatus === 'error' && (
+              <p className="netflix-window__recommend-error">Firebase not configured. Add VITE_FIREBASE_* env vars.</p>
+            )}
+          </form>
+          <section className="netflix-window__row">
+            <h2 className="netflix-window__row-title">{t('netflix.recommendedWatchList')}</h2>
+            <div className="netflix-window__cards netflix-window__cards--recommend">
+              {recommendations.length ? (
+                recommendations.map((r, i) => (
+                  <div key={`${r.title}-${r.category}-${i}`} className="netflix-window__card netflix-window__card--recommend">
+                    <div className="netflix-window__card-poster" />
+                    <span className="netflix-window__card-title-overlay">{r.title}</span>
+                    <span className="netflix-window__card-category">{t(`netflix.${CATEGORY_KEYS[r.category] || 'categoryOther'}`)}</span>
+                    <span className="netflix-window__card-count">{r.count} {r.count === 1 ? 'vote' : 'votes'}</span>
                   </div>
-                </button>
-              ))}
+                ))
+              ) : (
+                <p className="netflix-window__recommend-empty">No recommendations yet. Be the first!</p>
+              )}
+            </div>
+          </section>
+        </div>
+      ) : (
+      <main className="netflix-window__content">
+        {ROW_KEYS.map((row) => (
+          <section key={row.id} className="netflix-window__row">
+            <h2 className="netflix-window__row-title">{t(`netflix.${row.key}`)}</h2>
+            <div className={`netflix-window__cards ${row.id === 'recommended' ? 'netflix-window__cards--recommend' : ''}`}>
+              {row.id === 'recommended' ? (
+                recommendations.length ? (
+                  recommendations.map((r, i) => (
+                    <div key={`${r.title}-${r.category}-${i}`} className="netflix-window__card netflix-window__card--recommend">
+                      <div className="netflix-window__card-poster" />
+                      <span className="netflix-window__card-title-overlay">{r.title}</span>
+                      <span className="netflix-window__card-category">{t(`netflix.${CATEGORY_KEYS[r.category] || 'categoryOther'}`)}</span>
+                      <span className="netflix-window__card-count">{r.count} {r.count === 1 ? 'vote' : 'votes'}</span>
+                    </div>
+                  ))
+                ) : (
+                  Array.from({ length: row.count }, (_, i) => (
+                    <div key={i} className="netflix-window__card netflix-window__card--recommend">
+                      <div className="netflix-window__card-poster" />
+                      <span className="netflix-window__card-title-overlay">—</span>
+                    </div>
+                  ))
+                )
+              ) : (
+                Array.from({ length: row.count }, (_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    className="netflix-window__card"
+                    onClick={() => setSelectedCard({ row: row.id, index: i })}
+                    onMouseEnter={(e) => handleCardMouseEnter(row.id, { title: t(`netflix.${row.key}`) }, e)}
+                    onMouseLeave={handleCardMouseLeave}
+                  >
+                    <div className="netflix-window__card-poster">
+                      {row.id === 'most-impactful' && i === 0 && (
+                        <span className="netflix-window__card-title-overlay">The Secret Life of Walter Mitty</span>
+                      )}
+                    </div>
+                  </button>
+                ))
+              )}
             </div>
           </section>
         ))}
       </main>
+      )}
 
       {hoverCard && (
         <div
@@ -221,7 +374,7 @@ export default function NetflixWindow() {
               type="button"
               className="netflix-window__modal-close"
               onClick={() => setShowDetail(false)}
-              aria-label="Close"
+              aria-label={t('netflix.close')}
             >
               ×
             </button>
@@ -242,7 +395,7 @@ export default function NetflixWindow() {
               type="button"
               className="netflix-window__modal-close"
               onClick={() => setSelectedCard(null)}
-              aria-label="Close"
+              aria-label={t('netflix.close')}
             >
               ×
             </button>

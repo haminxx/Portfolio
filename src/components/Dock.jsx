@@ -110,7 +110,7 @@ export default function Dock({ onOpenApp, dockOrder = Object.keys(APPS), onDockR
                     <img
                       src={app.iconPath}
                       alt=""
-                      className={`dock__icon-img ${key === 'dadnme' ? 'dock__icon-img--rounded-square' : ''} ${key === 'finder' ? 'dock__icon-img--rounded-square' : ''}`}
+                      className={`dock__icon-img ${key === 'dadnme' ? 'dock__icon-img--rounded-square' : ''} ${key === 'finder' ? 'dock__icon-img--rounded-square' : ''} ${key === 'appStore' ? 'dock__icon-img--appstore' : ''}`}
                     />
                   ) : Icon ? (
                     <Icon size={26} strokeWidth={1.6} />
