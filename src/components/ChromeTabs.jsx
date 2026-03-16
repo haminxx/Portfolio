@@ -6,7 +6,7 @@ import './ChromeTabs.css'
 
 export default function ChromeTabs({ tabs, activeTabId, onSelectTab, onCloseTab, onNewTab, onReorderTabs }) {
   const { t } = useLanguage()
-  const [closingTabId, setClosingTabId] = useState(null)
+  const [closingTabIds, setClosingTabIds] = useState(new Set())
 
   const getTabTitle = useCallback((tab) => {
     if (tab.type === 'home') return t('chrome.home')
@@ -30,15 +30,14 @@ export default function ChromeTabs({ tabs, activeTabId, onSelectTab, onCloseTab,
     }
   }, [tabs])
 
-  const closedForTabRef = useRef(null)
+  const closedForTabRef = useRef(new Set())
   const lastCloseTimeRef = useRef(0)
   const handleCloseTab = useCallback(
     (e, tabId) => {
       e.stopPropagation()
       e.preventDefault()
-      closedForTabRef.current = null
       lastCloseTimeRef.current = Date.now()
-      setClosingTabId(tabId)
+      setClosingTabIds((prev) => new Set([...prev, tabId]))
     },
     []
   )
@@ -46,7 +45,7 @@ export default function ChromeTabs({ tabs, activeTabId, onSelectTab, onCloseTab,
   const handleNewTabClick = useCallback(
     (e) => {
       e.stopPropagation()
-      if (Date.now() - lastCloseTimeRef.current < 300) return
+      if (Date.now() - lastCloseTimeRef.current < 150) return
       onNewTab?.()
     },
     [onNewTab]
@@ -55,13 +54,17 @@ export default function ChromeTabs({ tabs, activeTabId, onSelectTab, onCloseTab,
   const handleCloseAnimationEnd = useCallback(
     (e, tabId) => {
       if (e.propertyName !== 'opacity' && e.propertyName !== 'max-width') return
-      if (closingTabId === tabId && closedForTabRef.current !== tabId) {
-        closedForTabRef.current = tabId
+      if (closingTabIds.has(tabId) && !closedForTabRef.current.has(tabId)) {
+        closedForTabRef.current.add(tabId)
         onCloseTab?.(tabId)
-        setClosingTabId(null)
+        setClosingTabIds((prev) => {
+          const next = new Set(prev)
+          next.delete(tabId)
+          return next
+        })
       }
     },
-    [closingTabId, onCloseTab]
+    [closingTabIds, onCloseTab]
   )
 
   const handleDragStart = useCallback((e, tabId) => {
@@ -111,7 +114,7 @@ export default function ChromeTabs({ tabs, activeTabId, onSelectTab, onCloseTab,
         <div
           key={tab.id}
           draggable
-          className={`chrome-tabs__tab ${tab.id === activeTabId ? 'chrome-tabs__tab--active' : ''} ${addedTabIds.has(tab.id) ? 'chrome-tabs__tab--added' : ''} ${closingTabId === tab.id ? 'chrome-tabs__tab--closing' : ''} ${draggedTabId === tab.id ? 'chrome-tabs__tab--dragging' : ''} ${dragOverTabId === tab.id ? 'chrome-tabs__tab--drag-over' : ''}`}
+          className={`chrome-tabs__tab ${tab.id === activeTabId ? 'chrome-tabs__tab--active' : ''} ${addedTabIds.has(tab.id) ? 'chrome-tabs__tab--added' : ''} ${closingTabIds.has(tab.id) ? 'chrome-tabs__tab--closing' : ''} ${draggedTabId === tab.id ? 'chrome-tabs__tab--dragging' : ''} ${dragOverTabId === tab.id ? 'chrome-tabs__tab--drag-over' : ''}`}
           onClick={() => onSelectTab(tab.id)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {

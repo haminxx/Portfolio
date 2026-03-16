@@ -25,6 +25,7 @@ export default function YouTubeMusicWindow() {
   const [view, setView] = useState('home')
   const [selectedAlbum, setSelectedAlbum] = useState(null)
   const [playingVideoId, setPlayingVideoId] = useState(null)
+  const [playingItem, setPlayingItem] = useState(null)
 
   const baseUrl = API_URL.replace(/\/$/, '')
 
@@ -96,6 +97,17 @@ export default function YouTubeMusicWindow() {
   const showSearch = searchQuery.trim().length > 0
   const sections = curated || []
 
+  const playTrack = useCallback((videoId, item = null) => {
+    if (!videoId) return
+    setPlayingVideoId(videoId)
+    setPlayingItem(item || { title: 'Unknown', artist: '', thumbnail: videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null })
+  }, [])
+
+  const stopPlaying = useCallback(() => {
+    setPlayingVideoId(null)
+    setPlayingItem(null)
+  }, [])
+
   return (
     <div className="ytmusic-window">
       <aside className="ytmusic-window__sidebar">
@@ -157,7 +169,7 @@ export default function YouTubeMusicWindow() {
                     key={i}
                     type="button"
                     className="ytmusic-window__card"
-                    onClick={() => (item.videoId || item.id) && setPlayingVideoId(item.videoId || item.id)}
+                    onClick={() => (item.videoId || item.id) && playTrack(item.videoId || item.id, { title: item.title, artist: item.artist, thumbnail: item.thumbnail })}
                   >
                     <div className="ytmusic-window__card-art">
                       {item.thumbnail && (
@@ -190,7 +202,7 @@ export default function YouTubeMusicWindow() {
                   <button
                     type="button"
                     className="ytmusic-window__song-row"
-                    onClick={() => item.videoId && setPlayingVideoId(item.videoId)}
+                    onClick={() => item.videoId && playTrack(item.videoId, { title: item.title, artist: item.artist, thumbnail: item.videoId ? `https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg` : null })}
                     disabled={!item.videoId}
                   >
                     <span className="ytmusic-window__song-play">
@@ -233,7 +245,7 @@ export default function YouTubeMusicWindow() {
                       key={i}
                       type="button"
                       className="ytmusic-window__card"
-                      onClick={() => item.videoId && setPlayingVideoId(item.videoId)}
+                      onClick={() => item.videoId && playTrack(item.videoId, { title: item.title, artist: item.artist, thumbnail: item.videoId ? `https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg` : null })}
                       disabled={!item.videoId}
                     >
                       <div className="ytmusic-window__card-art">
@@ -254,22 +266,39 @@ export default function YouTubeMusicWindow() {
         )}
       </main>
       {playingVideoId && (
-        <div className="ytmusic-window__player">
+        <div className="ytmusic-window__mini-player">
+          <div className="ytmusic-window__mini-player-info">
+            <div className="ytmusic-window__mini-player-thumb">
+              {(playingItem?.thumbnail || playingVideoId) && (
+                <img
+                  src={playingItem?.thumbnail || `https://img.youtube.com/vi/${playingVideoId}/mqdefault.jpg`}
+                  alt=""
+                  className="ytmusic-window__mini-player-img"
+                />
+              )}
+            </div>
+            <div className="ytmusic-window__mini-player-meta">
+              <span className="ytmusic-window__mini-player-title">{playingItem?.title || 'Now playing'}</span>
+              <span className="ytmusic-window__mini-player-artist">{playingItem?.artist || ''}</span>
+            </div>
+          </div>
+          <div className="ytmusic-window__mini-player-video">
+            <iframe
+              src={`https://www.youtube.com/embed/${playingVideoId}?autoplay=1`}
+              title="YouTube player"
+              className="ytmusic-window__mini-player-iframe"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
           <button
             type="button"
-            className="ytmusic-window__player-close"
-            onClick={() => setPlayingVideoId(null)}
-            aria-label="Close player"
+            className="ytmusic-window__mini-player-close"
+            onClick={stopPlaying}
+            aria-label="Stop"
           >
             ×
           </button>
-          <iframe
-            src={`https://www.youtube.com/embed/${playingVideoId}?autoplay=1`}
-            title="YouTube player"
-            className="ytmusic-window__player-iframe"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
         </div>
       )}
     </div>

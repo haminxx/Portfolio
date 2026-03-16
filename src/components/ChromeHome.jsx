@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react'
 import { Search, User, Folder, Mail, Linkedin, Github } from 'lucide-react'
 import { SHORTCUTS } from '../config/shortcuts'
 import { useLanguage } from '../context/LanguageContext'
@@ -11,8 +12,20 @@ const SHORTCUT_ICONS = {
   github: Github,
 }
 
-export default function ChromeHome({ onShortcut }) {
+export default function ChromeHome({ onNavigateShortcut, onShortcutInNewTab }) {
   const { t } = useLanguage()
+  const [shortcutContextMenu, setShortcutContextMenu] = useState(null)
+  const menuRef = useRef(null)
+
+  useEffect(() => {
+    if (!shortcutContextMenu) return
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setShortcutContextMenu(null)
+    }
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [shortcutContextMenu])
+
   return (
     <div className="chrome-home">
       <div className="chrome-home__search-wrap">
@@ -33,7 +46,12 @@ export default function ChromeHome({ onShortcut }) {
               key={s.id}
               type="button"
               className="chrome-home__shortcut"
-              onClick={() => onShortcut?.(s.type)}
+              onClick={() => onNavigateShortcut?.(s.type)}
+              onContextMenu={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setShortcutContextMenu({ x: e.clientX, y: e.clientY, shortcutType: s.type })
+              }}
               title={label}
               aria-label={label}
             >
@@ -45,6 +63,27 @@ export default function ChromeHome({ onShortcut }) {
           )
         })}
       </div>
+      {shortcutContextMenu && (
+        <div
+          ref={menuRef}
+          className="chrome-home__context-menu"
+          style={{
+            left: Math.min(shortcutContextMenu.x, typeof window !== 'undefined' ? window.innerWidth - 180 : shortcutContextMenu.x),
+            top: shortcutContextMenu.y,
+          }}
+        >
+          <button
+            type="button"
+            className="chrome-home__context-item"
+            onClick={() => {
+              onShortcutInNewTab?.(shortcutContextMenu.shortcutType)
+              setShortcutContextMenu(null)
+            }}
+          >
+            Open in new tab
+          </button>
+        </div>
+      )}
     </div>
   )
 }

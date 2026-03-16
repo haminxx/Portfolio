@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import './ChromeContextMenu.css'
 
-export default function ChromeContextMenu({ x, y, currentUrl, onClose, onOpenInNewTab }) {
+export default function ChromeContextMenu({ x, y, currentUrl, onClose, onOpenInNewTab, onRefresh }) {
   const menuRef = useRef(null)
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export default function ChromeContextMenu({ x, y, currentUrl, onClose, onOpenInN
   }
 
   const handleReload = () => {
-    window.location.reload()
+    (onRefresh || (() => window.location.reload()))()
     onClose?.()
   }
 

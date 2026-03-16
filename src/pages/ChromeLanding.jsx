@@ -137,6 +137,7 @@ export default function ChromeLanding({ onReboot }) {
   const [openAppWindows, setOpenAppWindows] = useState([])
   const [focusedAppWindowId, setFocusedAppWindowId] = useState(null)
   const [chromeFocused, setChromeFocused] = useState(false)
+  const [chromeRefreshing, setChromeRefreshing] = useState(false)
   const [showShutdown, setShowShutdown] = useState(false)
   const [shutdownAction, setShutdownAction] = useState(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -220,6 +221,17 @@ export default function ChromeLanding({ onReboot }) {
     })
   }, [chromeMinimized])
 
+  const navigateToShortcut = useCallback((shortcutType) => {
+    const shortcut = SHORTCUTS.find((s) => s.type === shortcutType)
+    if (!shortcut) return
+    setTabs((prev) =>
+      prev.map((t) =>
+        t.id === activeTabId ? { ...t, type: shortcutType, title: shortcut.label } : t
+      )
+    )
+    setChromeMinimized(false)
+  }, [activeTabId])
+
   const openShortcutTab = useCallback((shortcutType) => {
     const shortcut = SHORTCUTS.find((s) => s.type === shortcutType)
     if (!shortcut) return
@@ -267,7 +279,14 @@ export default function ChromeLanding({ onReboot }) {
       window.location.reload()
     }
   }, [tabs])
-  const handleRefresh = useCallback(() => window.location.reload(), [])
+  const iframeRefreshKeyRef = useRef(0)
+  const handleRefresh = useCallback(() => {
+    setChromeRefreshing(true)
+    setTimeout(() => {
+      iframeRefreshKeyRef.current += 1
+      setChromeRefreshing(false)
+    }, 400)
+  }, [])
 
   useEffect(() => {
     const idx = tabHistoryRef.current.findIndex((id) => id === activeTabId)
@@ -366,7 +385,7 @@ export default function ChromeLanding({ onReboot }) {
         onScreenshot={takeScreenshot}
         onNewTab={openNewHomeTab}
         onCloseTab={() => closeTab(activeTabId)}
-        onReload={() => window.location.reload()}
+        onReload={handleRefresh}
         onGoHome={goHome}
         onMinimize={setMinimized}
         onZoom={toggleMaximize}
@@ -442,8 +461,13 @@ export default function ChromeLanding({ onReboot }) {
                   setChromeContextMenu({ x: e.clientX, y: e.clientY, url })
                 }}
               >
+                {chromeRefreshing && (
+                  <div className="chrome-landing__refresh-overlay" aria-hidden="true">
+                    <div className="chrome-landing__refresh-spinner" />
+                  </div>
+                )}
                 {activeTab.type === 'home' ? (
-                  <ChromeHome onShortcut={openShortcutTab} />
+                  <ChromeHome onNavigateShortcut={navigateToShortcut} onShortcutInNewTab={openShortcutTab} />
                 ) : activeTab.type === 'about' ? (
                   <AboutPage />
                 ) : activeTab.type === 'project' ? (
@@ -462,7 +486,7 @@ export default function ChromeLanding({ onReboot }) {
                   const url = getUrlForTab(activeTab)
                   if (url) {
                     return (
-                      <iframe src={url} className="chrome-landing__iframe" title={activeTab.title} />
+                      <iframe key={iframeRefreshKeyRef.current} src={url} className="chrome-landing__iframe" title={activeTab.title} />
                     )
                   }
                   return (
@@ -571,6 +595,7 @@ export default function ChromeLanding({ onReboot }) {
           currentUrl={chromeContextMenu.url}
           onClose={() => setChromeContextMenu(null)}
           onOpenInNewTab={() => {}}
+          onRefresh={handleRefresh}
         />
       )}
     </div>
