@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useLanguage } from '../context/LanguageContext'
-import { useMusicPlayer, searchYouTubeVideos } from '../context/MusicPlayerContext'
+import { useMusicPlayer, searchYouTubeVideos, fetchRecommendedFromListening } from '../context/MusicPlayerContext'
+import NowPlayingBar from './NowPlayingBar'
 import './YouTubeMusicWindow.css'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -22,6 +23,7 @@ export default function YouTubeMusicWindow() {
   const { t } = useLanguage()
   const { playTrack } = useMusicPlayer()
   const [curated, setCurated] = useState(null)
+  const [recommendedForYou, setRecommendedForYou] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState(null)
   const [searchLoading, setSearchLoading] = useState(false)
@@ -51,6 +53,19 @@ export default function YouTubeMusicWindow() {
       setCurated([])
     }
   }, [baseUrl])
+
+  const loadPersonalized = useCallback(async () => {
+    if (!HAS_YT_KEY) {
+      setRecommendedForYou([])
+      return
+    }
+    try {
+      const items = await fetchRecommendedFromListening(20)
+      setRecommendedForYou(items)
+    } catch {
+      setRecommendedForYou([])
+    }
+  }, [])
 
   const fetchSearch = useCallback(
     async (q) => {
@@ -101,6 +116,10 @@ export default function YouTubeMusicWindow() {
   }, [fetchCurated])
 
   useEffect(() => {
+    loadPersonalized()
+  }, [loadPersonalized])
+
+  useEffect(() => {
     const timer = setTimeout(() => fetchSearch(searchQuery), 300)
     return () => clearTimeout(timer)
   }, [searchQuery, fetchSearch])
@@ -112,8 +131,163 @@ export default function YouTubeMusicWindow() {
     (videoId, item = null) => {
       if (!videoId) return
       playTrack(videoId, item || { title: 'Unknown', artist: '', thumbnail: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` })
+      loadPersonalized()
     },
-    [playTrack]
+    [playTrack, loadPersonalized]
+  )
+
+  const mainContent = (
+    <>
+      <div className="ytmusic-window__search-bar">
+        <input
+          type="text"
+          placeholder={t('ytmusic.searchPlaceholder')}
+          className="ytmusic-window__search-input"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
+      {showSearch ? (
+        <section className="ytmusic-window__section">
+          <h2 className="ytmusic-window__section-title">
+            {t('ytmusic.searchResults')} {searchLoading && `(${t('ytmusic.loading')})`}
+          </h2>
+          <div className="ytmusic-window__grid">
+            {searchLoading ? (
+              [1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="ytmusic-window__card ytmusic-window__card--loading">
+                  <div className="ytmusic-window__card-art" />
+                  <span className="ytmusic-window__card-title">...</span>
+                </div>
+              ))
+            ) : searchResults?.length ? (
+              searchResults.map((item, i) => (
+                <button
+                  key={item.videoId || i}
+                  type="button"
+                  className="ytmusic-window__card"
+                  onClick={() => (item.videoId || item.id) && handlePlayTrack(item.videoId || item.id, { title: item.title, artist: item.artist, thumbnail: item.thumbnail })}
+                >
+                  <div className="ytmusic-window__card-art">
+                    {item.thumbnail && <img src={item.thumbnail} alt="" className="ytmusic-window__card-img" />}
+                  </div>
+                  <span className="ytmusic-window__card-title">{item.title}</span>
+                  <span className="ytmusic-window__card-artist">{item.artist}</span>
+                </button>
+              ))
+            ) : (
+              <p className="ytmusic-window__empty">{t('ytmusic.noResults')}</p>
+            )}
+          </div>
+        </section>
+      ) : selectedAlbum ? (
+        <section className="ytmusic-window__album-view">
+          <button type="button" className="ytmusic-window__back-btn" onClick={() => setSelectedAlbum(null)}>
+            ← {t('ytmusic.back')}
+          </button>
+          <h2 className="ytmusic-window__album-title">{selectedAlbum.title}</h2>
+          <p className="ytmusic-window__album-subtitle">{selectedAlbum.subtitle || t('ytmusic.yourMusic')}</p>
+          <ul className="ytmusic-window__song-list">
+            {(selectedAlbum.items || []).map((item, i) => (
+              <li key={i} className="ytmusic-window__song-item">
+                <button
+                  type="button"
+                  className="ytmusic-window__song-row"
+                  onClick={() => item.videoId && handlePlayTrack(item.videoId, { title: item.title, artist: item.artist, thumbnail: `https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg` })}
+                  disabled={!item.videoId}
+                >
+                  <span className="ytmusic-window__song-play">{item.videoId ? '▶' : '—'}</span>
+                  <span className="ytmusic-window__song-title">{item.title}</span>
+                  <span className="ytmusic-window__song-artist">{item.artist}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : (
+        <>
+          {recommendedForYou && recommendedForYou.length > 0 && view === 'home' && (
+            <section className="ytmusic-window__section ytmusic-window__section--rail">
+              <h2 className="ytmusic-window__section-title">Recommended for you</h2>
+              <p className="ytmusic-window__section-sub">Based on what you have played</p>
+              <div className="ytmusic-window__rail">
+                {recommendedForYou.map((item, i) => (
+                  <button
+                    key={`${item.videoId}-${i}`}
+                    type="button"
+                    className="ytmusic-window__card ytmusic-window__card--rail"
+                    onClick={() => handlePlayTrack(item.videoId, item)}
+                  >
+                    <div className="ytmusic-window__card-art">
+                      {item.thumbnail && <img src={item.thumbnail} alt="" className="ytmusic-window__card-img" />}
+                    </div>
+                    <span className="ytmusic-window__card-title">{item.title}</span>
+                    <span className="ytmusic-window__card-artist">{item.artist}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+          {sections[0] && view === 'home' && (
+            <button
+              type="button"
+              className="ytmusic-window__hero"
+              onClick={() => setSelectedAlbum(sections[0])}
+            >
+              <div className="ytmusic-window__hero-art">
+                <div className="ytmusic-window__play-circle">
+                  <span className="ytmusic-window__play-icon">▶</span>
+                </div>
+              </div>
+              <div className="ytmusic-window__hero-info">
+                <h1 className="ytmusic-window__hero-title">{sections[0].title}</h1>
+                <p className="ytmusic-window__hero-desc">{sections[0].subtitle || t('ytmusic.yourMusic')}</p>
+              </div>
+            </button>
+          )}
+          {view === 'home' &&
+            sections.slice(1).map((section, idx) => (
+              <section key={idx} className="ytmusic-window__section">
+                <h2 className="ytmusic-window__section-title">{section.title}</h2>
+                {section.subtitle && <p className="ytmusic-window__section-sub">{section.subtitle}</p>}
+                <div className="ytmusic-window__grid">
+                  {(section.items || []).map((item, i) => {
+                    const thumb = item.thumbnail || (item.videoId ? `https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg` : null)
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        className="ytmusic-window__card"
+                        onClick={() => item.videoId && handlePlayTrack(item.videoId, { title: item.title, artist: item.artist, thumbnail: thumb })}
+                        disabled={!item.videoId}
+                      >
+                        <div className="ytmusic-window__card-art">
+                          {thumb && <img src={thumb} alt="" className="ytmusic-window__card-img" />}
+                        </div>
+                        <span className="ytmusic-window__card-title">{item.title}</span>
+                        {item.artist && <span className="ytmusic-window__card-artist">{item.artist}</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+              </section>
+            ))}
+          {view === 'explore' && (
+            <section className="ytmusic-window__section">
+              <h2 className="ytmusic-window__section-title">{t('ytmusic.explore')}</h2>
+              <p className="ytmusic-window__empty">Use search to explore tracks and artists.</p>
+            </section>
+          )}
+          {view === 'library' && (
+            <section className="ytmusic-window__section">
+              <h2 className="ytmusic-window__section-title">{t('ytmusic.library')}</h2>
+              <p className="ytmusic-window__empty">Your library syncs with listening history when signed in with an API key.</p>
+            </section>
+          )}
+        </>
+      )}
+    </>
   )
 
   return (
@@ -147,121 +321,10 @@ export default function YouTubeMusicWindow() {
           </button>
         </nav>
       </aside>
-      <main className="ytmusic-window__main">
-        <div className="ytmusic-window__search-bar">
-          <input
-            type="text"
-            placeholder={t('ytmusic.searchPlaceholder')}
-            className="ytmusic-window__search-input"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-
-        {showSearch ? (
-          <section className="ytmusic-window__section">
-            <h2 className="ytmusic-window__section-title">
-              {t('ytmusic.searchResults')} {searchLoading && `(${t('ytmusic.loading')})`}
-            </h2>
-            <div className="ytmusic-window__grid">
-              {searchLoading ? (
-                [1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="ytmusic-window__card ytmusic-window__card--loading">
-                    <div className="ytmusic-window__card-art" />
-                    <span className="ytmusic-window__card-title">...</span>
-                  </div>
-                ))
-              ) : searchResults?.length ? (
-                searchResults.map((item, i) => (
-                  <button
-                    key={item.videoId || i}
-                    type="button"
-                    className="ytmusic-window__card"
-                    onClick={() => (item.videoId || item.id) && handlePlayTrack(item.videoId || item.id, { title: item.title, artist: item.artist, thumbnail: item.thumbnail })}
-                  >
-                    <div className="ytmusic-window__card-art">
-                      {item.thumbnail && <img src={item.thumbnail} alt="" className="ytmusic-window__card-img" />}
-                    </div>
-                    <span className="ytmusic-window__card-title">{item.title}</span>
-                    <span className="ytmusic-window__card-artist">{item.artist}</span>
-                  </button>
-                ))
-              ) : (
-                <p className="ytmusic-window__empty">{t('ytmusic.noResults')}</p>
-              )}
-            </div>
-          </section>
-        ) : selectedAlbum ? (
-          <section className="ytmusic-window__album-view">
-            <button type="button" className="ytmusic-window__back-btn" onClick={() => setSelectedAlbum(null)}>
-              ← {t('ytmusic.back')}
-            </button>
-            <h2 className="ytmusic-window__album-title">{selectedAlbum.title}</h2>
-            <p className="ytmusic-window__album-subtitle">{selectedAlbum.subtitle || t('ytmusic.yourMusic')}</p>
-            <ul className="ytmusic-window__song-list">
-              {(selectedAlbum.items || []).map((item, i) => (
-                <li key={i} className="ytmusic-window__song-item">
-                  <button
-                    type="button"
-                    className="ytmusic-window__song-row"
-                    onClick={() => item.videoId && handlePlayTrack(item.videoId, { title: item.title, artist: item.artist, thumbnail: `https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg` })}
-                    disabled={!item.videoId}
-                  >
-                    <span className="ytmusic-window__song-play">{item.videoId ? '▶' : '—'}</span>
-                    <span className="ytmusic-window__song-title">{item.title}</span>
-                    <span className="ytmusic-window__song-artist">{item.artist}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : (
-          <>
-            {sections[0] && (
-              <button
-                type="button"
-                className="ytmusic-window__hero"
-                onClick={() => setSelectedAlbum(sections[0])}
-              >
-                <div className="ytmusic-window__hero-art">
-                  <div className="ytmusic-window__play-circle">
-                    <span className="ytmusic-window__play-icon">▶</span>
-                  </div>
-                </div>
-                <div className="ytmusic-window__hero-info">
-                  <h1 className="ytmusic-window__hero-title">{sections[0].title}</h1>
-                  <p className="ytmusic-window__hero-desc">{sections[0].subtitle || t('ytmusic.yourMusic')}</p>
-                </div>
-              </button>
-            )}
-            {sections.slice(1).map((section, idx) => (
-              <section key={idx} className="ytmusic-window__section">
-                <h2 className="ytmusic-window__section-title">{section.title}</h2>
-                <div className="ytmusic-window__grid">
-                  {(section.items || []).map((item, i) => {
-                    const thumb = item.thumbnail || (item.videoId ? `https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg` : null)
-                    return (
-                      <button
-                        key={i}
-                        type="button"
-                        className="ytmusic-window__card"
-                        onClick={() => item.videoId && handlePlayTrack(item.videoId, { title: item.title, artist: item.artist, thumbnail: thumb })}
-                        disabled={!item.videoId}
-                      >
-                        <div className="ytmusic-window__card-art">
-                          {thumb && <img src={thumb} alt="" className="ytmusic-window__card-img" />}
-                        </div>
-                        <span className="ytmusic-window__card-title">{item.title}</span>
-                        {item.artist && <span className="ytmusic-window__card-artist">{item.artist}</span>}
-                      </button>
-                    )
-                  })}
-                </div>
-              </section>
-            ))}
-          </>
-        )}
-      </main>
+      <div className="ytmusic-window__column">
+        <div className="ytmusic-window__scroll">{mainContent}</div>
+        <NowPlayingBar variant="embedded" />
+      </div>
     </div>
   )
 }

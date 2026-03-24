@@ -3,23 +3,15 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  padding: 56px 20px 88px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-}
-
-.desktop-widgets__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(140px, 200px));
-  gap: 14px;
-  max-width: 440px;
-  pointer-events: none;
+  padding: 56px 20px 72px;
+  overflow: hidden;
 }
 
 .desktop-widgets__card {
+  position: absolute;
   pointer-events: auto;
-  padding: 12px 14px 14px;
+  padding: 10px 12px 12px;
+  padding-top: 28px;
   border-radius: 16px;
   background: rgba(28, 28, 30, 0.55);
   backdrop-filter: blur(28px) saturate(160%);
@@ -27,6 +19,55 @@
   border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
   color: rgba(255, 255, 255, 0.95);
+  box-sizing: border-box;
+}
+
+.desktop-widgets__card--calendar {
+  width: 200px;
+  min-height: 200px;
+}
+
+.desktop-widgets__card--clock {
+  width: 200px;
+  min-height: 110px;
+}
+
+.desktop-widgets__card--weather {
+  width: 200px;
+  min-height: 118px;
+}
+
+.desktop-widgets__card--music {
+  width: 200px;
+  min-height: 108px;
+}
+
+.desktop-widgets__grip {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.45);
+  cursor: grab;
+  touch-action: none;
+}
+
+.desktop-widgets__grip:active {
+  cursor: grabbing;
+}
+
+.desktop-widgets__grip:hover {
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 [data-theme='light'] .desktop-widgets__card {
@@ -34,6 +75,11 @@
   border-color: rgba(0, 0, 0, 0.08);
   color: rgba(0, 0, 0, 0.88);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme='light'] .desktop-widgets__grip {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.4);
 }
 
 .desktop-widgets__card-title {
@@ -110,27 +156,36 @@
 
 .desktop-widgets__weather-strip {
   display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 2px;
-  margin: 0 -4px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 6px;
+  overflow: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.desktop-widgets__weather-strip::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .desktop-widgets__weather-day {
-  flex: 0 0 auto;
-  min-width: 44px;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 48px;
   text-align: center;
 }
 
 .desktop-widgets__weather-dow {
   display: block;
-  font-size: 10px;
+  font-size: 9px;
   opacity: 0.55;
   margin-bottom: 2px;
 }
 
 .desktop-widgets__weather-hi {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -194,10 +249,4 @@
 
 [data-theme='light'] .desktop-widgets__music-play:hover {
   background: rgba(0, 0, 0, 0.1);
-}
-
-@media (max-width: 640px) {
-  .desktop-widgets__grid {
-    grid-template-columns: 1fr;
-  }
 }

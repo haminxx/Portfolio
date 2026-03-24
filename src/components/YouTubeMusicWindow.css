@@ -61,15 +61,42 @@
   color: #fff;
 }
 
-.ytmusic-window__main {
+.ytmusic-window__column {
   flex: 1;
-  overflow-y: auto;
-  padding: 24px;
-  padding-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
 }
 
-.ytmusic-window:has(.ytmusic-window__mini-player) .ytmusic-window__main {
-  padding-bottom: 104px;
+.ytmusic-window__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.ytmusic-window__section-sub {
+  margin: -8px 0 16px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.ytmusic-window__rail {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+}
+
+.ytmusic-window__card--rail {
+  flex: 0 0 140px;
+  width: 140px;
+}
+
+.ytmusic-window__section--rail {
+  margin-bottom: 32px;
 }
 
 .ytmusic-window__search-bar {

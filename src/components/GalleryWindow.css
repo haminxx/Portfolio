@@ -270,8 +270,8 @@
 
 .gallery-window__lightbox-inner {
   position: relative;
-  max-width: 90vw;
-  max-height: 90vh;
+  max-width: min(90vw, 960px);
+  max-height: min(85vh, 720px);
   animation: gallery-lightbox-scale-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -303,8 +303,8 @@
 
 .gallery-window__lightbox-img {
   display: block;
-  max-width: 90vw;
-  max-height: 90vh;
+  max-width: min(90vw, 960px);
+  max-height: min(85vh, 720px);
   width: auto;
   height: auto;
   object-fit: contain;

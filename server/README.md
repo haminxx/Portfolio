@@ -38,3 +38,7 @@ Backend for fetching GitHub profile data. Deploy to Render or run locally.
 5. Start command: `npm start`
 6. Add environment variables: `GITHUB_TOKEN`, `GITHUB_USER`
 7. After deploy, set `VITE_API_URL=https://your-service.onrender.com` when building the frontend
+
+## Maps directions proxy
+
+`GET /api/maps/route?from=LAT,LON&to=LAT,LON&profile=driving|walking|cycling` proxies to the public OSRM demo (or set `OSRM_BASE_URL` to your own OSRM instance). Used by the portfolio Map app for turn-by-turn geometry without browser CORS issues.

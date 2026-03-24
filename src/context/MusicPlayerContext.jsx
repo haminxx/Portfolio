@@ -156,36 +156,73 @@ export function MusicPlayerProvider({ children }) {
     if (currentTrack?.videoId) loadVideo(currentTrack.videoId)
   }, [currentTrack?.videoId, loadVideo])
 
-  const playTrack = useCallback((videoId, meta = {}) => {
+  const appendListenHistory = useCallback((videoId, title, artist) => {
     if (!videoId) return
-    const thumb = meta.thumbnail || `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
-    const entry = {
-      videoId,
-      title: meta.title || 'Unknown',
-      artist: meta.artist || '',
-      thumbnail: thumb,
+    try {
+      const LISTEN_KEY = 'ytm-listen-history'
+      const raw = localStorage.getItem(LISTEN_KEY)
+      let arr = []
+      try {
+        arr = JSON.parse(raw || '[]')
+      } catch {
+        arr = []
+      }
+      if (!Array.isArray(arr)) arr = []
+      arr.unshift({ videoId, title: title || '', artist: artist || '', at: Date.now() })
+      const deduped = []
+      const seen = new Set()
+      for (const e of arr) {
+        if (!e?.videoId || seen.has(e.videoId)) continue
+        seen.add(e.videoId)
+        deduped.push({ videoId: e.videoId, title: e.title || '', artist: e.artist || '' })
+        if (deduped.length >= 50) break
+      }
+      localStorage.setItem(LISTEN_KEY, JSON.stringify(deduped))
+    } catch {
+      // ignore
     }
-    setQueue([entry])
-    setCurrentIndex(0)
-    setProgressSec(0)
-    setDurationSec(0)
   }, [])
 
-  const playQueue = useCallback((tracks, startIndex = 0) => {
-    const normalized = tracks
-      .filter((t) => t.videoId)
-      .map((t) => ({
-        videoId: t.videoId,
-        title: t.title || 'Unknown',
-        artist: t.artist || '',
-        thumbnail: t.thumbnail || `https://img.youtube.com/vi/${t.videoId}/mqdefault.jpg`,
-      }))
-    if (!normalized.length) return
-    setQueue(normalized)
-    setCurrentIndex(Math.min(Math.max(0, startIndex), normalized.length - 1))
-    setProgressSec(0)
-    setDurationSec(0)
-  }, [])
+  const playTrack = useCallback(
+    (videoId, meta = {}) => {
+      if (!videoId) return
+      const thumb = meta.thumbnail || `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+      const entry = {
+        videoId,
+        title: meta.title || 'Unknown',
+        artist: meta.artist || '',
+        thumbnail: thumb,
+      }
+      appendListenHistory(videoId, entry.title, entry.artist)
+      setQueue([entry])
+      setCurrentIndex(0)
+      setProgressSec(0)
+      setDurationSec(0)
+    },
+    [appendListenHistory]
+  )
+
+  const playQueue = useCallback(
+    (tracks, startIndex = 0) => {
+      const normalized = tracks
+        .filter((t) => t.videoId)
+        .map((t) => ({
+          videoId: t.videoId,
+          title: t.title || 'Unknown',
+          artist: t.artist || '',
+          thumbnail: t.thumbnail || `https://img.youtube.com/vi/${t.videoId}/mqdefault.jpg`,
+        }))
+      if (!normalized.length) return
+      const i = Math.min(Math.max(0, startIndex), normalized.length - 1)
+      const cur = normalized[i]
+      appendListenHistory(cur.videoId, cur.title, cur.artist)
+      setQueue(normalized)
+      setCurrentIndex(i)
+      setProgressSec(0)
+      setDurationSec(0)
+    },
+    [appendListenHistory]
+  )
 
   const pause = useCallback(() => {
     try {
@@ -319,19 +356,8 @@ export function useMusicPlayer() {
 
 const YOUTUBE_KEY = import.meta.env.VITE_YOUTUBE_API_KEY || ''
 
-export async function searchYouTubeVideos(query) {
-  if (!query?.trim() || !YOUTUBE_KEY) return []
-  const url = new URL('https://www.googleapis.com/youtube/v3/search')
-  url.searchParams.set('part', 'snippet')
-  url.searchParams.set('type', 'video')
-  url.searchParams.set('maxResults', '24')
-  url.searchParams.set('q', query.trim())
-  url.searchParams.set('key', YOUTUBE_KEY)
-  const res = await fetch(url.toString())
-  if (!res.ok) return []
-  const data = await res.json()
-  const items = data.items || []
-  return items
+function mapSearchItems(items) {
+  return (items || [])
     .map((it) => {
       const sn = it.snippet || {}
       const vid = it.id?.videoId
@@ -343,4 +369,87 @@ export async function searchYouTubeVideos(query) {
       }
     })
     .filter((x) => x.videoId)
+}
+
+export async function searchYouTubeVideos(query) {
+  if (!query?.trim() || !YOUTUBE_KEY) return []
+  const url = new URL('https://www.googleapis.com/youtube/v3/search')
+  url.searchParams.set('part', 'snippet')
+  url.searchParams.set('type', 'video')
+  url.searchParams.set('maxResults', '24')
+  url.searchParams.set('q', query.trim())
+  url.searchParams.set('key', YOUTUBE_KEY)
+  const res = await fetch(url.toString())
+  if (!res.ok) return []
+  const data = await res.json()
+  return mapSearchItems(data.items)
+}
+
+const LISTEN_KEY = 'ytm-listen-history'
+
+/** Related + keyword search from recent plays (requires VITE_YOUTUBE_API_KEY). */
+export async function fetchRecommendedFromListening(maxTotal = 20) {
+  if (!YOUTUBE_KEY) return []
+  let history = []
+  try {
+    history = JSON.parse(localStorage.getItem(LISTEN_KEY) || '[]')
+  } catch {
+    return []
+  }
+  if (!Array.isArray(history) || !history.length) return []
+
+  const seen = new Set()
+  const out = []
+
+  const pushMapped = (items) => {
+    for (const it of mapSearchItems(items)) {
+      if (seen.has(it.videoId)) continue
+      seen.add(it.videoId)
+      out.push(it)
+      if (out.length >= maxTotal) return true
+    }
+    return false
+  }
+
+  const lastWithId = history.find((h) => h?.videoId)
+  if (lastWithId) {
+    try {
+      const url = new URL('https://www.googleapis.com/youtube/v3/search')
+      url.searchParams.set('part', 'snippet')
+      url.searchParams.set('type', 'video')
+      url.searchParams.set('maxResults', '12')
+      url.searchParams.set('relatedToVideoId', lastWithId.videoId)
+      url.searchParams.set('key', YOUTUBE_KEY)
+      const res = await fetch(url.toString())
+      if (res.ok) {
+        const data = await res.json()
+        if (pushMapped(data.items)) return out
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const artists = [...new Set(history.slice(0, 8).map((h) => h?.artist).filter(Boolean))]
+  for (const artist of artists.slice(0, 3)) {
+    if (out.length >= maxTotal) break
+    try {
+      const q = `${artist} music`
+      const url = new URL('https://www.googleapis.com/youtube/v3/search')
+      url.searchParams.set('part', 'snippet')
+      url.searchParams.set('type', 'video')
+      url.searchParams.set('maxResults', '8')
+      url.searchParams.set('q', q)
+      url.searchParams.set('key', YOUTUBE_KEY)
+      const res = await fetch(url.toString())
+      if (res.ok) {
+        const data = await res.json()
+        if (pushMapped(data.items)) break
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return out
 }

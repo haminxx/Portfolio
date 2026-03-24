@@ -1,16 +1,37 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap, GeoJSON, CircleMarker } from 'react-leaflet'
 import L from 'leaflet'
-import { Home, GraduationCap, MapPin, Globe, Search, ChevronDown, ChevronRight, Coffee, Utensils, Map, ZoomIn, ZoomOut } from 'lucide-react'
+import {
+  Home,
+  GraduationCap,
+  MapPin,
+  Globe,
+  Search,
+  ChevronDown,
+  ChevronRight,
+  Utensils,
+  Map,
+  ZoomIn,
+  ZoomOut,
+  X,
+  Navigation,
+  Car,
+  Footprints,
+  Bike,
+  Train,
+} from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext'
 import 'leaflet/dist/leaflet.css'
 import './MapWindow.css'
+
+const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
 const MAP_STYLE_KEYS = {
   minimal: {
     key: 'minimal',
     url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
   },
   standard: {
     key: 'standard',
@@ -25,26 +46,30 @@ const MAP_STYLE_KEYS = {
   terrain: {
     key: 'terrain',
     url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
   },
 }
 
-const SAVED_LOCATIONS = {
+const PLACES = {
   home: {
+    id: 'home',
     nameKey: 'home',
     address: 'Aliso Viejo, CA',
     coords: [33.575, -117.726],
     zoom: 12,
     icon: Home,
   },
-  school: {
-    nameKey: 'school',
+  college: {
+    id: 'college',
+    nameKey: 'college',
     address: 'UC San Diego, 9500 Gilman Dr, La Jolla, CA',
     coords: [32.8801, -117.234],
     zoom: 15,
     icon: GraduationCap,
   },
   chicago: {
+    id: 'chicago',
     nameKey: 'homeTown',
     address: 'Chicago, IL',
     coords: [41.8781, -87.6298],
@@ -52,6 +77,7 @@ const SAVED_LOCATIONS = {
     icon: MapPin,
   },
   seoul: {
+    id: 'seoul',
     nameKey: 'secondHomeTown',
     address: 'Seoul, South Korea',
     coords: [37.5665, 126.978],
@@ -60,56 +86,17 @@ const SAVED_LOCATIONS = {
   },
 }
 
-// Placeholder - add locations later
-const CAFE_LOCATIONS = {}
-const FOOD_LOCATIONS = {}
+const SPEEDS_MS = { driving: 22, walking: 1.4, cycling: 5 }
 
-const FOLDERS = [
-  { id: 'savedLocations', labelKey: 'savedLocations', icon: MapPin, locations: SAVED_LOCATIONS },
-  { id: 'cafe', labelKey: 'cafe', icon: Coffee, locations: CAFE_LOCATIONS },
-  { id: 'food', labelKey: 'food', icon: Utensils, locations: FOOD_LOCATIONS },
-]
-
-const ALL_LOCATIONS = { ...SAVED_LOCATIONS, ...CAFE_LOCATIONS, ...FOOD_LOCATIONS }
-
-function MapFlyTo({ coords, zoom }) {
-  const map = useMap()
-  useEffect(() => {
-    if (coords && coords.length === 2) {
-      map.flyTo(coords, zoom ?? 12, { duration: 0.8 })
-    }
-  }, [coords, zoom, map])
-  return null
-}
-
-function MapControls({ mapStyle, onMapStyleChange, t }) {
-  const map = useMap()
-  return (
-    <div className="map-window__controls-strip">
-      <div className="map-window__view-dropdown map-window__view-dropdown--animated">
-        <Map size={16} strokeWidth={1.5} />
-        <select
-          value={mapStyle}
-          onChange={(e) => onMapStyleChange(e.target.value)}
-          className="map-window__view-select"
-          aria-label="Map style"
-        >
-          {Object.entries(MAP_STYLE_KEYS).map(([key, s]) => (
-            <option key={key} value={key}>{t(`map.${s.key}`)}</option>
-          ))}
-        </select>
-        <ChevronDown size={16} strokeWidth={1.5} className="map-window__view-chevron" />
-      </div>
-      <div className="map-window__zoom-buttons">
-        <button type="button" className="map-window__zoom-btn" onClick={() => map.zoomIn()} aria-label="Zoom in">
-          <ZoomIn size={16} strokeWidth={1.5} />
-        </button>
-        <button type="button" className="map-window__zoom-btn" onClick={() => map.zoomOut()} aria-label="Zoom out">
-          <ZoomOut size={16} strokeWidth={1.5} />
-        </button>
-      </div>
-    </div>
-  )
+function haversineMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000
+  const toRad = (d) => (d * Math.PI) / 180
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  return 2 * R * Math.asin(Math.sqrt(a))
 }
 
 const homeIcon = L.divIcon({
@@ -141,10 +128,67 @@ async function geocode(query, limit = 1) {
       }))
 }
 
+function MapFlyTo({ coords, zoom }) {
+  const map = useMap()
+  useEffect(() => {
+    if (coords && coords.length === 2) {
+      map.flyTo(coords, zoom ?? 12, { duration: 0.8 })
+    }
+  }, [coords, zoom, map])
+  return null
+}
+
+function MapFitRouteBounds({ geometry }) {
+  const map = useMap()
+  useEffect(() => {
+    if (!geometry?.coordinates?.length) return
+    try {
+      const layer = L.geoJSON(geometry)
+      const b = layer.getBounds()
+      if (b.isValid()) map.fitBounds(b, { padding: [64, 64], maxZoom: 14 })
+    } catch {
+      // ignore
+    }
+  }, [geometry, map])
+  return null
+}
+
+function MapControls({ mapStyle, onMapStyleChange, t }) {
+  const map = useMap()
+  return (
+    <div className="map-window__controls-strip">
+      <div className="map-window__view-dropdown map-window__view-dropdown--animated">
+        <Map size={16} strokeWidth={1.5} />
+        <select
+          value={mapStyle}
+          onChange={(e) => onMapStyleChange(e.target.value)}
+          className="map-window__view-select"
+          aria-label="Map style"
+        >
+          {Object.entries(MAP_STYLE_KEYS).map(([key, s]) => (
+            <option key={key} value={key}>
+              {t(`map.${s.key}`)}
+            </option>
+          ))}
+        </select>
+        <ChevronDown size={16} strokeWidth={1.5} className="map-window__view-chevron" />
+      </div>
+      <div className="map-window__zoom-buttons">
+        <button type="button" className="map-window__zoom-btn" onClick={() => map.zoomIn()} aria-label="Zoom in">
+          <ZoomIn size={16} strokeWidth={1.5} />
+        </button>
+        <button type="button" className="map-window__zoom-btn" onClick={() => map.zoomOut()} aria-label="Zoom out">
+          <ZoomOut size={16} strokeWidth={1.5} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function MapWindow() {
   const { t } = useLanguage()
   const [activeLocation, setActiveLocation] = useState(null)
-  const [expandedFolders, setExpandedFolders] = useState(new Set())
+  const [restaurantsOpen, setRestaurantsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResult, setSearchResult] = useState(null)
   const [searchCoords, setSearchCoords] = useState(null)
@@ -155,25 +199,149 @@ export default function MapWindow() {
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
   const suggestionsDebounceRef = useRef(null)
   const [mapStyle, setMapStyle] = useState('minimal')
+  const [userLocation, setUserLocation] = useState(null)
+  const [geoMessage, setGeoMessage] = useState(null)
+  const [directionsTarget, setDirectionsTarget] = useState(null)
+  const [routeProfile, setRouteProfile] = useState('driving')
+  const [routeGeometry, setRouteGeometry] = useState(null)
+  const [routeMeta, setRouteMeta] = useState(null)
+  const [routeLoading, setRouteLoading] = useState(false)
+  const [routeHint, setRouteHint] = useState(null)
 
-  const flyToCoords = searchCoords ?? (activeLocation ? ALL_LOCATIONS[activeLocation]?.coords : null)
-  const flyToZoom = searchCoords ? 14 : (activeLocation ? ALL_LOCATIONS[activeLocation]?.zoom : null)
+  const requestLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setGeoMessage(t('map.locationDenied'))
+      return
+    }
+    setGeoMessage(null)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLocation([pos.coords.latitude, pos.coords.longitude])
+        setGeoMessage(null)
+      },
+      (err) => {
+        if (err.code === 1) setGeoMessage(t('map.locationDenied'))
+        else setGeoMessage(t('map.routeError'))
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+    )
+  }, [t])
 
-  const toggleFolder = useCallback((id) => {
-    setExpandedFolders((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
+  useEffect(() => {
+    requestLocation()
+  }, [requestLocation])
+
+  const openDirectionsForPlace = useCallback(
+    (placeId) => {
+      const place = PLACES[placeId]
+      if (!place) return
+      setActiveLocation(placeId)
+      setSearchCoords(null)
+      setSearchResult(null)
+      setShowSuggestions(false)
+      setDirectionsTarget(place)
+    },
+    []
+  )
+
+  const closeDirections = useCallback(() => {
+    setDirectionsTarget(null)
+    setRouteGeometry(null)
+    setRouteMeta(null)
+    setRouteHint(null)
+  }, [])
+
+  useEffect(() => {
+    if (!directionsTarget) {
+      setRouteGeometry(null)
+      setRouteMeta(null)
+      setRouteHint(null)
+      return
+    }
+
+    const dest = directionsTarget.coords
+    const [dlat, dlng] = dest
+
+    if (!userLocation) {
+      setRouteGeometry(null)
+      setRouteMeta(null)
+      setRouteHint(null)
+      return
+    }
+
+    const [ulat, ulng] = userLocation
+
+    let cancelled = false
+    setRouteLoading(true)
+    setRouteHint(null)
+
+    const run = async () => {
+      if (API_URL) {
+        try {
+          const url = `${API_URL}/api/maps/route?from=${ulat},${ulng}&to=${dlat},${dlng}&profile=${routeProfile}`
+          const res = await fetch(url)
+          if (cancelled) return
+          if (res.ok) {
+            const data = await res.json()
+            setRouteGeometry(data.geometry || null)
+            setRouteMeta({
+              duration: data.duration,
+              distance: data.distance,
+              steps: data.steps || [],
+            })
+            setRouteHint(null)
+            setRouteLoading(false)
+            return
+          }
+        } catch {
+          // fall through
+        }
+      }
+
+      if (cancelled) return
+      const meters = haversineMeters(ulat, ulng, dlat, dlng)
+      const speed = SPEEDS_MS[routeProfile] || SPEEDS_MS.driving
+      const duration = meters / speed
+      const geometry = {
+        type: 'LineString',
+        coordinates: [
+          [ulng, ulat],
+          [dlng, dlat],
+        ],
+      }
+      setRouteGeometry(geometry)
+      setRouteMeta({
+        duration,
+        distance: meters,
+        steps: [],
+      })
+      setRouteHint(API_URL ? t('map.straightLineHint') : t('map.straightLineHint'))
+      setRouteLoading(false)
+    }
+
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [directionsTarget, userLocation, routeProfile, t])
+
+  const flyToCoords = searchCoords ?? (activeLocation && PLACES[activeLocation] ? PLACES[activeLocation].coords : null)
+  const flyToZoom = searchCoords ? 14 : activeLocation ? PLACES[activeLocation]?.zoom : null
+
+  const markersToShow = []
+  if (activeLocation && !searchCoords && PLACES[activeLocation]) {
+    const p = PLACES[activeLocation]
+    markersToShow.push({ key: activeLocation, coords: p.coords, address: p.address })
+  }
+  if (searchCoords) {
+    markersToShow.push({
+      key: 'search',
+      coords: searchCoords,
+      address: searchResult?.address ?? 'Searched location',
     })
-  }, [])
+  }
 
-  const goToLocation = useCallback((key) => {
-    setActiveLocation(key)
-    setSearchCoords(null)
-    setSearchResult(null)
-    setShowSuggestions(false)
-  }, [])
+  const currentStyle = MAP_STYLE_KEYS[mapStyle] ?? MAP_STYLE_KEYS.minimal
 
   const handleSearch = useCallback(async () => {
     const q = searchQuery.trim()
@@ -186,6 +354,8 @@ export default function MapWindow() {
       if (result) {
         setSearchCoords(result.coords)
         setSearchResult(result)
+        setActiveLocation(null)
+        setDirectionsTarget(null)
         setRecentSearches((prev) => {
           const next = [{ query: q, ...result }, ...prev.filter((r) => r.query !== q)].slice(0, 5)
           return next
@@ -236,21 +406,25 @@ export default function MapWindow() {
     setSearchQuery(item.address)
     setShowSuggestions(false)
     setSuggestions([])
+    setActiveLocation(null)
+    setDirectionsTarget(null)
     setRecentSearches((prev) => {
       const next = [{ query: item.address, ...item }, ...prev.filter((r) => r.address !== item.address)].slice(0, 5)
       return next
     })
   }, [])
 
-  const markersToShow = []
-  if (activeLocation && !searchCoords && ALL_LOCATIONS[activeLocation]) {
-    markersToShow.push({ key: activeLocation, ...ALL_LOCATIONS[activeLocation] })
-  }
-  if (searchCoords) {
-    markersToShow.push({ key: 'search', coords: searchCoords, address: searchResult?.address ?? 'Searched location' })
+  const formatDuration = (sec) => {
+    if (sec == null || Number.isNaN(sec)) return '—'
+    const m = Math.round(sec / 60)
+    return `${m} ${t('map.min')}`
   }
 
-  const currentStyle = MAP_STYLE_KEYS[mapStyle] ?? MAP_STYLE_KEYS.minimal
+  const formatDistance = (meters) => {
+    if (meters == null || Number.isNaN(meters)) return '—'
+    const mi = meters / 1609.34
+    return `${mi < 10 ? mi.toFixed(1) : Math.round(mi)} ${t('map.mi')}`
+  }
 
   return (
     <div className="map-window">
@@ -263,8 +437,29 @@ export default function MapWindow() {
           zoomControl={false}
         >
           <MapFlyTo coords={flyToCoords} zoom={flyToZoom} />
+          {routeGeometry && <MapFitRouteBounds geometry={routeGeometry} />}
           <TileLayer attribution={currentStyle.attribution} url={currentStyle.url} />
           <MapControls mapStyle={mapStyle} onMapStyleChange={setMapStyle} t={t} />
+          {userLocation && (
+            <CircleMarker
+              center={userLocation}
+              radius={7}
+              pathOptions={{ color: '#fff', weight: 2, fillColor: '#34c759', fillOpacity: 1 }}
+            />
+          )}
+          {routeGeometry && (
+            <GeoJSON
+              key={`${routeProfile}-${routeGeometry.coordinates?.length}-${routeGeometry.coordinates?.[0]?.join(',')}`}
+              data={routeGeometry}
+              style={{
+                color: '#007aff',
+                weight: 5,
+                opacity: 0.92,
+                lineCap: 'round',
+                lineJoin: 'round',
+              }}
+            />
+          )}
           {markersToShow.map((m) => (
             <Marker key={m.key} position={m.coords} icon={homeIcon}>
               <Popup>{m.address}</Popup>
@@ -272,6 +467,7 @@ export default function MapWindow() {
           ))}
         </MapContainer>
       </div>
+
       <div className="map-window__search-overlay">
         <div className="map-window__search-wrap map-window__search-wrap--relative">
           <Search size={18} strokeWidth={1.5} className="map-window__search-icon" />
@@ -316,78 +512,188 @@ export default function MapWindow() {
           </button>
         </div>
       </div>
-      <aside className="map-window__sidebar map-window__sidebar--overlay">
-          {FOLDERS.map((folder) => {
-            const Icon = folder.icon
-            const entries = Object.entries(folder.locations)
-            const isExpanded = expandedFolders.has(folder.id)
-            return (
-              <div key={folder.id} className="map-window__folder">
-                <button
-                  type="button"
-                  className="map-window__folder-header"
-                  onClick={() => toggleFolder(folder.id)}
-                >
-                  {isExpanded ? (
-                    <ChevronDown size={18} strokeWidth={1.5} />
-                  ) : (
-                    <ChevronRight size={18} strokeWidth={1.5} />
-                  )}
-                  <Icon size={18} strokeWidth={1.5} />
-                  <span className="map-window__folder-label">{t(`map.${folder.labelKey}`)}</span>
-                </button>
-                {isExpanded && (
-                  <div className="map-window__folder-items">
-                    {entries.length > 0 ? (
-                      entries.map(([key, loc]) => {
-                        const LocIcon = loc.icon ?? MapPin
-                        return (
-                          <button
-                            key={key}
-                            type="button"
-                            className={`map-window__saved-item ${activeLocation === key && !searchCoords ? 'map-window__saved-item--active' : ''}`}
-                            onClick={() => goToLocation(key)}
-                          >
-                            <LocIcon size={20} strokeWidth={1.5} />
-                            <div className="map-window__saved-item-text">
-                              <span className="map-window__saved-item-name">{t(`map.${loc.nameKey}`)}</span>
-                              <span className="map-window__saved-item-address">{loc.address}</span>
-                            </div>
-                          </button>
-                        )
-                      })
-                    ) : (
-                      <div className="map-window__folder-empty">{t('map.noLocationsYet')}</div>
-                    )}
-                  </div>
-                )}
+
+      <aside className="map-window__sidebar map-window__sidebar--overlay map-window__sidebar--apple">
+        <p className="map-window__sidebar-section-label">{t('map.favorites')}</p>
+        {['home', 'college'].map((id) => {
+          const loc = PLACES[id]
+          const Icon = loc.icon
+          return (
+            <button
+              key={id}
+              type="button"
+              className={`map-window__saved-item ${activeLocation === id && !searchCoords ? 'map-window__saved-item--active' : ''}`}
+              onClick={() => openDirectionsForPlace(id)}
+            >
+              <Icon size={20} strokeWidth={1.5} />
+              <div className="map-window__saved-item-text">
+                <span className="map-window__saved-item-name">{t(`map.${loc.nameKey}`)}</span>
+                <span className="map-window__saved-item-address">{loc.address}</span>
               </div>
-            )
-          })}
-          {recentSearches.length > 0 && (
-            <>
-              <h3 className="map-window__sidebar-title map-window__sidebar-title--mt">{t('map.recentSearches')}</h3>
-              {recentSearches.map((r, i) => (
-                <button
-                  key={`${r.query}-${i}`}
-                  type="button"
-                  className="map-window__saved-item"
-                  onClick={() => {
-                    setSearchCoords(r.coords)
-                    setSearchResult(r)
-                    setActiveLocation(null)
-                  }}
-                >
-                  <MapPin size={20} strokeWidth={1.5} />
-                  <div className="map-window__saved-item-text">
-                    <span className="map-window__saved-item-name">{r.query}</span>
-                    <span className="map-window__saved-item-address">{r.address}</span>
-                  </div>
-                </button>
-              ))}
-            </>
+            </button>
+          )
+        })}
+        <p className="map-window__sidebar-sub-label">{t('map.hometowns')}</p>
+        {['chicago', 'seoul'].map((id) => {
+          const loc = PLACES[id]
+          const Icon = loc.icon
+          return (
+            <button
+              key={id}
+              type="button"
+              className={`map-window__saved-item ${activeLocation === id && !searchCoords ? 'map-window__saved-item--active' : ''}`}
+              onClick={() => openDirectionsForPlace(id)}
+            >
+              <Icon size={20} strokeWidth={1.5} />
+              <div className="map-window__saved-item-text">
+                <span className="map-window__saved-item-name">{t(`map.${loc.nameKey}`)}</span>
+                <span className="map-window__saved-item-address">{loc.address}</span>
+              </div>
+            </button>
+          )
+        })}
+
+        <div className="map-window__folder map-window__folder--restaurants">
+          <button
+            type="button"
+            className="map-window__folder-header"
+            onClick={() => setRestaurantsOpen((o) => !o)}
+          >
+            {restaurantsOpen ? (
+              <ChevronDown size={18} strokeWidth={1.5} />
+            ) : (
+              <ChevronRight size={18} strokeWidth={1.5} />
+            )}
+            <Utensils size={18} strokeWidth={1.5} />
+            <span className="map-window__folder-label">{t('map.restaurantsAndCafe')}</span>
+          </button>
+          {restaurantsOpen && (
+            <div className="map-window__folder-items">
+              <div className="map-window__folder-empty">{t('map.restaurantsPlaceholder')}</div>
+            </div>
           )}
-        </aside>
+        </div>
+
+        {recentSearches.length > 0 && (
+          <>
+            <h3 className="map-window__sidebar-title map-window__sidebar-title--mt">{t('map.recentSearches')}</h3>
+            {recentSearches.map((r, i) => (
+              <button
+                key={`${r.query}-${i}`}
+                type="button"
+                className="map-window__saved-item"
+                onClick={() => {
+                  setSearchCoords(r.coords)
+                  setSearchResult(r)
+                  setActiveLocation(null)
+                  setDirectionsTarget(null)
+                }}
+              >
+                <MapPin size={20} strokeWidth={1.5} />
+                <div className="map-window__saved-item-text">
+                  <span className="map-window__saved-item-name">{r.query}</span>
+                  <span className="map-window__saved-item-address">{r.address}</span>
+                </div>
+              </button>
+            ))}
+          </>
+        )}
+      </aside>
+
+      {directionsTarget && (
+        <div className="map-window__directions-card">
+          <div className="map-window__directions-header">
+            <Navigation size={20} strokeWidth={1.5} className="map-window__directions-header-icon" />
+            <h2 className="map-window__directions-title">{t('map.directions')}</h2>
+            <button type="button" className="map-window__directions-close" onClick={closeDirections} aria-label={t('map.closePanel')}>
+              <X size={20} strokeWidth={1.5} />
+            </button>
+          </div>
+
+          <div className="map-window__directions-modes">
+            <button
+              type="button"
+              className={`map-window__mode-btn ${routeProfile === 'driving' ? 'map-window__mode-btn--active' : ''}`}
+              onClick={() => setRouteProfile('driving')}
+              aria-pressed={routeProfile === 'driving'}
+            >
+              <Car size={18} strokeWidth={1.5} />
+              <span>{t('map.driving')}</span>
+            </button>
+            <button
+              type="button"
+              className={`map-window__mode-btn ${routeProfile === 'walking' ? 'map-window__mode-btn--active' : ''}`}
+              onClick={() => setRouteProfile('walking')}
+              aria-pressed={routeProfile === 'walking'}
+            >
+              <Footprints size={18} strokeWidth={1.5} />
+              <span>{t('map.walking')}</span>
+            </button>
+            <button
+              type="button"
+              className={`map-window__mode-btn ${routeProfile === 'cycling' ? 'map-window__mode-btn--active' : ''}`}
+              onClick={() => setRouteProfile('cycling')}
+              aria-pressed={routeProfile === 'cycling'}
+            >
+              <Bike size={18} strokeWidth={1.5} />
+              <span>{t('map.cycling')}</span>
+            </button>
+            <button type="button" className="map-window__mode-btn map-window__mode-btn--disabled" disabled title={t('map.transitSoon')}>
+              <Train size={18} strokeWidth={1.5} />
+              <span>{t('map.transitSoon')}</span>
+            </button>
+          </div>
+
+          <div className="map-window__directions-places">
+            <div className="map-window__directions-row">
+              <span className="map-window__directions-label">{t('map.yourLocation')}</span>
+              <span className="map-window__directions-value">
+                {userLocation ? `${userLocation[0].toFixed(4)}, ${userLocation[1].toFixed(4)}` : '—'}
+              </span>
+            </div>
+            {!userLocation && (
+              <div className="map-window__directions-alert">
+                <p>{t('map.locationNeeded')}</p>
+                <button type="button" className="map-window__directions-loc-btn" onClick={requestLocation}>
+                  {t('map.search')}
+                </button>
+              </div>
+            )}
+            {geoMessage && <p className="map-window__directions-warn">{geoMessage}</p>}
+            <div className="map-window__directions-row map-window__directions-row--dest">
+              <span className="map-window__directions-label">{t('map.to')}</span>
+              <span className="map-window__directions-value map-window__directions-value--strong">{t(`map.${directionsTarget.nameKey}`)}</span>
+              <span className="map-window__directions-address">{directionsTarget.address}</span>
+            </div>
+          </div>
+
+          {userLocation && (
+            <div className="map-window__directions-summary">
+              {routeLoading ? (
+                <p className="map-window__directions-loading">{t('map.searching')}</p>
+              ) : routeMeta ? (
+                <>
+                  <div className="map-window__directions-summary-main">
+                    <span className="map-window__directions-eta">{formatDuration(routeMeta.duration)}</span>
+                    <span className="map-window__directions-dot">·</span>
+                    <span className="map-window__directions-dist">{formatDistance(routeMeta.distance)}</span>
+                  </div>
+                  {routeHint && <p className="map-window__directions-hint">{routeHint}</p>}
+                  {routeMeta.steps?.length > 0 && (
+                    <ol className="map-window__directions-steps">
+                      {routeMeta.steps.slice(0, 12).map((step, i) => (
+                        <li key={i} className="map-window__directions-step">
+                          {step.name || step.maneuver || '—'}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </>
+              ) : null}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

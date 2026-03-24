@@ -10,7 +10,7 @@ function formatTime(sec) {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
-export default function NowPlayingBar() {
+export default function NowPlayingBar({ variant = 'global' }) {
   const {
     currentTrack,
     isPlaying,
@@ -41,7 +41,11 @@ export default function NowPlayingBar() {
   const pct = durationSec > 0 ? Math.min(100, (progressSec / durationSec) * 100) : 0
 
   return (
-    <div className="now-playing-bar" role="region" aria-label="Now playing">
+    <div
+      className={`now-playing-bar ${variant === 'embedded' ? 'now-playing-bar--embedded' : ''}`}
+      role="region"
+      aria-label="Now playing"
+    >
       <div className="now-playing-bar__thumb">
         <img src={currentTrack.thumbnail} alt="" className="now-playing-bar__thumb-img" />
       </div>

@@ -31,7 +31,6 @@ import { SHORTCUTS } from '../config/shortcuts'
 import { useLanguage } from '../context/LanguageContext'
 import { useTheme } from '../context/ThemeContext'
 import { MusicPlayerProvider } from '../context/MusicPlayerContext'
-import NowPlayingBar from '../components/NowPlayingBar'
 import { Globe, Image, Film, Images, Video, ShoppingBag, Settings, Map, Folder } from 'lucide-react'
 import './ChromeLanding.css'
 
@@ -601,7 +600,6 @@ export default function ChromeLanding({ onReboot }) {
           onRefresh={handleRefresh}
         />
       )}
-      <NowPlayingBar />
     </div>
     </MusicPlayerProvider>
   )

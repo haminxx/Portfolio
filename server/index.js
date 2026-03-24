@@ -103,6 +103,56 @@ app.get('/api/ytmusic/curated', (req, res) => {
   res.json({ sections: CURATED_SECTIONS })
 })
 
+const OSRM_BASE = process.env.OSRM_BASE_URL || 'https://router.project-osrm.org'
+
+/** Proxy OSRM (driving / foot / bike) so the browser avoids CORS. Query: from=lat,lon&to=lat,lon&profile=driving|walking|cycling */
+app.get('/api/maps/route', async (req, res) => {
+  const from = req.query.from
+  const to = req.query.to
+  const profile = req.query.profile || 'driving'
+  if (!from || !to) {
+    return res.status(400).json({ error: 'Missing from or to (lat,lon)' })
+  }
+  const parse = (s) => {
+    const parts = String(s).split(',').map((x) => parseFloat(x.trim(), 10))
+    if (parts.length !== 2 || parts.some((n) => Number.isNaN(n))) return null
+    return parts
+  }
+  const fromPt = parse(from)
+  const toPt = parse(to)
+  if (!fromPt || !toPt) {
+    return res.status(400).json({ error: 'Invalid coordinates' })
+  }
+  const osrmProfile = { driving: 'driving', walking: 'foot', cycling: 'bike' }[profile] || 'driving'
+  const [lat1, lon1] = fromPt
+  const [lat2, lon2] = toPt
+  const url = `${OSRM_BASE.replace(/\/$/, '')}/route/v1/${osrmProfile}/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson&steps=true`
+  try {
+    const r = await fetch(url)
+    const data = await r.json()
+    if (data.code !== 'Ok' || !data.routes?.[0]) {
+      return res.status(404).json({ error: data.message || 'No route found' })
+    }
+    const route = data.routes[0]
+    const leg = route.legs?.[0]
+    res.json({
+      duration: leg?.duration ?? route.duration,
+      distance: leg?.distance ?? route.distance,
+      geometry: route.geometry,
+      steps: (leg?.steps || []).map((s) => ({
+        maneuver: s.maneuver?.type,
+        name: s.name || '',
+        distance: s.distance,
+        duration: s.duration,
+        instruction: s.maneuver?.instruction,
+      })),
+    })
+  } catch (err) {
+    console.error('Maps route proxy error:', err)
+    res.status(502).json({ error: 'Routing request failed' })
+  }
+})
+
 app.get('/api/youtube/search', async (req, res) => {
   const q = req.query.q?.trim()
   if (!q) {
