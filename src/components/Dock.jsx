@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { APPS } from '../config/apps'
 import { useLanguage } from '../context/LanguageContext'
 import {
@@ -29,6 +29,9 @@ const APP_ICONS = {
   dadnme: Film,
 }
 
+/** Horizontal slot width used for “make space” animation while dragging */
+const SLOT_PX = 52
+
 function reorderDockWithInsertion(order, dragKey, targetKey, placement) {
   if (!dragKey || dragKey === targetKey) return order
   const next = order.filter((k) => k !== dragKey)
@@ -39,16 +42,30 @@ function reorderDockWithInsertion(order, dragKey, targetKey, placement) {
   return next
 }
 
+function shiftForIndex(i, fromIdx, insertIdx) {
+  if (fromIdx < 0 || insertIdx < 0 || fromIdx === insertIdx) return 0
+  if (insertIdx < fromIdx) {
+    if (i >= insertIdx && i < fromIdx) return SLOT_PX
+    return 0
+  }
+  if (insertIdx > fromIdx) {
+    if (i > fromIdx && i < insertIdx) return -SLOT_PX
+    return 0
+  }
+  return 0
+}
+
 export default function Dock({ onOpenApp, dockOrder = Object.keys(APPS), onDockReorder, isChromeMaximized, anyMaximized, openAppWindows = [] }) {
   const { t } = useLanguage()
   const [draggedKey, setDraggedKey] = useState(null)
-  const [dropHint, setDropHint] = useState(null)
+  const [insertPreview, setInsertPreview] = useState(null)
   const doomOpen = openAppWindows.some((w) => w.appKey === 'doom')
   const dadnmeOpen = openAppWindows.some((w) => w.appKey === 'dadnme')
   const visibleKeys = dockOrder.filter(
     (key) => (key !== 'doom' && key !== 'dadnme') || (key === 'doom' && doomOpen) || (key === 'dadnme' && dadnmeOpen)
   )
-  const isHidden = anyMaximized ?? isChromeMaximized
+
+  const fromIdx = useMemo(() => (draggedKey ? visibleKeys.indexOf(draggedKey) : -1), [draggedKey, visibleKeys])
 
   const handleDragStart = (e, key) => {
     setDraggedKey(key)
@@ -62,28 +79,32 @@ export default function Dock({ onOpenApp, dockOrder = Object.keys(APPS), onDockR
       e.preventDefault()
       e.dataTransfer.dropEffect = 'move'
       if (!draggedKey || draggedKey === key) {
-        setDropHint(null)
+        setInsertPreview(null)
         return
       }
+      const h = visibleKeys.indexOf(key)
+      if (h === -1) return
       const wrap = e.currentTarget
       const rect = wrap.getBoundingClientRect()
       const mid = rect.left + rect.width / 2
       const placement = e.clientX < mid ? 'before' : 'after'
-      setDropHint({ key, placement })
+      const insertIdx = placement === 'before' ? h : h + 1
+      const f = visibleKeys.indexOf(draggedKey)
+      setInsertPreview({ insertIdx, fromIdx: f })
     },
-    [draggedKey]
+    [draggedKey, visibleKeys]
   )
 
   const handleDragLeave = (e) => {
     if (!e.currentTarget.contains(e.relatedTarget)) {
-      setDropHint(null)
+      setInsertPreview(null)
     }
   }
 
   const handleDrop = (e, targetKey) => {
     e.preventDefault()
     const dragKey = e.dataTransfer.getData('text/plain')
-    setDropHint(null)
+    setInsertPreview(null)
     setDraggedKey(null)
     if (!dragKey || !onDockReorder || dragKey === targetKey) return
     const rect = e.currentTarget.getBoundingClientRect()
@@ -95,23 +116,31 @@ export default function Dock({ onOpenApp, dockOrder = Object.keys(APPS), onDockR
 
   const handleDragEnd = () => {
     setDraggedKey(null)
-    setDropHint(null)
+    setInsertPreview(null)
   }
+
+  const insertIdx = insertPreview?.insertIdx ?? -1
+  const previewFrom = insertPreview?.fromIdx ?? fromIdx
+
+  const isHidden = anyMaximized ?? isChromeMaximized
 
   return (
     <div className={`dock-wrapper ${isHidden ? 'dock-wrapper--fullscreen-hidden' : ''}`}>
       <footer className="dock">
         <div className="dock__inner">
-          {visibleKeys.map((key) => {
+          {visibleKeys.map((key, i) => {
             const app = APPS[key]
             if (!app) return null
             const Icon = APP_ICONS[key] ?? Film
             const isDragging = draggedKey === key
-            const hint = dropHint?.key === key ? dropHint.placement : null
+            const tx = draggedKey ? shiftForIndex(i, previewFrom, insertIdx) : 0
             return (
               <div
                 key={key}
-                className={`dock__item-wrap ${isDragging ? 'dock__item-wrap--dragging' : ''} ${hint === 'before' ? 'dock__item-wrap--drop-before' : ''} ${hint === 'after' ? 'dock__item-wrap--drop-after' : ''}`}
+                className={`dock__item-wrap ${isDragging ? 'dock__item-wrap--dragging' : ''}`}
+                style={{
+                  transform: tx ? `translateX(${tx}px)` : undefined,
+                }}
                 draggable
                 onDragStart={(e) => handleDragStart(e, key)}
                 onDragOver={(e) => handleDragOver(e, key)}
@@ -123,7 +152,7 @@ export default function Dock({ onOpenApp, dockOrder = Object.keys(APPS), onDockR
                   type="button"
                   className="dock__item"
                   onClick={() => onOpenApp(key)}
-                  title={t(`apps.${key}`)}
+                  title=""
                   aria-label={t(`apps.${key}`)}
                 >
                   <span className="dock__icon">
@@ -134,10 +163,9 @@ export default function Dock({ onOpenApp, dockOrder = Object.keys(APPS), onDockR
                         className={`dock__icon-img ${key === 'dadnme' ? 'dock__icon-img--rounded-square' : ''} ${key === 'finder' ? 'dock__icon-img--rounded-square' : ''} ${key === 'appStore' ? 'dock__icon-img--appstore' : ''}`}
                       />
                     ) : Icon ? (
-                      <Icon size={24} strokeWidth={1.6} />
+                      <Icon size={26} strokeWidth={1.6} />
                     ) : null}
                   </span>
-                  <span className="dock__label">{t(`apps.${key}`)}</span>
                 </button>
               </div>
             )

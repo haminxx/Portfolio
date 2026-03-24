@@ -104,8 +104,55 @@ app.get('/api/ytmusic/curated', (req, res) => {
 })
 
 const OSRM_BASE = process.env.OSRM_BASE_URL || 'https://router.project-osrm.org'
+const ORS_API_KEY = process.env.ORS_API_KEY
 
-/** Proxy OSRM (driving / foot / bike) so the browser avoids CORS. Query: from=lat,lon&to=lat,lon&profile=driving|walking|cycling */
+const ORS_PROFILE = {
+  driving: 'driving-car',
+  walking: 'foot-walking',
+  cycling: 'cycling-regular',
+}
+
+async function fetchRouteOpenRouteService(lon1, lat1, lon2, lat2, profile) {
+  const p = ORS_PROFILE[profile] || ORS_PROFILE.driving
+  const r = await fetch(`https://api.openrouteservice.org/v2/directions/${p}/geojson`, {
+    method: 'POST',
+    headers: {
+      Authorization: ORS_API_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ coordinates: [[lon1, lat1], [lon2, lat2]] }),
+  })
+  if (!r.ok) {
+    const errText = await r.text().catch(() => '')
+    throw new Error(`ORS ${r.status} ${errText.slice(0, 120)}`)
+  }
+  const data = await r.json()
+  const feat = data.features?.[0]
+  if (!feat?.geometry) throw new Error('ORS: no route geometry')
+  const props = feat.properties || {}
+  const summary = props.summary || {}
+  const segments = props.segments || []
+  const steps = []
+  for (const seg of segments) {
+    for (const s of seg.steps || []) {
+      steps.push({
+        maneuver: s.type,
+        name: s.name || '',
+        distance: s.distance,
+        duration: s.duration,
+        instruction: s.instruction,
+      })
+    }
+  }
+  return {
+    duration: summary.duration,
+    distance: summary.distance,
+    geometry: feat.geometry,
+    steps,
+  }
+}
+
+/** Directions proxy: OpenRouteService when ORS_API_KEY is set (better road graph / free tier), else OSRM. Query: from=lat,lon&to=lat,lon&profile=driving|walking|cycling */
 app.get('/api/maps/route', async (req, res) => {
   const from = req.query.from
   const to = req.query.to
@@ -126,6 +173,18 @@ app.get('/api/maps/route', async (req, res) => {
   const osrmProfile = { driving: 'driving', walking: 'foot', cycling: 'bike' }[profile] || 'driving'
   const [lat1, lon1] = fromPt
   const [lat2, lon2] = toPt
+
+  if (ORS_API_KEY) {
+    try {
+      const out = await fetchRouteOpenRouteService(lon1, lat1, lon2, lat2, profile)
+      if (out.geometry && out.duration != null) {
+        return res.json(out)
+      }
+    } catch (e) {
+      console.warn('OpenRouteService route failed, falling back to OSRM:', e.message)
+    }
+  }
+
   const url = `${OSRM_BASE.replace(/\/$/, '')}/route/v1/${osrmProfile}/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson&steps=true`
   try {
     const r = await fetch(url)

@@ -255,11 +255,11 @@
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.82);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 48px 40px;
   animation: gallery-lightbox-fade-in 0.25s ease-out;
 }
 
@@ -270,8 +270,8 @@
 
 .gallery-window__lightbox-inner {
   position: relative;
-  max-width: min(90vw, 960px);
-  max-height: min(85vh, 720px);
+  max-width: min(58vw, 440px);
+  max-height: min(52vh, 380px);
   animation: gallery-lightbox-scale-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -303,8 +303,8 @@
 
 .gallery-window__lightbox-img {
   display: block;
-  max-width: min(90vw, 960px);
-  max-height: min(85vh, 720px);
+  max-width: min(58vw, 440px);
+  max-height: min(52vh, 380px);
   width: auto;
   height: auto;
   object-fit: contain;

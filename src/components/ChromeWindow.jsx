@@ -25,6 +25,8 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
   }, [position])
   const dragMouseStartRef = useRef({ x: 0, y: 0 })
   const dragPosStartRef = useRef({ x: 0, y: 0 })
+  const dragRafRef = useRef(null)
+  const dragPendingRef = useRef(null)
   const resizeRef = useRef({ edge: '', startX: 0, startY: 0, startW: 0, startH: 0, startLeft: 0, startTop: 0 })
 
   useEffect(() => {
@@ -67,18 +69,30 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
 
   useEffect(() => {
     if (!isDragging) return
-    const handleMove = (e) => {
-      const dx = e.clientX - dragMouseStartRef.current.x
-      const dy = e.clientY - dragMouseStartRef.current.y
+    const applyTransform = () => {
+      dragRafRef.current = null
+      const pe = dragPendingRef.current
+      if (!pe || !winRef.current) return
+      const dx = pe.clientX - dragMouseStartRef.current.x
+      const dy = pe.clientY - dragMouseStartRef.current.y
       const o = dragPosStartRef.current
       const newX = Math.max(0, o.x + dx)
       const newY = Math.max(MENU_BAR_HEIGHT, o.y + dy)
       const base = positionRef.current
-      if (winRef.current) {
-        winRef.current.style.transform = `translate(${newX - base.x}px, ${newY - base.y}px)`
+      winRef.current.style.transform = `translate(${newX - base.x}px, ${newY - base.y}px)`
+    }
+    const handleMove = (e) => {
+      dragPendingRef.current = { clientX: e.clientX, clientY: e.clientY }
+      if (dragRafRef.current == null) {
+        dragRafRef.current = requestAnimationFrame(applyTransform)
       }
     }
     const handleUp = (e) => {
+      if (dragRafRef.current != null) {
+        cancelAnimationFrame(dragRafRef.current)
+        dragRafRef.current = null
+      }
+      dragPendingRef.current = null
       const dx = e.clientX - dragMouseStartRef.current.x
       const dy = e.clientY - dragMouseStartRef.current.y
       const o = dragPosStartRef.current
@@ -93,6 +107,9 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
     document.addEventListener('mousemove', handleMove)
     document.addEventListener('mouseup', handleUp)
     return () => {
+      if (dragRafRef.current != null) cancelAnimationFrame(dragRafRef.current)
+      dragRafRef.current = null
+      dragPendingRef.current = null
       document.removeEventListener('mousemove', handleMove)
       document.removeEventListener('mouseup', handleUp)
     }
@@ -132,7 +149,7 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
         left = startLeft + clampedDx
       }
       if (edge.includes('s')) h = Math.max(MIN_HEIGHT, startH + dy)
-      else       if (edge.includes('n')) {
+      else if (edge.includes('n')) {
         const maxDy = startH - MIN_HEIGHT
         const clampedDy = Math.min(dy, maxDy)
         h = startH - clampedDy
@@ -164,7 +181,14 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
           transform: 'scale(0.05) translateY(40vh)',
           opacity: 0,
         }
-      : { left: position.x, top: position.y, width: size.width, height: size.height, transform: 'none', opacity: 1 }
+      : {
+          left: position.x,
+          top: position.y,
+          width: size.width,
+          height: size.height,
+          transform: isDragging ? undefined : 'none',
+          opacity: 1,
+        }
 
   return (
     <div

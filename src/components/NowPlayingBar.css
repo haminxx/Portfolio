@@ -2,7 +2,7 @@
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(48px + 8px);
+  bottom: calc(54px + 8px);
   z-index: 60;
   display: flex;
   align-items: center;
@@ -168,7 +168,7 @@
 @media (max-width: 640px) {
   .now-playing-bar:not(.now-playing-bar--embedded) {
     flex-wrap: wrap;
-    bottom: calc(48px + 4px);
+    bottom: calc(54px + 4px);
     padding: 8px;
   }
 

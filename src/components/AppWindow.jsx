@@ -32,6 +32,7 @@ export default function AppWindow({
   const resizeRef = useRef({ edge: '', startX: 0, startY: 0, startW: 0, startH: 0, startLeft: 0, startTop: 0 })
   const [isClosing, setIsClosing] = useState(false)
   const [openingPhase, setOpeningPhase] = useState('dock')
+  const winRef = useRef(null)
   const dragRef = useRef({ startX: 0, startY: 0, startLeft: 0, startTop: 0 })
 
   useEffect(() => {
@@ -47,13 +48,13 @@ export default function AppWindow({
     if (e.target.closest('button')) return
     e.preventDefault()
     onFocus?.()
-    setIsDragging(true)
     dragRef.current = {
       startX: e.clientX,
       startY: e.clientY,
       startLeft: position.x,
       startTop: position.y,
     }
+    setIsDragging(true)
   }
 
   useEffect(() => {
@@ -61,12 +62,22 @@ export default function AppWindow({
     const handleMove = (e) => {
       const dx = e.clientX - dragRef.current.startX
       const dy = e.clientY - dragRef.current.startY
+      if (winRef.current) {
+        winRef.current.style.transform = `translate(${dx}px, ${dy}px)`
+      }
+    }
+    const handleUp = (e) => {
+      const dx = e.clientX - dragRef.current.startX
+      const dy = e.clientY - dragRef.current.startY
+      if (winRef.current) {
+        winRef.current.style.transform = ''
+      }
       onPositionChange?.({
         x: dragRef.current.startLeft + dx,
         y: dragRef.current.startTop + dy,
       })
+      setIsDragging(false)
     }
-    const handleUp = () => setIsDragging(false)
     document.addEventListener('mousemove', handleMove)
     document.addEventListener('mouseup', handleUp)
     return () => {
@@ -177,14 +188,15 @@ export default function AppWindow({
           top: position.y,
           width: size.width,
           height: size.height,
-          transform: 'scale(1)',
+          transform: isDragging ? undefined : 'scale(1)',
           opacity: 1,
         }
 
   return (
     <div
+      ref={winRef}
       id={`app-window-${id}`}
-      className={`app-window ${isMaximized ? 'app-window--maximized' : ''} ${isFocused ? 'app-window--focused' : ''} ${isClosing ? 'app-window--closing' : ''} ${isMinimizing ? 'app-window--minimizing' : ''} ${isOpening ? 'app-window--opening' : ''}`}
+      className={`app-window ${isMaximized ? 'app-window--maximized' : ''} ${isFocused ? 'app-window--focused' : ''} ${isDragging ? 'app-window--dragging' : ''} ${isClosing ? 'app-window--closing' : ''} ${isMinimizing ? 'app-window--minimizing' : ''} ${isOpening ? 'app-window--opening' : ''}`}
       style={style}
       onClick={onFocus}
       onTransitionEnd={isOpening ? handleOpeningTransitionEnd : undefined}

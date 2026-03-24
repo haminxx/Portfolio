@@ -11,8 +11,9 @@
   position: absolute;
   pointer-events: auto;
   padding: 10px 12px 12px;
-  padding-top: 28px;
+  padding-top: 12px;
   border-radius: 16px;
+  transition: padding-top 0.22s ease;
   background: rgba(28, 28, 30, 0.55);
   backdrop-filter: blur(28px) saturate(160%);
   -webkit-backdrop-filter: blur(28px) saturate(160%);
@@ -59,6 +60,18 @@
   color: rgba(255, 255, 255, 0.45);
   cursor: grab;
   touch-action: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s ease, visibility 0.18s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.desktop-widgets__card:hover {
+  padding-top: 28px;
+}
+
+.desktop-widgets__card:hover .desktop-widgets__grip {
+  opacity: 1;
+  visibility: visible;
 }
 
 .desktop-widgets__grip:active {

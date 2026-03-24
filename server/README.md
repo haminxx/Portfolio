@@ -41,4 +41,4 @@ Backend for fetching GitHub profile data. Deploy to Render or run locally.
 
 ## Maps directions proxy
 
-`GET /api/maps/route?from=LAT,LON&to=LAT,LON&profile=driving|walking|cycling` proxies to the public OSRM demo (or set `OSRM_BASE_URL` to your own OSRM instance). Used by the portfolio Map app for turn-by-turn geometry without browser CORS issues.
+`GET /api/maps/route?from=LAT,LON&to=LAT,LON&profile=driving|walking|cycling` returns a GeoJSON line and step list for the Map app. If `ORS_API_KEY` is set (OpenRouteService free tier), the server uses ORS first for road-following routes; otherwise it proxies to the public OSRM demo or your `OSRM_BASE_URL` instance. This avoids browser CORS against third-party routing APIs.

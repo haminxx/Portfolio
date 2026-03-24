@@ -278,6 +278,7 @@ export default function MapWindow() {
     const run = async () => {
       if (API_URL) {
         try {
+          // Backend uses OpenRouteService when ORS_API_KEY is set, else OSRM. Apple MapKit JS would need a separate dev token and script embed.
           const url = `${API_URL}/api/maps/route?from=${ulat},${ulng}&to=${dlat},${dlng}&profile=${routeProfile}`
           const res = await fetch(url)
           if (cancelled) return
