@@ -30,6 +30,8 @@ Personal Portfolio Website/
 
 The game is by The Behemoth. If you have a license, you may be able to obtain the SWF from their official sources. Ensure the file is a valid Adobe Flash SWF (not a renamed image or corrupted download).
 
+This repo may vendor `public/dadnme.swf` from a third-party GitHub Pages mirror for local Ruffle playback only—for example the file linked as `SWF/DAD n' ME.swf` in [ArdorAchord/ArdorAchord.github.io](https://github.com/ArdorAchord/ArdorAchord.github.io) (raw: `https://raw.githubusercontent.com/ArdorAchord/ArdorAchord.github.io/master/SWF/DAD%20n%27%20ME.swf`). **You are responsible for complying with copyright** when hosting or redistributing the game.
+
 ## After Adding the File
 
 1. Restart the dev server if running: `npm run dev`
