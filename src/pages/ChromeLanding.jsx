@@ -21,6 +21,7 @@ import YouTubeMusicWindow from '../components/YouTubeMusicWindow'
 import SettingsWindow from '../components/SettingsWindow'
 import AppStoreWindow from '../components/AppStoreWindow'
 import GalleryWindow from '../components/GalleryWindow'
+import NotesWindow from '../components/NotesWindow'
 import FaceTimeWindow from '../components/FaceTimeWindow'
 import FinderWindow from '../components/FinderWindow'
 import MenuBar from '../components/MenuBar'
@@ -45,6 +46,7 @@ const APP_ICONS = {
   settings: Settings,
   map: Map,
   youtubeMusic: Film,
+  notes: StickyNote,
 }
 
 const HOME_TAB = { id: 'home', title: 'Home', type: 'home' }
@@ -363,6 +365,7 @@ export default function ChromeLanding({ onReboot }) {
 
   return (
     <MusicPlayerProvider>
+    <GalleryProvider>
     <div className="chrome-landing">
       <Desktop
         onOpenApp={openAppTab}
@@ -532,6 +535,8 @@ export default function ChromeLanding({ onReboot }) {
           content = <AppStoreWindow />
         } else if (win.appKey === 'photos') {
           content = <GalleryWindow />
+        } else if (win.appKey === 'notes') {
+          content = <NotesWindow />
         } else if (win.appKey === 'finder') {
           content = <FinderWindow onOpenApp={openAppTab} />
         } else if (win.appKey === 'facetime') {
@@ -601,6 +606,7 @@ export default function ChromeLanding({ onReboot }) {
         />
       )}
     </div>
+    </GalleryProvider>
     </MusicPlayerProvider>
   )
 }

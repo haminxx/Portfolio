@@ -32,6 +32,12 @@ export const APPS = {
     icon: 'photos',
     iconPath: '/dock-icons/photos.png',
   },
+  notes: {
+    label: 'Notes',
+    domain: 'notes.local',
+    icon: 'notes',
+    iconPath: '/dock-icons/notes.png',
+  },
   facetime: {
     label: 'FaceTime',
     domain: 'facetime.local',

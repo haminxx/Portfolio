@@ -13,11 +13,7 @@
   min-width: 100vw;
   min-height: 100vh;
   overflow: hidden;
-  background: #1a1a1e;
-  background-image: url('/home-background.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  background: #0c0b10;
   z-index: 0;
 }
 
