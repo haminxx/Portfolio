@@ -55,11 +55,35 @@
   gap: 8px;
 }
 
+.folder-window__traffic-lights:hover .folder-window__traffic-icon,
+.folder-window__btn:focus-visible .folder-window__traffic-icon {
+  opacity: 1;
+}
+
+.folder-window__traffic-icon {
+  position: absolute;
+  opacity: 0;
+  color: rgba(40, 30, 25, 0.9);
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.folder-window__traffic-icon--restore {
+  color: rgba(220, 255, 220, 0.95);
+}
+
 .folder-window__btn {
+  position: relative;
   width: 12px;
   height: 12px;
+  min-width: 12px;
+  min-height: 12px;
   border-radius: 50%;
   border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: filter 0.15s ease;
 }

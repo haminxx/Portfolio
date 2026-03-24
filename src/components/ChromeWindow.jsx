@@ -19,7 +19,12 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
   }))
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
-  const dragStartRef = useRef({ x: 0, y: 0, left: 0, top: 0 })
+  const positionRef = useRef(position)
+  useEffect(() => {
+    positionRef.current = position
+  }, [position])
+  const dragMouseStartRef = useRef({ x: 0, y: 0 })
+  const dragPosStartRef = useRef({ x: 0, y: 0 })
   const resizeRef = useRef({ edge: '', startX: 0, startY: 0, startW: 0, startH: 0, startLeft: 0, startTop: 0 })
 
   useEffect(() => {
@@ -53,31 +58,32 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
       }
     }
     onFocus?.()
-    if (isFrame) setIsDragging(true)
-    dragStartRef.current = {
-      x: e.clientX,
-      y: e.clientY,
-      left: position.x,
-      top: position.y,
+    if (isFrame) {
+      dragMouseStartRef.current = { x: e.clientX, y: e.clientY }
+      dragPosStartRef.current = { ...positionRef.current }
+      setIsDragging(true)
     }
-  }, [isMaximized, position, onFocus])
+  }, [isMaximized, onFocus])
 
   useEffect(() => {
     if (!isDragging) return
     const handleMove = (e) => {
-      const dx = e.clientX - dragStartRef.current.x
-      const dy = e.clientY - dragStartRef.current.y
-      const newX = Math.max(0, dragStartRef.current.left + dx)
-      const newY = Math.max(MENU_BAR_HEIGHT, dragStartRef.current.top + dy)
+      const dx = e.clientX - dragMouseStartRef.current.x
+      const dy = e.clientY - dragMouseStartRef.current.y
+      const o = dragPosStartRef.current
+      const newX = Math.max(0, o.x + dx)
+      const newY = Math.max(MENU_BAR_HEIGHT, o.y + dy)
+      const base = positionRef.current
       if (winRef.current) {
-        winRef.current.style.transform = `translate(${newX - position.x}px, ${newY - position.y}px)`
+        winRef.current.style.transform = `translate(${newX - base.x}px, ${newY - base.y}px)`
       }
     }
     const handleUp = (e) => {
-      const dx = e.clientX - dragStartRef.current.x
-      const dy = e.clientY - dragStartRef.current.y
-      const newX = Math.max(0, dragStartRef.current.left + dx)
-      const newY = Math.max(MENU_BAR_HEIGHT, dragStartRef.current.top + dy)
+      const dx = e.clientX - dragMouseStartRef.current.x
+      const dy = e.clientY - dragMouseStartRef.current.y
+      const o = dragPosStartRef.current
+      const newX = Math.max(0, o.x + dx)
+      const newY = Math.max(MENU_BAR_HEIGHT, o.y + dy)
       if (winRef.current) {
         winRef.current.style.transform = ''
       }
@@ -90,7 +96,7 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
       document.removeEventListener('mousemove', handleMove)
       document.removeEventListener('mouseup', handleUp)
     }
-  }, [isDragging, position.x, position.y])
+  }, [isDragging])
 
   const handleResizeStart = useCallback((e, edge) => {
     e.stopPropagation()

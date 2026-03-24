@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { Folder, FileText, Home } from 'lucide-react'
+import { Folder, FileText, Home, X, Minus, Maximize2 } from 'lucide-react'
 import './FolderWindow.css'
 
 const SIDEBAR_ITEMS = [
@@ -164,9 +164,15 @@ export default function FolderWindow({
         onMouseDown={handleTitleMouseDown}
       >
         <div className="folder-window__traffic-lights">
-          <button type="button" className="folder-window__btn folder-window__btn--close" aria-label="Close" onClick={handleClose} />
-          <button type="button" className="folder-window__btn folder-window__btn--minimize" aria-label="Minimize" />
-          <button type="button" className="folder-window__btn folder-window__btn--maximize" aria-label="Maximize" />
+          <button type="button" className="folder-window__btn folder-window__btn--close" aria-label="Close" onClick={handleClose}>
+            <X className="folder-window__traffic-icon" size={9} strokeWidth={3} />
+          </button>
+          <button type="button" className="folder-window__btn folder-window__btn--minimize" aria-label="Minimize">
+            <Minus className="folder-window__traffic-icon" size={9} strokeWidth={3} />
+          </button>
+          <button type="button" className="folder-window__btn folder-window__btn--maximize" aria-label="Maximize">
+            <Maximize2 className="folder-window__traffic-icon" size={8} strokeWidth={2.5} />
+          </button>
         </div>
         <span className="folder-window__title">{folderName}</span>
       </div>

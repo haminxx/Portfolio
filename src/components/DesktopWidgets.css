@@ -1,0 +1,203 @@
+.desktop-widgets {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  padding: 56px 20px 88px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.desktop-widgets__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(140px, 200px));
+  gap: 14px;
+  max-width: 440px;
+  pointer-events: none;
+}
+
+.desktop-widgets__card {
+  pointer-events: auto;
+  padding: 12px 14px 14px;
+  border-radius: 16px;
+  background: rgba(28, 28, 30, 0.55);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme='light'] .desktop-widgets__card {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.88);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.desktop-widgets__card-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.65;
+  margin-bottom: 8px;
+}
+
+.desktop-widgets__muted {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.65;
+}
+
+.desktop-widgets__week-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.desktop-widgets__weekday {
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+  opacity: 0.5;
+}
+
+.desktop-widgets__cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.desktop-widgets__cal-cell {
+  font-size: 11px;
+  text-align: center;
+  line-height: 22px;
+  border-radius: 6px;
+}
+
+.desktop-widgets__cal-cell--empty {
+  visibility: hidden;
+}
+
+.desktop-widgets__cal-cell--today {
+  background: #0a84ff;
+  color: #fff;
+  font-weight: 700;
+}
+
+.desktop-widgets__clock-time {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.desktop-widgets__clock-date {
+  font-size: 13px;
+  margin-top: 6px;
+  opacity: 0.85;
+}
+
+.desktop-widgets__clock-loc {
+  font-size: 11px;
+  margin-top: 4px;
+  opacity: 0.55;
+}
+
+.desktop-widgets__weather-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  margin: 0 -4px;
+}
+
+.desktop-widgets__weather-day {
+  flex: 0 0 auto;
+  min-width: 44px;
+  text-align: center;
+}
+
+.desktop-widgets__weather-dow {
+  display: block;
+  font-size: 10px;
+  opacity: 0.55;
+  margin-bottom: 2px;
+}
+
+.desktop-widgets__weather-hi {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.desktop-widgets__music-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.desktop-widgets__music-art {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.desktop-widgets__music-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.desktop-widgets__music-title {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.desktop-widgets__music-artist {
+  font-size: 11px;
+  opacity: 0.65;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.desktop-widgets__music-play {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.desktop-widgets__music-play:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+[data-theme='light'] .desktop-widgets__music-play {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='light'] .desktop-widgets__music-play:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 640px) {
+  .desktop-widgets__grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import DesktopCustomIcons from './DesktopCustomIcons'
 import DesktopContextMenu from './DesktopContextMenu'
+import DesktopWidgets from './DesktopWidgets'
 import './Desktop.css'
 
 const DESKTOP_ITEMS_KEY = 'desktop-items'
@@ -132,6 +133,7 @@ export default function Desktop({
       onMouseDown={handleMouseDown}
       onContextMenu={handleContextMenu}
     >
+      <DesktopWidgets />
       <div ref={iconsRef} className="desktop__icons-wrap">
         <DesktopCustomIcons
           desktopItems={desktopItems}

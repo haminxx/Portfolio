@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useLanguage } from '../context/LanguageContext'
+import { useMusicPlayer, searchYouTubeVideos } from '../context/MusicPlayerContext'
 import './YouTubeMusicWindow.css'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
+const HAS_YT_KEY = Boolean(import.meta.env.VITE_YOUTUBE_API_KEY)
 
 const REBEL_FALLBACK = {
   title: 'Rebel',
@@ -18,14 +20,13 @@ const REBEL_FALLBACK = {
 
 export default function YouTubeMusicWindow() {
   const { t } = useLanguage()
+  const { playTrack } = useMusicPlayer()
   const [curated, setCurated] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState(null)
   const [searchLoading, setSearchLoading] = useState(false)
   const [view, setView] = useState('home')
   const [selectedAlbum, setSelectedAlbum] = useState(null)
-  const [playingVideoId, setPlayingVideoId] = useState(null)
-  const [playingItem, setPlayingItem] = useState(null)
 
   const baseUrl = API_URL.replace(/\/$/, '')
 
@@ -51,62 +52,69 @@ export default function YouTubeMusicWindow() {
     }
   }, [baseUrl])
 
-  const fetchSearch = useCallback(async (q) => {
-    if (!q.trim()) {
-      setSearchResults(null)
-      return
-    }
-    if (!baseUrl) {
-      setSearchResults([])
-      return
-    }
-    setSearchLoading(true)
-    try {
-      let res = await fetch(`${baseUrl}/api/youtube/search?q=${encodeURIComponent(q)}`)
-      if (res.status === 503) {
-        res = await fetch(`${baseUrl}/api/ytmusic/search?q=${encodeURIComponent(q)}`)
+  const fetchSearch = useCallback(
+    async (q) => {
+      if (!q.trim()) {
+        setSearchResults(null)
+        return
       }
-      if (res.ok) {
-        const data = await res.json()
-        const items = (data.items || []).map((item) => ({
-          ...item,
-          videoId: item.videoId ?? item.id,
-          url: item.url ?? (item.videoId || item.id ? `https://www.youtube.com/watch?v=${item.videoId || item.id}` : null),
-          artist: item.artist ?? item.channelTitle,
-        }))
-        setSearchResults(items)
-      } else {
+      setSearchLoading(true)
+      try {
+        if (HAS_YT_KEY) {
+          const items = await searchYouTubeVideos(q)
+          setSearchResults(items)
+          setSearchLoading(false)
+          return
+        }
+        if (!baseUrl) {
+          setSearchResults([])
+          setSearchLoading(false)
+          return
+        }
+        let res = await fetch(`${baseUrl}/api/youtube/search?q=${encodeURIComponent(q)}`)
+        if (res.status === 503) {
+          res = await fetch(`${baseUrl}/api/ytmusic/search?q=${encodeURIComponent(q)}`)
+        }
+        if (res.ok) {
+          const data = await res.json()
+          const items = (data.items || []).map((item) => ({
+            ...item,
+            videoId: item.videoId ?? item.id,
+            url: item.url ?? (item.videoId || item.id ? `https://www.youtube.com/watch?v=${item.videoId || item.id}` : null),
+            artist: item.artist ?? item.channelTitle,
+          }))
+          setSearchResults(items)
+        } else {
+          setSearchResults([])
+        }
+      } catch {
         setSearchResults([])
+      } finally {
+        setSearchLoading(false)
       }
-    } catch {
-      setSearchResults([])
-    } finally {
-      setSearchLoading(false)
-    }
-  }, [baseUrl])
+    },
+    [baseUrl]
+  )
 
   useEffect(() => {
     fetchCurated()
   }, [fetchCurated])
 
   useEffect(() => {
-    const t = setTimeout(() => fetchSearch(searchQuery), 300)
-    return () => clearTimeout(t)
+    const timer = setTimeout(() => fetchSearch(searchQuery), 300)
+    return () => clearTimeout(timer)
   }, [searchQuery, fetchSearch])
 
   const showSearch = searchQuery.trim().length > 0
   const sections = curated || []
 
-  const playTrack = useCallback((videoId, item = null) => {
-    if (!videoId) return
-    setPlayingVideoId(videoId)
-    setPlayingItem(item || { title: 'Unknown', artist: '', thumbnail: videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null })
-  }, [])
-
-  const stopPlaying = useCallback(() => {
-    setPlayingVideoId(null)
-    setPlayingItem(null)
-  }, [])
+  const handlePlayTrack = useCallback(
+    (videoId, item = null) => {
+      if (!videoId) return
+      playTrack(videoId, item || { title: 'Unknown', artist: '', thumbnail: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` })
+    },
+    [playTrack]
+  )
 
   return (
     <div className="ytmusic-window">
@@ -166,15 +174,13 @@ export default function YouTubeMusicWindow() {
               ) : searchResults?.length ? (
                 searchResults.map((item, i) => (
                   <button
-                    key={i}
+                    key={item.videoId || i}
                     type="button"
                     className="ytmusic-window__card"
-                    onClick={() => (item.videoId || item.id) && playTrack(item.videoId || item.id, { title: item.title, artist: item.artist, thumbnail: item.thumbnail })}
+                    onClick={() => (item.videoId || item.id) && handlePlayTrack(item.videoId || item.id, { title: item.title, artist: item.artist, thumbnail: item.thumbnail })}
                   >
                     <div className="ytmusic-window__card-art">
-                      {item.thumbnail && (
-                        <img src={item.thumbnail} alt="" className="ytmusic-window__card-img" />
-                      )}
+                      {item.thumbnail && <img src={item.thumbnail} alt="" className="ytmusic-window__card-img" />}
                     </div>
                     <span className="ytmusic-window__card-title">{item.title}</span>
                     <span className="ytmusic-window__card-artist">{item.artist}</span>
@@ -187,11 +193,7 @@ export default function YouTubeMusicWindow() {
           </section>
         ) : selectedAlbum ? (
           <section className="ytmusic-window__album-view">
-            <button
-              type="button"
-              className="ytmusic-window__back-btn"
-              onClick={() => setSelectedAlbum(null)}
-            >
+            <button type="button" className="ytmusic-window__back-btn" onClick={() => setSelectedAlbum(null)}>
               ← {t('ytmusic.back')}
             </button>
             <h2 className="ytmusic-window__album-title">{selectedAlbum.title}</h2>
@@ -202,12 +204,10 @@ export default function YouTubeMusicWindow() {
                   <button
                     type="button"
                     className="ytmusic-window__song-row"
-                    onClick={() => item.videoId && playTrack(item.videoId, { title: item.title, artist: item.artist, thumbnail: item.videoId ? `https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg` : null })}
+                    onClick={() => item.videoId && handlePlayTrack(item.videoId, { title: item.title, artist: item.artist, thumbnail: `https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg` })}
                     disabled={!item.videoId}
                   >
-                    <span className="ytmusic-window__song-play">
-                      {item.videoId ? '▶' : '—'}
-                    </span>
+                    <span className="ytmusic-window__song-play">{item.videoId ? '▶' : '—'}</span>
                     <span className="ytmusic-window__song-title">{item.title}</span>
                     <span className="ytmusic-window__song-artist">{item.artist}</span>
                   </button>
@@ -241,66 +241,27 @@ export default function YouTubeMusicWindow() {
                   {(section.items || []).map((item, i) => {
                     const thumb = item.thumbnail || (item.videoId ? `https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg` : null)
                     return (
-                    <button
-                      key={i}
-                      type="button"
-                      className="ytmusic-window__card"
-                      onClick={() => item.videoId && playTrack(item.videoId, { title: item.title, artist: item.artist, thumbnail: item.videoId ? `https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg` : null })}
-                      disabled={!item.videoId}
-                    >
-                      <div className="ytmusic-window__card-art">
-                        {thumb && (
-                          <img src={thumb} alt="" className="ytmusic-window__card-img" />
-                        )}
-                      </div>
-                      <span className="ytmusic-window__card-title">{item.title}</span>
-                      {item.artist && (
-                        <span className="ytmusic-window__card-artist">{item.artist}</span>
-                      )}
-                    </button>
-                  )})}
+                      <button
+                        key={i}
+                        type="button"
+                        className="ytmusic-window__card"
+                        onClick={() => item.videoId && handlePlayTrack(item.videoId, { title: item.title, artist: item.artist, thumbnail: thumb })}
+                        disabled={!item.videoId}
+                      >
+                        <div className="ytmusic-window__card-art">
+                          {thumb && <img src={thumb} alt="" className="ytmusic-window__card-img" />}
+                        </div>
+                        <span className="ytmusic-window__card-title">{item.title}</span>
+                        {item.artist && <span className="ytmusic-window__card-artist">{item.artist}</span>}
+                      </button>
+                    )
+                  })}
                 </div>
               </section>
             ))}
           </>
         )}
       </main>
-      {playingVideoId && (
-        <div className="ytmusic-window__mini-player">
-          <div className="ytmusic-window__mini-player-info">
-            <div className="ytmusic-window__mini-player-thumb">
-              {(playingItem?.thumbnail || playingVideoId) && (
-                <img
-                  src={playingItem?.thumbnail || `https://img.youtube.com/vi/${playingVideoId}/mqdefault.jpg`}
-                  alt=""
-                  className="ytmusic-window__mini-player-img"
-                />
-              )}
-            </div>
-            <div className="ytmusic-window__mini-player-meta">
-              <span className="ytmusic-window__mini-player-title">{playingItem?.title || 'Now playing'}</span>
-              <span className="ytmusic-window__mini-player-artist">{playingItem?.artist || ''}</span>
-            </div>
-          </div>
-          <div className="ytmusic-window__mini-player-video">
-            <iframe
-              src={`https://www.youtube.com/embed/${playingVideoId}?autoplay=1`}
-              title="YouTube player"
-              className="ytmusic-window__mini-player-iframe"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-          <button
-            type="button"
-            className="ytmusic-window__mini-player-close"
-            onClick={stopPlaying}
-            aria-label="Stop"
-          >
-            ×
-          </button>
-        </div>
-      )}
     </div>
   )
 }

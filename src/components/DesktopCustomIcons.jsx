@@ -20,7 +20,7 @@ export default function DesktopCustomIcons({
   const [renamingId, setRenamingId] = useState(null)
   const [renameValue, setRenameValue] = useState('')
   const [dropTargetId, setDropTargetId] = useState(null)
-  const [draggingId, setDraggingId] = useState(null)
+  const [draggingIds, setDraggingIds] = useState(() => [])
   const rootItems = desktopItems.filter((i) => !i.parentId)
 
   const desktopItemsRef = useRef(desktopItems)
@@ -75,25 +75,35 @@ export default function DesktopCustomIcons({
     [onOpenFolder, onOpenApp]
   )
 
-  const findFolderUnderPoint = useCallback((clientX, clientY, excludeItemId) => {
+  const findFolderUnderPoint = useCallback((clientX, clientY, excludeIds = []) => {
+    const exclude = new Set(Array.isArray(excludeIds) ? excludeIds : [excludeIds].filter(Boolean))
     const stack = document.elementsFromPoint(clientX, clientY)
     for (const el of stack) {
+      const desktopItem = el.closest?.('[data-desktop-item-id]')
+      if (desktopItem) {
+        const iid = desktopItem.getAttribute('data-desktop-item-id')
+        if (iid && exclude.has(iid)) continue
+      }
       const folderEl = el.closest?.('[data-folder-id]')
       if (!folderEl) continue
       const fid = folderEl.getAttribute('data-folder-id')
-      if (fid && fid !== excludeItemId) return fid
+      if (fid && !exclude.has(fid)) return fid
     }
     return null
   }, [])
 
   const flushPendingPosition = useCallback(() => {
     const pending = pendingPosRef.current
-    if (!pending) return
+    if (!pending || typeof pending !== 'object') return
+    const entries = Object.entries(pending).filter(([, pos]) => pos && typeof pos.x === 'number')
+    if (!entries.length) return
     pendingPosRef.current = null
     rafRef.current = null
-    const { id, x, y } = pending
     onItemsChange?.((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, x, y, parentId: null } : i))
+      prev.map((i) => {
+        const pos = pending[i.id]
+        return pos ? { ...i, x: pos.x, y: pos.y, parentId: null } : i
+      })
     )
   }, [onItemsChange])
 
@@ -110,10 +120,6 @@ export default function DesktopCustomIcons({
       e.preventDefault()
 
       const captureEl = e.currentTarget
-      const rect = captureEl.getBoundingClientRect()
-      const offsetX = e.clientX - rect.left
-      const offsetY = e.clientY - rect.top
-
       try {
         captureEl.setPointerCapture(e.pointerId)
       } catch {
@@ -126,11 +132,29 @@ export default function DesktopCustomIcons({
         rafRef.current = null
       }
 
+      const multi =
+        selectedIds.length > 1 &&
+        selectedIds.includes(item.id) &&
+        selectedIds.every((id) => rootItems.some((r) => r.id === id))
+
+      const groupIds = multi ? selectedIds.filter((id) => rootItems.some((r) => r.id === id)) : [item.id]
+
+      const itemStartPositions = {}
+      for (const id of groupIds) {
+        const ri = rootItems.find((r) => r.id === id)
+        if (ri) {
+          itemStartPositions[id] = { x: ri.x ?? 24, y: ri.y ?? 24 }
+        }
+      }
+
+      if (!multi) {
+        onSelectIcons?.([item.id])
+      }
+
       const dragState = {
-        itemId: item.id,
+        groupIds,
+        itemStartPositions,
         wrapEl,
-        offsetX,
-        offsetY,
         startClientX: e.clientX,
         startClientY: e.clientY,
         active: false,
@@ -138,8 +162,7 @@ export default function DesktopCustomIcons({
         captureEl,
       }
 
-      setDraggingId(item.id)
-      onSelectIcons?.([item.id])
+      setDraggingIds(groupIds)
 
       const onMove = (ev) => {
         const dx = ev.clientX - dragState.startClientX
@@ -150,12 +173,18 @@ export default function DesktopCustomIcons({
         dragState.active = true
 
         const wrap = dragState.wrapEl.getBoundingClientRect()
-        let x = ev.clientX - wrap.left - dragState.offsetX
-        let y = ev.clientY - wrap.top - dragState.offsetY
-        x = Math.max(0, Math.min(wrap.width - ICON_WIDTH, x))
-        y = Math.max(0, Math.min(wrap.height - ICON_HEIGHT, y))
+        const next = {}
+        for (const id of dragState.groupIds) {
+          const start = dragState.itemStartPositions[id]
+          if (!start) continue
+          let x = start.x + dx
+          let y = start.y + dy
+          x = Math.max(0, Math.min(wrap.width - ICON_WIDTH, x))
+          y = Math.max(0, Math.min(wrap.height - ICON_HEIGHT, y))
+          next[id] = { x, y }
+        }
 
-        pendingPosRef.current = { id: dragState.itemId, x, y }
+        pendingPosRef.current = next
         if (rafRef.current == null) {
           rafRef.current = requestAnimationFrame(() => {
             rafRef.current = null
@@ -163,7 +192,7 @@ export default function DesktopCustomIcons({
           })
         }
 
-        const folderId = findFolderUnderPoint(ev.clientX, ev.clientY, dragState.itemId)
+        const folderId = findFolderUnderPoint(ev.clientX, ev.clientY, dragState.groupIds)
         setDropTargetId(folderId)
       }
 
@@ -187,26 +216,29 @@ export default function DesktopCustomIcons({
         flushPendingPosition()
         pendingPosRef.current = null
         setDropTargetId(null)
-        setDraggingId(null)
+        setDraggingIds([])
 
         if (!dragState.active) return
 
-        const folderId = findFolderUnderPoint(ev.clientX, ev.clientY, dragState.itemId)
-        if (folderId) {
-          const found = desktopItemsRef.current.find((i) => i.id === dragState.itemId)
-          if (found && found.id !== folderId) {
-            onItemsChange?.((prev) =>
-              prev.map((i) => (i.id === dragState.itemId ? { ...i, parentId: folderId } : i))
-            )
-          }
-        }
+        const folderId = findFolderUnderPoint(ev.clientX, ev.clientY, dragState.groupIds)
+        if (!folderId || dragState.groupIds.includes(folderId)) return
+
+        const allMovable = dragState.groupIds.every((gid) => {
+          const found = desktopItemsRef.current.find((i) => i.id === gid)
+          return found && found.id !== folderId
+        })
+        if (!allMovable) return
+
+        onItemsChange?.((prev) =>
+          prev.map((i) => (dragState.groupIds.includes(i.id) ? { ...i, parentId: folderId } : i))
+        )
       }
 
       window.addEventListener('pointermove', onMove)
       window.addEventListener('pointerup', onUp)
       window.addEventListener('pointercancel', onUp)
     },
-    [renamingId, onSelectIcons, findFolderUnderPoint, flushPendingPosition, onItemsChange]
+    [renamingId, selectedIds, rootItems, onSelectIcons, findFolderUnderPoint, flushPendingPosition, onItemsChange]
   )
 
   return (
@@ -216,7 +248,7 @@ export default function DesktopCustomIcons({
         const isShortcut = item.type === 'shortcut'
         const Icon = isFolder ? Folder : isShortcut ? Gamepad2 : FileText
         const isDropTarget = dropTargetId === item.id
-        const isDragging = draggingId === item.id
+        const isDragging = draggingIds.includes(item.id)
 
         return (
           <div

@@ -30,6 +30,8 @@ import { APPS, getDomainForApp } from '../config/apps'
 import { SHORTCUTS } from '../config/shortcuts'
 import { useLanguage } from '../context/LanguageContext'
 import { useTheme } from '../context/ThemeContext'
+import { MusicPlayerProvider } from '../context/MusicPlayerContext'
+import NowPlayingBar from '../components/NowPlayingBar'
 import { Globe, Image, Film, Images, Video, ShoppingBag, Settings, Map, Folder } from 'lucide-react'
 import './ChromeLanding.css'
 
@@ -361,6 +363,7 @@ export default function ChromeLanding({ onReboot }) {
   }, [showShutdown, shutdownAction, onReboot])
 
   return (
+    <MusicPlayerProvider>
     <div className="chrome-landing">
       <Desktop
         onOpenApp={openAppTab}
@@ -448,7 +451,7 @@ export default function ChromeLanding({ onReboot }) {
                 onBack={handleBack}
                 onForward={handleForward}
                 onRefresh={handleRefresh}
-                activeTabType={activeTab.type}
+                isMaximized={chromeMaximized}
                 onMaximize={toggleMaximize}
                 onMinimize={setMinimized}
                 onWindowClose={setMinimized}
@@ -598,6 +601,8 @@ export default function ChromeLanding({ onReboot }) {
           onRefresh={handleRefresh}
         />
       )}
+      <NowPlayingBar />
     </div>
+    </MusicPlayerProvider>
   )
 }

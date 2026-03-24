@@ -1,7 +1,7 @@
 import ChromeTabs from './ChromeTabs'
 import AddressBar from './AddressBar'
 import VoiceAIDropdown from './VoiceAIDropdown'
-import { MoreVertical } from 'lucide-react'
+import { MoreVertical, X, Minus, Maximize2, Square } from 'lucide-react'
 import './ChromeFrame.css'
 
 export default function ChromeFrame({
@@ -16,28 +16,54 @@ export default function ChromeFrame({
   onBack,
   onForward,
   onRefresh,
-  activeTabType,
   onMinimize,
   onMaximize,
   onWindowClose,
+  isMaximized = false,
 }) {
   return (
     <header className="chrome-frame">
-      <div className="chrome-frame__traffic-lights">
-        <button type="button" className="chrome-frame__traffic chrome-frame__traffic--close" aria-label="Close" onClick={onWindowClose} />
-        <button type="button" className="chrome-frame__traffic chrome-frame__traffic--minimize" aria-label="Minimize" onClick={onMinimize} />
-        <button type="button" className="chrome-frame__traffic chrome-frame__traffic--maximize" aria-label="Maximize" onClick={onMaximize} />
+      <div className="chrome-frame__drag" aria-hidden="true" />
+      <div className="chrome-frame__row chrome-frame__row--top">
+        <div className="chrome-frame__traffic-lights">
+          <button
+            type="button"
+            className="chrome-frame__traffic chrome-frame__traffic--close"
+            aria-label="Close"
+            onClick={onWindowClose}
+          >
+            <X className="chrome-frame__traffic-icon" size={9} strokeWidth={3} />
+          </button>
+          <button type="button" className="chrome-frame__traffic chrome-frame__traffic--minimize" aria-label="Minimize" onClick={onMinimize}>
+            <Minus className="chrome-frame__traffic-icon" size={9} strokeWidth={3} />
+          </button>
+          <button type="button" className="chrome-frame__traffic chrome-frame__traffic--maximize" aria-label={isMaximized ? 'Restore' : 'Maximize'} onClick={onMaximize}>
+            {isMaximized ? (
+              <Square className="chrome-frame__traffic-icon chrome-frame__traffic-icon--restore" size={8} strokeWidth={2.5} />
+            ) : (
+              <Maximize2 className="chrome-frame__traffic-icon" size={8} strokeWidth={2.5} />
+            )}
+          </button>
+        </div>
+        <div className="chrome-frame__tabs-wrap">
+          <ChromeTabs
+            tabs={tabs}
+            activeTabId={activeTabId}
+            onSelectTab={onSelectTab}
+            onCloseTab={onCloseTab}
+            onNewTab={onNewTab}
+            onReorderTabs={onReorderTabs}
+          />
+        </div>
+        <div className="chrome-frame__right">
+          <VoiceAIDropdown />
+          <div className="chrome-frame__profile" aria-label="Profile" />
+          <button type="button" className="chrome-frame__menu-btn" aria-label="Settings">
+            <MoreVertical size={18} strokeWidth={2} />
+          </button>
+        </div>
       </div>
-      <div className="chrome-frame__drag" />
-      <div className="chrome-frame__center">
-        <ChromeTabs
-          tabs={tabs}
-          activeTabId={activeTabId}
-          onSelectTab={onSelectTab}
-          onCloseTab={onCloseTab}
-          onNewTab={onNewTab}
-          onReorderTabs={onReorderTabs}
-        />
+      <div className="chrome-frame__row chrome-frame__row--toolbar">
         <AddressBar
           domain={currentDomain}
           onGoHome={onGoHome}
@@ -45,13 +71,6 @@ export default function ChromeFrame({
           onForward={onForward}
           onRefresh={onRefresh}
         />
-      </div>
-      <div className="chrome-frame__right">
-        <VoiceAIDropdown />
-        <div className="chrome-frame__profile" aria-label="Profile" />
-        <button type="button" className="chrome-frame__menu-btn" aria-label="Settings">
-          <MoreVertical size={18} strokeWidth={2} />
-        </button>
       </div>
     </header>
   )

@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   width: 100%;
-  height: 72px;
+  height: 58px;
   z-index: 50;
   display: flex;
   align-items: flex-end;
@@ -35,12 +35,12 @@
 .dock__inner {
   display: flex;
   align-items: flex-end;
-  gap: 6px;
-  padding: 10px 16px;
+  gap: 4px;
+  padding: 8px 12px;
   background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(24px);
-  border-radius: 18px;
+  border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -78,7 +78,7 @@
 
 .dock__item:hover,
 .dock__item:focus-visible {
-  transform: translateY(-12px);
+  transform: translateY(-10px);
 }
 
 .dock__item:focus-visible {
@@ -90,16 +90,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 64px;
+  width: 48px;
+  height: 48px;
   transition: transform 0.22s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
 .dock__icon-img {
-  width: 60px;
-  height: 60px;
-  max-width: 60px;
-  max-height: 60px;
+  width: 44px;
+  height: 44px;
+  max-width: 44px;
+  max-height: 44px;
   object-fit: contain;
   flex-shrink: 0;
 }
@@ -109,16 +109,16 @@
 }
 
 .dock__icon-img--appstore {
-  width: 60px;
-  height: 60px;
-  max-width: 60px;
-  max-height: 60px;
+  width: 44px;
+  height: 44px;
+  max-width: 44px;
+  max-height: 44px;
   object-fit: contain;
 }
 
 .dock__item:hover .dock__icon,
 .dock__item:focus-visible .dock__icon {
-  transform: scale(1.18);
+  transform: scale(1.14);
 }
 
 .dock__label {
@@ -145,4 +145,5 @@
   opacity: 1;
   transform: translateX(-50%) translateY(-14px);
 }
+
 

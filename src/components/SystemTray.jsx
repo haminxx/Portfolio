@@ -1,74 +1,15 @@
-import { useState, useMemo, useEffect } from 'react'
-import { Wifi, Battery, Circle, Moon, Search, Maximize2, Minimize2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Wifi, Battery, Circle, Moon, Search, Maximize2, Minimize2, Lock, ChevronRight } from 'lucide-react'
 import './SystemTray.css'
 
-const WIFI_NETWORKS = [
-  { id: 'home', name: 'Home WiFi', connected: true },
-  { id: 'office', name: 'Office', connected: false },
-  { id: 'guest', name: 'Guest Network', connected: false },
-  { id: 'off', name: 'Wi-Fi Off', connected: false },
+const WIFI_KNOWN = [
+  { id: 'sj', name: 'SJ', secured: true, connected: true },
+  { id: 'cox', name: 'CoxWiFi', secured: false, connected: false },
 ]
-
-function CalendarDropdown({ now }) {
-  const year = now.getFullYear()
-  const month = now.getMonth()
-  const firstDay = new Date(year, month, 1).getDay()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const daysInPrevMonth = new Date(year, month, 0).getDate()
-
-  const dow = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-
-  const days = useMemo(() => {
-    const arr = []
-    for (let i = 0; i < firstDay; i++) {
-      arr.push({ day: daysInPrevMonth - firstDay + i + 1, other: true })
-    }
-    for (let i = 1; i <= daysInMonth; i++) {
-      arr.push({ day: i, other: false, today: i === now.getDate() })
-    }
-    const remaining = 42 - arr.length
-    for (let i = 1; i <= remaining; i++) {
-      arr.push({ day: i, other: true })
-    }
-    return arr
-  }, [year, month, firstDay, daysInMonth, daysInPrevMonth, now])
-
-  return (
-    <div className="system-tray__calendar-flyout">
-      <div className="system-tray__calendar-header">
-        <div className="system-tray__calendar-time">
-          {now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
-        </div>
-        <div className="system-tray__calendar-date">
-          {monthNames[month]} {now.getDate()}, {year}
-        </div>
-      </div>
-      <div className="system-tray__calendar-nav">
-        <span className="system-tray__calendar-month">{monthNames[month]} {year}</span>
-      </div>
-      <div className="system-tray__calendar-dow">
-        {dow.map((d) => (
-          <span key={d} className="system-tray__calendar-dow-cell">{d}</span>
-        ))}
-      </div>
-      <div className="system-tray__calendar-grid">
-        {days.slice(0, 35).map((d, i) => (
-          <span
-            key={i}
-            className={`system-tray__calendar-day ${d.other ? 'system-tray__calendar-day--other' : ''} ${d.today ? 'system-tray__calendar-day--today' : ''}`}
-          >
-            {d.day}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 export default function SystemTray({ nightMode, onNightModeToggle, isCapturing, onScreenshot, onFullScreenToggle, isFullscreen }) {
   const [showWifi, setShowWifi] = useState(false)
-  const [showCalendar, setShowCalendar] = useState(false)
+  const [wifiOn, setWifiOn] = useState(true)
   const [now, setNow] = useState(() => new Date())
 
   useEffect(() => {
@@ -102,19 +43,43 @@ export default function SystemTray({ nightMode, onNightModeToggle, isCapturing, 
         {showWifi && (
           <>
             <div className="system-tray__backdrop" onClick={() => setShowWifi(false)} aria-hidden />
-            <div className="system-tray__wifi-flyout">
-              <div className="system-tray__wifi-header">Wi-Fi</div>
-              {WIFI_NETWORKS.map((n) => (
+            <div className="system-tray__wifi-panel" role="dialog" aria-label="Wi-Fi">
+              <div className="system-tray__wifi-panel-header">
+                <span className="system-tray__wifi-panel-title">Wi-Fi</span>
+                <button
+                  type="button"
+                  className={`system-tray__wifi-toggle ${wifiOn ? 'system-tray__wifi-toggle--on' : ''}`}
+                  aria-pressed={wifiOn}
+                  onClick={() => setWifiOn((v) => !v)}
+                  aria-label={wifiOn ? 'Turn Wi-Fi off' : 'Turn Wi-Fi on'}
+                >
+                  <span className="system-tray__wifi-toggle-knob" />
+                </button>
+              </div>
+              <div className="system-tray__wifi-section-label">Known Networks</div>
+              {WIFI_KNOWN.map((n) => (
                 <button
                   key={n.id}
                   type="button"
-                  className={`system-tray__wifi-item ${n.connected ? 'system-tray__wifi-item--connected' : ''}`}
+                  className={`system-tray__wifi-network ${n.connected ? 'system-tray__wifi-network--active' : ''}`}
                   onClick={() => setShowWifi(false)}
                 >
-                  {n.connected && <span className="system-tray__wifi-check">✓</span>}
-                  {n.name}
+                  <span className="system-tray__wifi-network-icon">
+                    <Wifi size={18} strokeWidth={2} />
+                  </span>
+                  <span className="system-tray__wifi-network-name">{n.name}</span>
+                  {n.secured && <Lock size={14} className="system-tray__wifi-network-lock" strokeWidth={2} aria-hidden />}
                 </button>
               ))}
+              <div className="system-tray__wifi-divider" />
+              <button type="button" className="system-tray__wifi-other" onClick={() => setShowWifi(false)}>
+                <span>Other Networks</span>
+                <ChevronRight size={16} strokeWidth={2} />
+              </button>
+              <div className="system-tray__wifi-divider" />
+              <button type="button" className="system-tray__wifi-settings" onClick={() => setShowWifi(false)}>
+                Wi-Fi Settings…
+              </button>
             </div>
           </>
         )}
@@ -151,23 +116,9 @@ export default function SystemTray({ nightMode, onNightModeToggle, isCapturing, 
       <button type="button" className="system-tray__icon-btn" aria-label="Search">
         <Search size={14} strokeWidth={2} />
       </button>
-      <div className="system-tray__dropdown-wrap">
-        <button
-          type="button"
-          className="system-tray__clock"
-          aria-label="Date and time"
-          aria-expanded={showCalendar}
-          onClick={() => setShowCalendar((o) => !o)}
-        >
-          {clockStr}
-        </button>
-        {showCalendar && (
-          <>
-            <div className="system-tray__backdrop" onClick={() => setShowCalendar(false)} aria-hidden />
-            <CalendarDropdown now={now} />
-          </>
-        )}
-      </div>
+      <span className="system-tray__clock system-tray__clock--plain" aria-live="polite">
+        {clockStr}
+      </span>
     </div>
   )
 }

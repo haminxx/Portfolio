@@ -26,7 +26,7 @@
   top: 32px;
   left: 0;
   width: 100vw;
-  height: calc(100vh - 32px - 72px);
+  height: calc(100vh - 32px - 58px);
   min-width: 0;
   min-height: 0;
   border-radius: 0;
@@ -75,14 +75,37 @@
   gap: 8px;
 }
 
+.app-window__traffic-lights:hover .app-window__traffic-icon,
+.app-window__traffic:focus-visible .app-window__traffic-icon {
+  opacity: 1;
+}
+
 .app-window__traffic {
+  position: relative;
   width: 12px;
   height: 12px;
+  min-width: 12px;
+  min-height: 12px;
   border-radius: 50%;
   border: none;
   padding: 0;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: filter 0.15s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.app-window__traffic-icon {
+  position: absolute;
+  opacity: 0;
+  color: rgba(60, 40, 30, 0.88);
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.app-window__traffic-icon--restore {
+  color: rgba(30, 50, 30, 0.9);
 }
 
 .app-window__traffic:hover {

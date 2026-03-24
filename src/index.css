@@ -43,3 +43,15 @@ body {
 .social-profile-card::-webkit-scrollbar {
   display: none;
 }
+
+.music-player__hidden-host {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}

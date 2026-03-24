@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { X, Minus, Maximize2, Square } from 'lucide-react'
 import './AppWindow.css'
 
 const MIN_WIDTH = 320
@@ -203,7 +204,9 @@ export default function AppWindow({
               setIsClosing(true)
             }}
             aria-label="Close"
-          />
+          >
+            <X className="app-window__traffic-icon" size={9} strokeWidth={3} />
+          </button>
           <button
             type="button"
             className="app-window__traffic app-window__traffic--minimize"
@@ -213,13 +216,24 @@ export default function AppWindow({
               onMinimize?.()
             }}
             aria-label="Minimize"
-          />
+          >
+            <Minus className="app-window__traffic-icon" size={9} strokeWidth={3} />
+          </button>
           <button
             type="button"
             className="app-window__traffic app-window__traffic--maximize"
-            onClick={(e) => { e.stopPropagation(); onMaximize?.(); }}
-            aria-label="Maximize"
-          />
+            onClick={(e) => {
+              e.stopPropagation()
+              onMaximize?.()
+            }}
+            aria-label={isMaximized ? 'Restore' : 'Maximize'}
+          >
+            {isMaximized ? (
+              <Square className="app-window__traffic-icon app-window__traffic-icon--restore" size={8} strokeWidth={2.5} />
+            ) : (
+              <Maximize2 className="app-window__traffic-icon" size={8} strokeWidth={2.5} />
+            )}
+          </button>
         </div>
         {icon && <span className="app-window__icon">{icon}</span>}
         <span className="app-window__title-text">{title}</span>
