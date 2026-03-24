@@ -32,20 +32,17 @@ export default function ChromeTabs({ tabs, activeTabId, onSelectTab, onCloseTab,
 
   const closedForTabRef = useRef(new Set())
   const lastCloseTimeRef = useRef(0)
-  const handleCloseTab = useCallback(
-    (e, tabId) => {
-      e.stopPropagation()
-      e.preventDefault()
-      lastCloseTimeRef.current = Date.now()
-      setClosingTabIds((prev) => new Set([...prev, tabId]))
-    },
-    []
-  )
+  const handleCloseTab = useCallback((e, tabId) => {
+    e.stopPropagation()
+    e.preventDefault()
+    lastCloseTimeRef.current = Date.now()
+    setClosingTabIds((prev) => new Set([...prev, tabId]))
+  }, [])
 
   const handleNewTabClick = useCallback(
     (e) => {
       e.stopPropagation()
-      if (Date.now() - lastCloseTimeRef.current < 150) return
+      if (Date.now() - lastCloseTimeRef.current < 450) return
       onNewTab?.()
     },
     [onNewTab]
@@ -108,8 +105,13 @@ export default function ChromeTabs({ tabs, activeTabId, onSelectTab, onCloseTab,
   }, [])
 
   const tabHeight = tabs.length <= 3 ? 40 : 32
+  const isClosingAny = closingTabIds.size > 0
   return (
-    <div className="chrome-tabs" data-tab-count={tabs.length} style={{ ['--tab-height']: `${tabHeight}px` }}>
+    <div
+      className={`chrome-tabs ${isClosingAny ? 'chrome-tabs--closing-tab' : ''}`}
+      data-tab-count={tabs.length}
+      style={{ ['--tab-height']: `${tabHeight}px` }}
+    >
       {tabs.map((tab) => (
         <div
           key={tab.id}
@@ -136,6 +138,10 @@ export default function ChromeTabs({ tabs, activeTabId, onSelectTab, onCloseTab,
           <button
             type="button"
             className="chrome-tabs__close"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
             onClick={(e) => handleCloseTab(e, tab.id)}
             aria-label={`Close ${getTabTitle(tab)}`}
           >

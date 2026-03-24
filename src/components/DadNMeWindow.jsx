@@ -62,7 +62,9 @@ export default function DadNMeWindow() {
           <div className="dadnme-window__error">
             <p className="dadnme-window__error-title">Game file not found or invalid</p>
             <p className="dadnme-window__error-msg">
-              The SWF could not be loaded. You can retry or play on an external site.
+              The SWF could not be loaded. Add a valid <code>dadnme.swf</code> under <code>public/</code> before
+              build—if the file is missing, hosting may serve the SPA HTML instead and Ruffle will report an
+              invalid SWF. You can retry or play on an external site.
             </p>
             <div className="dadnme-window__error-actions">
               <button

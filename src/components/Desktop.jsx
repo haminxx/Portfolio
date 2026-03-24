@@ -125,42 +125,12 @@ export default function Desktop({
     setSelectedIds(Array.isArray(ids) ? ids : [ids])
   }, [])
 
-  const handleDesktopDragOver = useCallback((e) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-  }, [])
-
-  const handleDesktopDrop = useCallback(
-    (e) => {
-      e.preventDefault()
-      const data = e.dataTransfer.getData('application/json')
-      if (!data) return
-      let parsed
-      try {
-        parsed = JSON.parse(data)
-      } catch {
-        return
-      }
-      const { id, offsetX, offsetY } = parsed
-      const item = desktopItems.find((i) => i.id === id)
-      if (!item) return
-      const newX = Math.max(0, Math.min(window.innerWidth - ICON_WIDTH, e.clientX - (offsetX ?? ICON_WIDTH / 2)))
-      const newY = Math.max(0, Math.min(window.innerHeight - ICON_HEIGHT, e.clientY - (offsetY ?? 24)))
-      onItemsChange?.((prev) =>
-        prev.map((i) => (i.id === id ? { ...i, x: newX, y: newY, parentId: null } : i))
-      )
-    },
-    [desktopItems, onItemsChange]
-  )
-
   return (
     <div
       ref={desktopRef}
       className="daedalos-desktop"
       onMouseDown={handleMouseDown}
       onContextMenu={handleContextMenu}
-      onDragOver={handleDesktopDragOver}
-      onDrop={handleDesktopDrop}
     >
       <div ref={iconsRef} className="desktop__icons-wrap">
         <DesktopCustomIcons

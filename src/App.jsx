@@ -1,45 +1,26 @@
 import { useState, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
-import PreLanding from './pages/PreLanding'
 import ChromeLanding from './pages/ChromeLanding'
 import iPhoneMobileLanding from './pages/iPhoneMobileLanding'
 
 const VIEW_KEY = 'portfolio-view'
 
+function readInitialView() {
+  if (typeof window === 'undefined') return 'desktop'
+  const v = sessionStorage.getItem(VIEW_KEY)
+  if (v === 'boot' || v === null || v === '') {
+    sessionStorage.setItem(VIEW_KEY, 'desktop')
+    return 'desktop'
+  }
+  return v
+}
+
 function LandingWrapper() {
-  const [view, setView] = useState(() => {
-    if (typeof window === 'undefined') return 'boot'
-    return (sessionStorage.getItem(VIEW_KEY) || 'boot')
-  })
+  const [view, setView] = useState(() => readInitialView())
 
   useEffect(() => {
-    if (view !== 'boot') {
-      sessionStorage.setItem(VIEW_KEY, view)
-    }
+    sessionStorage.setItem(VIEW_KEY, view)
   }, [view])
-
-  const handleEnterDesktop = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().then(() => {
-        setView('desktop')
-      }).catch(() => setView('desktop'))
-    } else {
-      setView('desktop')
-    }
-  }
-
-  const handleEnterMobile = () => {
-    setView('mobile')
-  }
-
-  if (view === 'boot') {
-    return (
-      <PreLanding
-        onEnterDesktop={handleEnterDesktop}
-        onEnterMobile={handleEnterMobile}
-      />
-    )
-  }
 
   if (view === 'mobile') {
     return <iPhoneMobileLanding />
@@ -47,7 +28,7 @@ function LandingWrapper() {
 
   const handleReboot = () => {
     if (document.exitFullscreen) document.exitFullscreen().catch(() => {})
-    setView('boot')
+    setView('desktop')
   }
 
   return <ChromeLanding onReboot={handleReboot} />

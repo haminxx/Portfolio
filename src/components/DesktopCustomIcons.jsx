@@ -4,6 +4,7 @@ import './DesktopCustomIcons.css'
 
 const ICON_WIDTH = 80
 const ICON_HEIGHT = 96
+const DRAG_THRESHOLD_PX = 6
 
 export default function DesktopCustomIcons({
   desktopItems = [],
@@ -19,7 +20,16 @@ export default function DesktopCustomIcons({
   const [renamingId, setRenamingId] = useState(null)
   const [renameValue, setRenameValue] = useState('')
   const [dropTargetId, setDropTargetId] = useState(null)
+  const [draggingId, setDraggingId] = useState(null)
   const rootItems = desktopItems.filter((i) => !i.parentId)
+
+  const desktopItemsRef = useRef(desktopItems)
+  useEffect(() => {
+    desktopItemsRef.current = desktopItems
+  }, [desktopItems])
+
+  const rafRef = useRef(null)
+  const pendingPosRef = useRef(null)
 
   useEffect(() => {
     if (startRenameId && desktopItems.some((i) => i.id === startRenameId)) {
@@ -65,53 +75,138 @@ export default function DesktopCustomIcons({
     [onOpenFolder, onOpenApp]
   )
 
-  const handleDragStart = useCallback((e, item) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    const offsetX = e.clientX - rect.left
-    const offsetY = e.clientY - rect.top
-    e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('text/plain', item.id)
-    e.dataTransfer.setData('application/json', JSON.stringify({ id: item.id, offsetX, offsetY }))
-    e.dataTransfer.dropEffect = 'move'
-    setTimeout(() => e.target.classList.add('desktop-custom-icons__item--dragging'), 0)
+  const findFolderUnderPoint = useCallback((clientX, clientY, excludeItemId) => {
+    const stack = document.elementsFromPoint(clientX, clientY)
+    for (const el of stack) {
+      const folderEl = el.closest?.('[data-folder-id]')
+      if (!folderEl) continue
+      const fid = folderEl.getAttribute('data-folder-id')
+      if (fid && fid !== excludeItemId) return fid
+    }
+    return null
   }, [])
 
-  const handleDragEnd = useCallback((e) => {
-    e.target.classList.remove('desktop-custom-icons__item--dragging')
-    setDropTargetId(null)
-  }, [])
+  const flushPendingPosition = useCallback(() => {
+    const pending = pendingPosRef.current
+    if (!pending) return
+    pendingPosRef.current = null
+    rafRef.current = null
+    const { id, x, y } = pending
+    onItemsChange?.((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, x, y, parentId: null } : i))
+    )
+  }, [onItemsChange])
 
-  const handleDragOver = useCallback((e, folderId) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-    if (folderId) setDropTargetId(folderId)
-  }, [])
+  const handlePointerDown = useCallback(
+    (e, item) => {
+      if (e.button !== 0) return
+      if (renamingId === item.id) return
+      if (e.target.closest('input')) return
 
-  const handleDragLeave = useCallback(() => {
-    setDropTargetId(null)
-  }, [])
+      const wrapEl = e.currentTarget.closest('.desktop__icons-wrap')
+      if (!wrapEl) return
 
-  const handleDropOnFolder = useCallback(
-    (e, folderId) => {
-      e.preventDefault()
       e.stopPropagation()
-      setDropTargetId(null)
-      const data = e.dataTransfer.getData('application/json')
-      if (!data) return
-      let parsed
+      e.preventDefault()
+
+      const captureEl = e.currentTarget
+      const rect = captureEl.getBoundingClientRect()
+      const offsetX = e.clientX - rect.left
+      const offsetY = e.clientY - rect.top
+
       try {
-        parsed = JSON.parse(data)
+        captureEl.setPointerCapture(e.pointerId)
       } catch {
-        return
+        // ignore
       }
-      const { id } = parsed
-      const item = desktopItems.find((i) => i.id === id)
-      if (!item || item.id === folderId) return
-      onItemsChange?.((prev) =>
-        prev.map((i) => (i.id === id ? { ...i, parentId: folderId } : i))
-      )
+
+      pendingPosRef.current = null
+      if (rafRef.current != null) {
+        cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
+      }
+
+      const dragState = {
+        itemId: item.id,
+        wrapEl,
+        offsetX,
+        offsetY,
+        startClientX: e.clientX,
+        startClientY: e.clientY,
+        active: false,
+        pointerId: e.pointerId,
+        captureEl,
+      }
+
+      setDraggingId(item.id)
+      onSelectIcons?.([item.id])
+
+      const onMove = (ev) => {
+        const dx = ev.clientX - dragState.startClientX
+        const dy = ev.clientY - dragState.startClientY
+        if (!dragState.active && dx * dx + dy * dy < DRAG_THRESHOLD_PX * DRAG_THRESHOLD_PX) {
+          return
+        }
+        dragState.active = true
+
+        const wrap = dragState.wrapEl.getBoundingClientRect()
+        let x = ev.clientX - wrap.left - dragState.offsetX
+        let y = ev.clientY - wrap.top - dragState.offsetY
+        x = Math.max(0, Math.min(wrap.width - ICON_WIDTH, x))
+        y = Math.max(0, Math.min(wrap.height - ICON_HEIGHT, y))
+
+        pendingPosRef.current = { id: dragState.itemId, x, y }
+        if (rafRef.current == null) {
+          rafRef.current = requestAnimationFrame(() => {
+            rafRef.current = null
+            flushPendingPosition()
+          })
+        }
+
+        const folderId = findFolderUnderPoint(ev.clientX, ev.clientY, dragState.itemId)
+        setDropTargetId(folderId)
+      }
+
+      const onUp = (ev) => {
+        window.removeEventListener('pointermove', onMove)
+        window.removeEventListener('pointerup', onUp)
+        window.removeEventListener('pointercancel', onUp)
+
+        try {
+          if (dragState.captureEl && dragState.pointerId != null) {
+            dragState.captureEl.releasePointerCapture(dragState.pointerId)
+          }
+        } catch {
+          // ignore
+        }
+
+        if (rafRef.current != null) {
+          cancelAnimationFrame(rafRef.current)
+          rafRef.current = null
+        }
+        flushPendingPosition()
+        pendingPosRef.current = null
+        setDropTargetId(null)
+        setDraggingId(null)
+
+        if (!dragState.active) return
+
+        const folderId = findFolderUnderPoint(ev.clientX, ev.clientY, dragState.itemId)
+        if (folderId) {
+          const found = desktopItemsRef.current.find((i) => i.id === dragState.itemId)
+          if (found && found.id !== folderId) {
+            onItemsChange?.((prev) =>
+              prev.map((i) => (i.id === dragState.itemId ? { ...i, parentId: folderId } : i))
+            )
+          }
+        }
+      }
+
+      window.addEventListener('pointermove', onMove)
+      window.addEventListener('pointerup', onUp)
+      window.addEventListener('pointercancel', onUp)
     },
-    [desktopItems, onItemsChange]
+    [renamingId, onSelectIcons, findFolderUnderPoint, flushPendingPosition, onItemsChange]
   )
 
   return (
@@ -121,20 +216,16 @@ export default function DesktopCustomIcons({
         const isShortcut = item.type === 'shortcut'
         const Icon = isFolder ? Folder : isShortcut ? Gamepad2 : FileText
         const isDropTarget = dropTargetId === item.id
+        const isDragging = draggingId === item.id
 
         return (
           <div
             key={item.id}
-            className={`desktop-custom-icons__item ${selectedIds.includes(item.id) ? 'desktop-custom-icons__item--selected' : ''} ${isDropTarget ? 'desktop-custom-icons__item--drop-target' : ''}`}
-            style={{ left: item.x ?? 24, top: item.y ?? 24 }}
+            className={`desktop-custom-icons__item ${selectedIds.includes(item.id) ? 'desktop-custom-icons__item--selected' : ''} ${isDropTarget ? 'desktop-custom-icons__item--drop-target' : ''} ${isDragging ? 'desktop-custom-icons__item--pointer-dragging' : ''}`}
+            style={{ left: item.x ?? 24, top: item.y ?? 24, touchAction: 'none' }}
             data-desktop-item-id={item.id}
             data-folder-id={isFolder ? item.id : undefined}
-            draggable
-            onDragStart={(e) => handleDragStart(e, item)}
-            onDragEnd={handleDragEnd}
-            onDragOver={isFolder ? (e) => handleDragOver(e, item.id) : undefined}
-            onDragLeave={isFolder ? handleDragLeave : undefined}
-            onDrop={isFolder ? (e) => handleDropOnFolder(e, item.id) : undefined}
+            onPointerDown={(e) => handlePointerDown(e, item)}
             onDoubleClick={(e) => handleDoubleClick(e, item)}
             onContextMenu={(e) => onIconContextMenu?.(e, item)}
           >
