@@ -27,3 +27,6 @@ dist-ssr
 *.sln
 *.sw?
 !public/dadnme.swf
+
+# Too large for GitHub (>100MB); keep locally for dev/deploy or host elsewhere
+public/videos/timeline-trailer.mp4
