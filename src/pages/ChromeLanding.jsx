@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useScreenshot } from '../hooks/useScreenshot'
 import ChromeFrame from '../components/ChromeFrame'
 import ChromeWindow from '../components/ChromeWindow'
@@ -32,7 +32,8 @@ import { SHORTCUTS } from '../config/shortcuts'
 import { useLanguage } from '../context/LanguageContext'
 import { useTheme } from '../context/ThemeContext'
 import { MusicPlayerProvider } from '../context/MusicPlayerContext'
-import { Globe, Image, Film, Images, Video, ShoppingBag, Settings, Map, Folder } from 'lucide-react'
+import { GalleryProvider } from '../context/GalleryContext'
+import { Globe, Image, Film, Images, Video, ShoppingBag, Settings, Map, Folder, StickyNote } from 'lucide-react'
 import './ChromeLanding.css'
 
 const APP_ICONS = {
@@ -148,6 +149,14 @@ export default function ChromeLanding({ onReboot }) {
   const { nightMode, setNightMode } = useTheme()
   const { isCapturing, takeScreenshot } = useScreenshot()
   const { t } = useLanguage()
+
+  const dockOpenIndicatorKeys = useMemo(() => {
+    const keys = openAppWindows.filter((w) => !w.isMinimized).map((w) => w.appKey)
+    if (!chromeMinimized && !keys.includes('chrome')) {
+      return [...keys, 'chrome']
+    }
+    return keys
+  }, [openAppWindows, chromeMinimized])
 
   const setDesktopItems = useCallback((fnOrValue) => {
     setDesktopItemsState((prev) => {
@@ -407,6 +416,7 @@ export default function ChromeLanding({ onReboot }) {
         isChromeMaximized={chromeMaximized}
         anyMaximized={(chromeMaximized && !chromeMinimized) || openAppWindows.some((w) => w.isMaximized && !w.isMinimized)}
         openAppWindows={openAppWindows}
+        openAppIndicatorKeys={dockOpenIndicatorKeys}
       />
       {openFolderId && (
         <FolderWindow

@@ -1,4 +1,11 @@
-import { useState, useCallback, useMemo, useRef, type ComponentType, type PointerEvent, type MouseEvent } from 'react'
+import {
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+  type ComponentType,
+  type PointerEvent as ReactPointerEvent,
+} from 'react'
 import { APPS } from '../config/apps'
 import { useLanguage } from '../context/LanguageContext'
 import {
@@ -12,6 +19,7 @@ import {
   Map,
   Folder,
 } from 'lucide-react'
+import MacOSDock, { type MacOSDockApp } from './ui/mac-os-dock'
 import './Dock.css'
 
 const APP_ICONS: Record<string, ComponentType<{ size?: number; strokeWidth?: number }>> = {
@@ -62,6 +70,8 @@ type DockProps = {
   isChromeMaximized?: boolean
   anyMaximized?: boolean
   openAppWindows?: { appKey: string }[]
+  /** App keys that show a running indicator under the icon (Chrome + non-minimized windows). */
+  openAppIndicatorKeys?: string[]
 }
 
 export default function Dock({
@@ -71,6 +81,7 @@ export default function Dock({
   isChromeMaximized,
   anyMaximized,
   openAppWindows = [],
+  openAppIndicatorKeys = [],
 }: DockProps) {
   const { t } = useLanguage()
   const [draggedKey, setDraggedKey] = useState<string | null>(null)
@@ -92,6 +103,27 @@ export default function Dock({
   const dadnmeOpen = openAppWindows.some((w) => w.appKey === 'dadnme')
   const visibleKeys = dockOrder.filter(
     (key) => (key !== 'doom' && key !== 'dadnme') || (key === 'doom' && doomOpen) || (key === 'dadnme' && dadnmeOpen),
+  )
+
+  const dockApps: MacOSDockApp[] = useMemo(
+    () =>
+      visibleKeys
+        .map((key) => {
+          const app = APPS[key as keyof typeof APPS]
+          if (!app) return null
+          const name = t(`apps.${key}`)
+          if (app.iconPath) {
+            return { id: key, name, icon: app.iconPath } satisfies MacOSDockApp
+          }
+          const Icon = APP_ICONS[key] ?? Film
+          return {
+            id: key,
+            name,
+            renderIcon: (px: number) => <Icon size={Math.round(px)} strokeWidth={1.6} />,
+          } satisfies MacOSDockApp
+        })
+        .filter((x): x is MacOSDockApp => x != null),
+    [visibleKeys, t],
   )
 
   const fromIdx = useMemo(() => (draggedKey ? visibleKeys.indexOf(draggedKey) : -1), [draggedKey, visibleKeys])
@@ -156,9 +188,10 @@ export default function Dock({
   }, [])
 
   const handleItemPointerDown = useCallback(
-    (e: PointerEvent<HTMLDivElement>, key: string) => {
+    (e: ReactPointerEvent<HTMLDivElement>, key: string) => {
       if (e.button !== 0) return
-      const wrap = e.currentTarget as HTMLDivElement
+      const wrap = itemWrapRefs.current.get(key)
+      if (!wrap) return
       const r = wrap.getBoundingClientRect()
       dragSessionRef.current = {
         key,
@@ -217,15 +250,13 @@ export default function Dock({
     [computeInsertPreview, commitReorder, onDockReorder, endPointerDrag],
   )
 
-  const handleButtonClick = useCallback(
-    (e: MouseEvent<HTMLButtonElement>, key: string) => {
+  const handleAppClick = useCallback(
+    (id: string) => {
       if (suppressClickRef.current) {
-        e.preventDefault()
-        e.stopPropagation()
         suppressClickRef.current = false
         return
       }
-      onOpenApp(key)
+      onOpenApp(id)
     },
     [onOpenApp],
   )
@@ -237,6 +268,11 @@ export default function Dock({
 
   const ghostApp = draggedKey ? APPS[draggedKey as keyof typeof APPS] : null
   const GhostIcon = draggedKey ? APP_ICONS[draggedKey] : null
+
+  const shiftXByIndex =
+    draggedKey != null
+      ? (i: number) => shiftForIndex(i, previewFrom, insertIdx)
+      : undefined
 
   return (
     <div className={`dock-wrapper ${isHidden ? 'dock-wrapper--fullscreen-hidden' : ''}`}>
@@ -259,50 +295,19 @@ export default function Dock({
           </span>
         </div>
       )}
-      <footer className="dock">
-        <div className="dock__inner">
-          {visibleKeys.map((key, i) => {
-            const app = APPS[key as keyof typeof APPS]
-            if (!app) return null
-            const Icon = APP_ICONS[key] ?? Film
-            const isDragging = draggedKey === key
-            const tx = draggedKey ? shiftForIndex(i, previewFrom, insertIdx) : 0
-            return (
-              <div
-                key={key}
-                ref={(el) => {
-                  if (el) itemWrapRefs.current.set(key, el)
-                  else itemWrapRefs.current.delete(key)
-                }}
-                className={`dock__item-wrap ${isDragging ? 'dock__item-wrap--dragging' : ''}`}
-                style={{
-                  transform: tx ? `translateX(${tx}px)` : undefined,
-                }}
-                onPointerDown={(e) => handleItemPointerDown(e, key)}
-              >
-                <button
-                  type="button"
-                  className="dock__item"
-                  onClick={(e) => handleButtonClick(e, key)}
-                  title=""
-                  aria-label={t(`apps.${key}`)}
-                >
-                  <span className="dock__icon">
-                    {app.iconPath ? (
-                      <img
-                        src={app.iconPath}
-                        alt=""
-                        className={`dock__icon-img ${key === 'dadnme' ? 'dock__icon-img--rounded-square' : ''} ${key === 'finder' ? 'dock__icon-img--rounded-square' : ''} ${key === 'appStore' ? 'dock__icon-img--appstore' : ''}`}
-                      />
-                    ) : Icon ? (
-                      <Icon size={26} strokeWidth={1.6} />
-                    ) : null}
-                  </span>
-                </button>
-              </div>
-            )
-          })}
-        </div>
+      <footer className="dock dock--macos">
+        <MacOSDock
+          apps={dockApps}
+          onAppClick={handleAppClick}
+          openAppIds={openAppIndicatorKeys}
+          shiftXByIndex={shiftXByIndex}
+          onAppPointerDown={(e, id) => handleItemPointerDown(e, id)}
+          onIconElementRef={(id, el) => {
+            if (el) itemWrapRefs.current.set(id, el)
+            else itemWrapRefs.current.delete(id)
+          }}
+          className="dock-macos-bar"
+        />
       </footer>
     </div>
   )
