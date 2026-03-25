@@ -27,8 +27,8 @@ export const WIDGET_OVERLAP_IDS = [
 
 const STATIC_SIZES = {
   calendar: { w: 200, h: 220 },
-  clock: { w: 200, h: 120 },
-  weather: { w: 200, h: 130 },
+  clock: { w: 268, h: 118 },
+  weather: { w: 200, h: 108 },
   music: { w: 312, h: 136 },
   bgControls: { w: 160, h: 160 },
   notesChecklist: { w: 200, h: 200 },

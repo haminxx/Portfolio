@@ -70,6 +70,16 @@ export function MusicPlayerProvider({ children }) {
   const queueRef = useRef([])
   const currentIndexRef = useRef(0)
   const starterInitRef = useRef(false)
+  /** Autoplay waits until 2s after first mount so the user “enters” the screen first. */
+  const providerMountTimeRef = useRef(Date.now())
+  const allowEarlyPlayRef = useRef(false)
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      allowEarlyPlayRef.current = true
+    }, 2000)
+    return () => window.clearTimeout(t)
+  }, [])
 
   const currentTrack = queue[currentIndex] ?? null
   queueRef.current = queue
@@ -110,6 +120,17 @@ export function MusicPlayerProvider({ children }) {
     setTimeout(tryPlay, 320)
   }, [])
 
+  const kickPlaybackMaybeDelayed = useCallback(
+    (p) => {
+      if (!p?.playVideo) return
+      const elapsed = Date.now() - providerMountTimeRef.current
+      const wait = Math.max(0, 2000 - elapsed)
+      if (wait <= 0) kickPlayback(p)
+      else setTimeout(() => kickPlayback(p), wait)
+    },
+    [kickPlayback],
+  )
+
   const loadVideo = useCallback(
     (videoId) => {
       if (!videoId) return
@@ -119,7 +140,7 @@ export function MusicPlayerProvider({ children }) {
           p.loadVideoById(videoId)
           setIsPlaying(true)
           startProgressTimer()
-          kickPlayback(p)
+          kickPlaybackMaybeDelayed(p)
         } catch {
           pendingVideoIdRef.current = videoId
         }
@@ -127,7 +148,7 @@ export function MusicPlayerProvider({ children }) {
         pendingVideoIdRef.current = videoId
       }
     },
-    [startProgressTimer, kickPlayback]
+    [startProgressTimer, kickPlaybackMaybeDelayed]
   )
 
   useEffect(() => {
@@ -144,7 +165,7 @@ export function MusicPlayerProvider({ children }) {
         width: 1,
         height: 1,
         playerVars: {
-          autoplay: 1,
+          autoplay: 0,
           mute: 0,
           controls: 0,
           modestbranding: 1,
@@ -161,26 +182,7 @@ export function MusicPlayerProvider({ children }) {
                 ytPlayer.loadVideoById(pending)
                 setIsPlaying(true)
                 startProgressTimer()
-                try {
-                  ytPlayer.playVideo()
-                } catch {
-                  // ignore
-                }
-                setTimeout(() => {
-                  try {
-                    ytPlayer.playVideo()
-                  } catch {
-                    // ignore
-                  }
-                }, 100)
-                setTimeout(() => {
-                  try {
-                    ytPlayer.playVideo()
-                  } catch {
-                    // ignore
-                  }
-                }, 500)
-                kickPlayback(ytPlayer)
+                kickPlaybackMaybeDelayed(ytPlayer)
               } catch {
                 // ignore
               }
@@ -192,7 +194,7 @@ export function MusicPlayerProvider({ children }) {
                   ytPlayer.loadVideoById(vid)
                   setIsPlaying(true)
                   startProgressTimer()
-                  kickPlayback(ytPlayer)
+                  kickPlaybackMaybeDelayed(ytPlayer)
                 } catch {
                   // ignore
                 }
@@ -209,6 +211,7 @@ export function MusicPlayerProvider({ children }) {
               setIsPlaying(false)
               clearProgressTimer()
             } else if (e.data === YT.PlayerState.CUED) {
+              if (!allowEarlyPlayRef.current) return
               try {
                 p?.playVideo?.()
               } catch {
@@ -240,7 +243,7 @@ export function MusicPlayerProvider({ children }) {
       }
       playerRef.current = null
     }
-  }, [clearProgressTimer, startProgressTimer, kickPlayback])
+  }, [clearProgressTimer, startProgressTimer, kickPlaybackMaybeDelayed])
 
   useEffect(() => {
     if (currentTrack?.videoId) loadVideo(currentTrack.videoId)

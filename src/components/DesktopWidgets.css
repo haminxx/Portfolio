@@ -37,8 +37,8 @@
 }
 
 .desktop-widgets__card--clock {
-  width: 200px;
-  min-height: 110px;
+  width: 268px;
+  min-height: 112px;
 }
 
 .desktop-widgets__card--calendar .desktop-widgets__cal-nav,
@@ -48,7 +48,7 @@
 
 .desktop-widgets__card--weather {
   width: 200px;
-  min-height: 118px;
+  min-height: 100px;
 }
 
 .desktop-widgets__card--music {
@@ -144,16 +144,29 @@
   color: var(--portfolio-chrome-fg);
 }
 
-.desktop-widgets__cal-rdp .rdp-today:not(.rdp-selected):not(.rdp-range_start):not(.rdp-range_end) .rdp-day_button {
-  background-color: var(--portfolio-accent, #818cf8) !important;
-  color: var(--portfolio-on-accent, #fafafa) !important;
-  border-radius: 8px !important;
+/* Today: white rounded tile, black numeral, small black dot below (reference UI) */
+.desktop-widgets__cal-rdp .rdp-today .rdp-day_button {
+  position: relative;
+  background: #ffffff !important;
+  color: #0a0a0a !important;
+  border-radius: 10px !important;
   border-color: transparent !important;
   font-weight: 700;
+  padding-bottom: 8px !important;
+  box-shadow: none !important;
 }
 
-.desktop-widgets__cal-rdp .rdp-today.rdp-selected .rdp-day_button {
-  border-radius: 8px !important;
+.desktop-widgets__cal-rdp .rdp-today .rdp-day_button::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #0a0a0a;
+  pointer-events: none;
 }
 
 .desktop-widgets__bg-controls-head {
@@ -216,17 +229,17 @@
 .desktop-widgets__card--photo {
   display: flex;
   flex-direction: column;
-  padding: 8px 10px 10px;
-  padding-top: 8px;
+  padding: 0;
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
+  border-radius: 22px;
 }
 
 .desktop-widgets__sync-trigger {
   position: absolute;
-  right: 34px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 8px;
+  right: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -266,54 +279,19 @@
   object-position: center;
 }
 
-.desktop-widgets__photo-chrome {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 22px;
-  margin-bottom: 6px;
-}
-
 .desktop-widgets__grip--photo {
-  position: relative;
-  top: auto;
-  left: auto;
+  position: absolute;
+  top: 8px;
+  left: 8px;
   transform: none;
   opacity: 0;
   visibility: hidden;
 }
 
 .desktop-widgets__card--photo:hover .desktop-widgets__grip--photo,
-.desktop-widgets__card--photo:hover .desktop-widgets__size-trigger {
+.desktop-widgets__card--photo:hover .desktop-widgets__sync-trigger {
   opacity: 1;
   visibility: visible;
-}
-
-.desktop-widgets__size-trigger {
-  position: absolute;
-  right: 2px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 22px;
-  padding: 0;
-  border: none;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.55);
-  cursor: pointer;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.18s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.desktop-widgets__size-trigger:hover {
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.16);
 }
 
 .desktop-widgets__size-popover--grid {
@@ -393,12 +371,66 @@
 }
 
 .desktop-widgets__photo-body {
+  position: relative;
   flex: 1;
   min-height: 0;
-  border-radius: 12px;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
   overflow: hidden;
   background: rgba(0, 0, 0, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.desktop-widgets__photo-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.desktop-widgets__photo-overlay .desktop-widgets__grip--photo,
+.desktop-widgets__photo-overlay .desktop-widgets__sync-trigger {
+  pointer-events: auto;
+}
+
+.desktop-widgets__photo-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 22px;
+  height: 22px;
+  z-index: 3;
+  padding: 0;
+  border: none;
+  border-radius: 10px 0 14px 0;
+  cursor: nwse-resize;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s ease, background 0.15s ease;
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(255, 255, 255, 0.35) 40%,
+    rgba(255, 255, 255, 0.55) 100%
+  );
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.desktop-widgets__card--photo:hover .desktop-widgets__photo-resize-handle {
+  opacity: 1;
+  visibility: visible;
+}
+
+.desktop-widgets__photo-resize-handle:hover {
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    transparent 35%,
+    rgba(255, 255, 255, 0.5) 35%,
+    rgba(255, 255, 255, 0.75) 100%
+  );
 }
 
 .desktop-widgets__photo-placeholder {
@@ -955,6 +987,90 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
+/* Flip-clock style time (reference: split panels + hinge line) */
+.desktop-widgets__flip-clock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.desktop-widgets__flip-clock__panel {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 78px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #3e3e42 0%, #303034 48%, #28282c 52%, #222226 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 4px 16px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+}
+
+.desktop-widgets__flip-clock__hinge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0.15) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.desktop-widgets__flip-clock__panel-body {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 78px;
+  padding: 12px 10px 16px;
+}
+
+.desktop-widgets__flip-clock__digit {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: rgba(236, 236, 240, 0.98);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.desktop-widgets__flip-clock__ampm {
+  position: absolute;
+  left: 10px;
+  bottom: 7px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(198, 198, 204, 0.78);
+}
+
+.desktop-widgets__flip-clock__sec {
+  position: absolute;
+  right: 10px;
+  bottom: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: rgba(198, 198, 204, 0.85);
+}
+
+.desktop-widgets__flip-clock__loc {
+  flex: 1 0 100%;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: color-mix(in srgb, var(--portfolio-chrome-fg) 58%, transparent);
+  margin-top: 2px;
+  text-align: center;
+}
+
 .desktop-widgets__clock-split {
   display: flex;
   align-items: stretch;
@@ -1010,6 +1126,41 @@
 
 .desktop-widgets__weather-city {
   margin-bottom: 6px;
+}
+
+.desktop-widgets__weather-today {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 0 4px;
+}
+
+.desktop-widgets__weather-today-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.92;
+}
+
+.desktop-widgets__weather-today-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.desktop-widgets__weather-today-temp {
+  font-size: 30px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.desktop-widgets__weather-today-sub {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.5;
 }
 
 .desktop-widgets__weather-strip {

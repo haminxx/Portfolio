@@ -14,7 +14,6 @@ import {
   CloudLightning,
   CloudDrizzle,
   ImageIcon,
-  LayoutGrid,
   RefreshCw,
   ListTodo,
 } from 'lucide-react'
@@ -56,8 +55,8 @@ function formatTrackTime(sec) {
 
 const STATIC_SIZES = {
   calendar: { w: 200, h: 220 },
-  clock: { w: 200, h: 120 },
-  weather: { w: 200, h: 130 },
+  clock: { w: 268, h: 118 },
+  weather: { w: 200, h: 108 },
   music: { w: 312, h: 136 },
   bgControls: { w: 160, h: 160 },
   notesChecklist: { w: 200, h: 200 },
@@ -150,13 +149,6 @@ function saveLayout(layout) {
   }
 }
 
-function formatLocalYMD(d) {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-
 function weatherCodeToIcon(code) {
   if (code == null || Number.isNaN(code)) return Cloud
   const c = code
@@ -194,21 +186,26 @@ export default function DesktopWidgets({
   onOpenApp,
 }) {
   const [now, setNow] = useState(() => new Date())
-  const [weather, setWeather] = useState({ status: 'idle', days: [], error: null })
+  const [weather, setWeather] = useState({ status: 'idle', current: null, error: null })
+  const [userLoc, setUserLoc] = useState({
+    status: 'pending',
+    lat: null,
+    lon: null,
+    label: '',
+  })
   const [layout, setLayout] = useState(loadLayout)
   const [calMonth, setCalMonth] = useState(() => {
     const d = new Date()
     return new Date(d.getFullYear(), d.getMonth(), 1)
   })
   const [selectedDate, setSelectedDate] = useState(() => new Date())
-  const [sizeMenuFor, setSizeMenuFor] = useState(null)
   const [photoImportFor, setPhotoImportFor] = useState(null)
   const [photoData, setPhotoData] = useState(readInitialPhotoMap)
   const [notesStore, setNotesStore] = useState(() => loadNotesStore())
   const dragRef = useRef(null)
   const [draggingId, setDraggingId] = useState(null)
   const containerRef = useRef(null)
-  const sizePopoverRef = useRef(null)
+  const photoResizeRef = useRef(null)
   const {
     currentTrack,
     isPlaying,
@@ -264,69 +261,62 @@ export default function DesktopWidgets({
   }, [layout, onLayoutChange])
 
   useEffect(() => {
-    if (!sizeMenuFor) return
-    const onDoc = (e) => {
-      if (sizePopoverRef.current?.contains(e.target)) return
-      setSizeMenuFor(null)
+    if (!navigator.geolocation) {
+      setUserLoc({ status: 'fallback', lat: SD_LAT, lon: SD_LON, label: 'San Diego' })
+      return
     }
-    document.addEventListener('pointerdown', onDoc, true)
-    return () => document.removeEventListener('pointerdown', onDoc, true)
-  }, [sizeMenuFor])
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude
+        const lon = pos.coords.longitude
+        let label = 'Local'
+        try {
+          const r = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,
+          )
+          const j = await r.json()
+          label = j.city || j.locality || j.principalSubdivision || label
+        } catch {
+          // keep "Local"
+        }
+        setUserLoc({ status: 'ok', lat, lon, label })
+      },
+      () => {
+        setUserLoc({ status: 'denied', lat: SD_LAT, lon: SD_LON, label: 'San Diego' })
+      },
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 300_000 },
+    )
+  }, [])
 
-  const loadWeather = useCallback(async () => {
+  const loadWeather = useCallback(async (lat, lon) => {
     setWeather((w) => ({ ...w, status: 'loading', error: null }))
     try {
       const url = new URL('https://api.open-meteo.com/v1/forecast')
-      url.searchParams.set('latitude', String(SD_LAT))
-      url.searchParams.set('longitude', String(SD_LON))
-      url.searchParams.set('daily', 'temperature_2m_max,temperature_2m_min,weathercode')
-      url.searchParams.set('timezone', 'America/Los_Angeles')
-      url.searchParams.set('forecast_days', '7')
+      url.searchParams.set('latitude', String(lat))
+      url.searchParams.set('longitude', String(lon))
+      url.searchParams.set('current', 'temperature_2m,weather_code')
+      url.searchParams.set('timezone', 'auto')
       const res = await fetch(url.toString())
       if (!res.ok) throw new Error('forecast failed')
       const data = await res.json()
-      const times = data.daily?.time || []
-      const maxT = data.daily?.temperature_2m_max || []
-      const minT = data.daily?.temperature_2m_min || []
-      const codes = data.daily?.weathercode || []
-      const days = times.map((t, i) => ({
-        date: t,
-        high: maxT[i],
-        low: minT[i],
-        code: codes[i],
-      }))
-      setWeather({ status: 'ready', days, error: null })
+      const cur = data.current
+      const temp = cur?.temperature_2m
+      const code = cur?.weather_code ?? cur?.weathercode
+      if (temp == null && code == null) throw new Error('no current data')
+      setWeather({
+        status: 'ready',
+        current: { temp, code },
+        error: null,
+      })
     } catch (e) {
-      setWeather({ status: 'error', days: [], error: e?.message || 'unavailable' })
+      setWeather({ status: 'error', current: null, error: e?.message || 'unavailable' })
     }
   }, [])
 
   useEffect(() => {
-    loadWeather()
-  }, [loadWeather])
-
-  const weatherWeekSlots = useMemo(() => {
-    if (weather.status !== 'ready' || !weather.days?.length) return []
-    const byDate = Object.fromEntries(weather.days.map((x) => [x.date, x]))
-    const today = new Date()
-    const keyToday = formatLocalYMD(today)
-    const sun = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay())
-    const slots = []
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(sun.getFullYear(), sun.getMonth(), sun.getDate() + i)
-      const key = formatLocalYMD(d)
-      const data = byDate[key]
-      slots.push({
-        key,
-        dayNum: d.getDate(),
-        isToday: key === keyToday,
-        dowLabel: d.toLocaleDateString(undefined, { weekday: 'short' }),
-        high: data?.high,
-        code: data?.code,
-      })
-    }
-    return slots
-  }, [weather])
+    if (userLoc.lat == null || userLoc.lon == null) return
+    loadWeather(userLoc.lat, userLoc.lon)
+  }, [userLoc.lat, userLoc.lon, loadWeather])
 
   const clampPos = useCallback((id, x, y, layoutMap) => {
     const el = containerRef.current
@@ -447,21 +437,70 @@ export default function DesktopWidgets({
     [layout, clampPos, nudgeToFreeSpot, desktopItems],
   )
 
-  const applyPhotoGrid = useCallback(
-    (id, gridW, gridH) => {
-      setLayout((prev) => {
-        const base = { ...prev[id], gridW: clampGrid(gridW), gridH: clampGrid(gridH) }
-        const pos = clampPos(id, base.x, base.y, { ...prev, [id]: base })
-        let next = { ...prev, [id]: { ...base, ...pos } }
-        if (hasOverlapWithAny(id, pos, next, desktopItems)) {
-          next = nudgeToFreeSpot(id, next)
+  const handlePhotoResizePointerDown = useCallback(
+    (e, pid) => {
+      if (e.button !== 0) return
+      e.stopPropagation()
+      e.preventDefault()
+      const entry = layout[pid] || DEFAULT_LAYOUT[pid]
+      const origW = clampGrid(entry.gridW)
+      const origH = clampGrid(entry.gridH)
+      photoResizeRef.current = {
+        pid,
+        startX: e.clientX,
+        startY: e.clientY,
+        origW,
+        origH,
+      }
+      const handleEl = e.currentTarget
+      const capId = e.pointerId
+      try {
+        handleEl.setPointerCapture(capId)
+      } catch {
+        // ignore
+      }
+
+      const onMove = (ev) => {
+        const d = photoResizeRef.current
+        if (!d) return
+        const nextW = clampGrid(d.origW + Math.round((ev.clientX - d.startX) / CELL))
+        const nextH = clampGrid(d.origH + Math.round((ev.clientY - d.startY) / CELL))
+        setLayout((prev) => {
+          const base = { ...(prev[d.pid] || DEFAULT_LAYOUT[d.pid]), gridW: nextW, gridH: nextH }
+          const pos = clampPos(d.pid, base.x, base.y, { ...prev, [d.pid]: base })
+          return { ...prev, [d.pid]: { ...base, ...pos } }
+        })
+      }
+
+      const onUp = () => {
+        window.removeEventListener('pointermove', onMove)
+        window.removeEventListener('pointerup', onUp)
+        window.removeEventListener('pointercancel', onUp)
+        try {
+          handleEl.releasePointerCapture(capId)
+        } catch {
+          // ignore
         }
-        saveLayout(next)
-        return next
-      })
-      setSizeMenuFor(null)
+        photoResizeRef.current = null
+        setLayout((prev) => {
+          let next = prev
+          for (const wid of WIDGET_IDS) {
+            const p = next[wid]
+            if (!p) continue
+            if (hasOverlapWithAny(wid, { x: p.x, y: p.y }, next, desktopItems)) {
+              next = nudgeToFreeSpot(wid, next)
+            }
+          }
+          saveLayout(next)
+          return next
+        })
+      }
+
+      window.addEventListener('pointermove', onMove)
+      window.addEventListener('pointerup', onUp)
+      window.addEventListener('pointercancel', onUp)
     },
-    [clampPos, nudgeToFreeSpot, desktopItems],
+    [layout, clampPos, nudgeToFreeSpot, desktopItems],
   )
 
   const handlePhotoApply = useCallback((pid, state) => {
@@ -475,22 +514,21 @@ export default function DesktopWidgets({
     [notesStore],
   )
 
+  const WeatherTodayIcon =
+    weather.status === 'ready' && weather.current
+      ? weatherCodeToIcon(weather.current.code)
+      : null
+
   const togglePinnedItem = useCallback((itemId, done) => {
     setPinnedChecklistItemDone(notesStore, itemId, done)
   }, [notesStore])
 
-  const timeStr = now.toLocaleTimeString(undefined, {
-    hour: 'numeric',
-    minute: '2-digit',
-    second: '2-digit',
-  })
-  const dateUpper = now
-    .toLocaleDateString(undefined, {
-      weekday: 'long',
-      month: 'short',
-      day: 'numeric',
-    })
-    .toUpperCase()
+  const h24 = now.getHours()
+  const flipAmpm = h24 >= 12 ? 'PM' : 'AM'
+  let flipHour12 = h24 % 12
+  if (flipHour12 === 0) flipHour12 = 12
+  const flipMinutes = String(now.getMinutes()).padStart(2, '0')
+  const flipSeconds = String(now.getSeconds()).padStart(2, '0')
 
   const cardStyle = (id) => {
     const p = layout[id] || DEFAULT_LAYOUT[id]
@@ -503,11 +541,6 @@ export default function DesktopWidgets({
       zIndex: draggingId === id ? 10000 : undefined,
     }
   }
-
-  const gridRange = useMemo(
-    () => Array.from({ length: GRID_MAX - GRID_MIN + 1 }, (_, i) => GRID_MIN + i),
-    [],
-  )
 
   return (
     <div ref={containerRef} className="desktop-widgets" aria-hidden>
@@ -540,6 +573,7 @@ export default function DesktopWidgets({
                 setCalMonth(new Date(d.getFullYear(), d.getMonth(), 1))
               }
             }}
+            today={now}
             weekStartsOn={0}
             className="w-full rounded-xl [--cell-size:1.65rem] sm:[--cell-size:1.65rem]"
           />
@@ -555,12 +589,28 @@ export default function DesktopWidgets({
         >
           <GripVertical size={14} strokeWidth={2} />
         </button>
-        <div className="desktop-widgets__clock-split">
-          <div className="desktop-widgets__clock-accent" aria-hidden />
-          <div className="desktop-widgets__adaptive desktop-widgets__clock-main">
-            <div className="desktop-widgets__clock-date-upper">{dateUpper}</div>
-            <div className="desktop-widgets__clock-time">{timeStr}</div>
-            <div className="desktop-widgets__clock-loc">San Diego</div>
+        <div
+          className="desktop-widgets__adaptive desktop-widgets__flip-clock"
+          role="timer"
+          aria-live="polite"
+          aria-label={`${flipHour12} ${flipMinutes} ${flipSeconds} ${flipAmpm}`}
+        >
+          <div className="desktop-widgets__flip-clock__panel">
+            <div className="desktop-widgets__flip-clock__hinge" aria-hidden />
+            <div className="desktop-widgets__flip-clock__panel-body">
+              <span className="desktop-widgets__flip-clock__digit">{flipHour12}</span>
+              <span className="desktop-widgets__flip-clock__ampm">{flipAmpm}</span>
+            </div>
+          </div>
+          <div className="desktop-widgets__flip-clock__panel">
+            <div className="desktop-widgets__flip-clock__hinge" aria-hidden />
+            <div className="desktop-widgets__flip-clock__panel-body">
+              <span className="desktop-widgets__flip-clock__digit">{flipMinutes}</span>
+              <span className="desktop-widgets__flip-clock__sec">{flipSeconds}</span>
+            </div>
+          </div>
+          <div className="desktop-widgets__flip-clock__loc">
+            {userLoc.status === 'pending' ? 'Locating…' : userLoc.label || 'Local time'}
           </div>
         </div>
       </div>
@@ -575,36 +625,27 @@ export default function DesktopWidgets({
           <GripVertical size={14} strokeWidth={2} />
         </button>
         <div className="desktop-widgets__adaptive desktop-widgets__weather-body">
-          <div className="desktop-widgets__card-title desktop-widgets__weather-city">San Diego</div>
+          <div className="desktop-widgets__card-title desktop-widgets__weather-city">
+            {userLoc.status === 'pending' ? '…' : userLoc.label || 'Weather'}
+          </div>
           {weather.status === 'loading' && <p className="desktop-widgets__muted">Loading…</p>}
           {weather.status === 'error' && <p className="desktop-widgets__muted">{weather.error}</p>}
-          {weather.status === 'ready' && (
-          <div className="desktop-widgets__weather-strip">
-            {weatherWeekSlots.map((slot) => {
-              const hi = slot.high != null ? Math.round(slot.high) : '—'
-              const Ico = weatherCodeToIcon(slot.code)
-              return (
-                <div
-                  key={slot.key}
-                  className={`desktop-widgets__weather-day ${slot.isToday ? 'desktop-widgets__weather-day--today' : ''}`}
-                >
-                  <div className="desktop-widgets__weather-day-top">
-                    {slot.isToday ? (
-                      <span className="desktop-widgets__weather-date-badge">{slot.dayNum}</span>
-                    ) : (
-                      <span className="desktop-widgets__weather-date-placeholder" aria-hidden />
-                    )}
-                  </div>
-                  <span className="desktop-widgets__weather-dow">{slot.dowLabel}</span>
-                  <span className="desktop-widgets__weather-icon" aria-hidden>
-                    <Ico size={18} strokeWidth={1.75} />
-                  </span>
-                  <span className="desktop-widgets__weather-hi">{hi}°</span>
-                </div>
-              )
-            })}
-          </div>
-          )}
+          {weather.status === 'ready' && weather.current && WeatherTodayIcon ? (
+            <div className="desktop-widgets__weather-today">
+              <span className="desktop-widgets__weather-today-icon" aria-hidden>
+                <WeatherTodayIcon size={36} strokeWidth={1.75} />
+              </span>
+              <div className="desktop-widgets__weather-today-meta">
+                <span className="desktop-widgets__weather-today-temp">
+                  {weather.current.temp != null && Number.isFinite(weather.current.temp)
+                    ? Math.round(weather.current.temp)
+                    : '—'}
+                  °
+                </span>
+                <span className="desktop-widgets__weather-today-sub">Now</span>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -810,81 +851,9 @@ export default function DesktopWidgets({
       </div>
 
       {PHOTO_IDS.map((pid) => {
-        const open = sizeMenuFor === pid
         const pdata = photoData[pid]
-        const layoutEntry = layout[pid] || DEFAULT_LAYOUT[pid]
         return (
           <div key={pid} className="desktop-widgets__card desktop-widgets__card--photo" style={cardStyle(pid)}>
-            <div className="desktop-widgets__photo-chrome">
-              <button
-                type="button"
-                className="desktop-widgets__grip desktop-widgets__grip--photo"
-                aria-label={`Move ${pid} widget`}
-                onPointerDown={(e) => handleGripPointerDown(e, pid)}
-              >
-                <GripVertical size={14} strokeWidth={2} />
-              </button>
-              <button
-                type="button"
-                className="desktop-widgets__sync-trigger"
-                aria-label="Import from Photos gallery"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setPhotoImportFor(pid)
-                }}
-              >
-                <RefreshCw size={14} strokeWidth={2} />
-              </button>
-              <button
-                type="button"
-                className="desktop-widgets__size-trigger"
-                aria-label="Widget size"
-                aria-expanded={open}
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setSizeMenuFor((x) => (x === pid ? null : pid))
-                }}
-              >
-                <LayoutGrid size={14} strokeWidth={2} />
-              </button>
-            </div>
-            {open && (
-              <div ref={sizePopoverRef} className="desktop-widgets__size-popover desktop-widgets__size-popover--grid" role="group" aria-label="Photo widget grid size">
-                <div className="desktop-widgets__size-select-row">
-                  <label className="desktop-widgets__size-select-label">
-                    Width
-                    <select
-                      className="desktop-widgets__size-select"
-                      value={clampGrid(layoutEntry.gridW)}
-                      onChange={(e) => applyPhotoGrid(pid, Number(e.target.value), clampGrid(layoutEntry.gridH))}
-                    >
-                      {gridRange.map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <span className="desktop-widgets__size-mul">×</span>
-                  <label className="desktop-widgets__size-select-label">
-                    Height
-                    <select
-                      className="desktop-widgets__size-select"
-                      value={clampGrid(layoutEntry.gridH)}
-                      onChange={(e) => applyPhotoGrid(pid, clampGrid(layoutEntry.gridW), Number(e.target.value))}
-                    >
-                      {gridRange.map((n) => (
-                        <option key={`h-${n}`} value={n}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-              </div>
-            )}
             <div className="desktop-widgets__photo-body">
               {pdata ? (
                 <img
@@ -899,6 +868,34 @@ export default function DesktopWidgets({
                   <span className="desktop-widgets__photo-hint">Photo</span>
                 </div>
               )}
+              <div className="desktop-widgets__photo-overlay">
+                <button
+                  type="button"
+                  className="desktop-widgets__grip desktop-widgets__grip--photo"
+                  aria-label={`Move ${pid} widget`}
+                  onPointerDown={(e) => handleGripPointerDown(e, pid)}
+                >
+                  <GripVertical size={14} strokeWidth={2} />
+                </button>
+                <button
+                  type="button"
+                  className="desktop-widgets__sync-trigger"
+                  aria-label="Import from Photos gallery"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setPhotoImportFor(pid)
+                  }}
+                >
+                  <RefreshCw size={14} strokeWidth={2} />
+                </button>
+              </div>
+              <button
+                type="button"
+                className="desktop-widgets__photo-resize-handle"
+                aria-label="Resize photo widget"
+                onPointerDown={(e) => handlePhotoResizePointerDown(e, pid)}
+              />
             </div>
           </div>
         )

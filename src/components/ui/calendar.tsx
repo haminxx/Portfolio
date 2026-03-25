@@ -47,8 +47,8 @@ const defaultClassNames = {
   disabled: '',
   hidden: 'invisible',
   focused: '',
-  today:
-    '*:after:pointer-events-none *:after:absolute *:after:bottom-1 *:after:start-1/2 *:after:z-1 *:after:size-[3px] *:after:-translate-x-1/2 *:after:rounded-full *:after:bg-primary [&[data-selected]:not(.range-middle)>*]:after:bg-background [&[data-disabled]>*]:after:bg-foreground/30 *:after:transition-colors',
+  /* Today styling is handled in DesktopWidgets.css (white tile + dot). */
+  today: '',
   selected: '',
   range_start: 'range-start',
   range_middle: 'range-middle',
