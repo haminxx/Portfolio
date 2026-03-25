@@ -3,7 +3,7 @@
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  padding: 56px 20px 72px;
+  padding: 48px 20px 72px;
   overflow: visible;
 }
 
@@ -36,6 +36,30 @@
 .desktop-widgets__card--clock {
   width: 200px;
   min-height: 110px;
+}
+
+.desktop-widgets__card--calendar,
+.desktop-widgets__card--clock {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.desktop-widgets__card--calendar .desktop-widgets__cal-nav,
+.desktop-widgets__card--clock .desktop-widgets__clock-accent {
+  text-shadow: none;
+}
+
+[data-theme='light'] .desktop-widgets__card--calendar,
+[data-theme='light'] .desktop-widgets__card--clock {
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .desktop-widgets__card--weather {

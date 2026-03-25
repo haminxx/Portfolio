@@ -77,11 +77,13 @@ export default function Dock({
 
   const doomOpen = openAppWindows.some((w) => w.appKey === 'doom')
   const dadnmeOpen = openAppWindows.some((w) => w.appKey === 'dadnme')
+  const tetrisOpen = openAppWindows.some((w) => w.appKey === 'tetris')
   const visibleKeys = dockOrder.filter(
     (key) =>
-      (key !== 'doom' && key !== 'dadnme') ||
+      (key !== 'doom' && key !== 'dadnme' && key !== 'tetris') ||
       (key === 'doom' && doomOpen) ||
-      (key === 'dadnme' && dadnmeOpen),
+      (key === 'dadnme' && dadnmeOpen) ||
+      (key === 'tetris' && tetrisOpen),
   )
 
   const fromIdx = useMemo(
@@ -97,7 +99,7 @@ export default function Dock({
           key === 'dadnme' || key === 'finder'
             ? 'rounded-md'
             : key === 'appStore'
-              ? 'max-h-[85%] max-w-[85%] object-contain'
+              ? 'max-h-[92%] max-w-[92%] object-contain -translate-y-0.5'
               : undefined
         return {
           id: key,

@@ -3,7 +3,7 @@ import DesktopCustomIcons from './DesktopCustomIcons'
 import DesktopContextMenu from './DesktopContextMenu'
 import DesktopWidgets from './DesktopWidgets'
 import './Desktop.css'
-import { DESKTOP_ICON_WIDTH, DESKTOP_ICON_HEIGHT } from '../desktopConstants'
+import { DESKTOP_ICON_WIDTH, DESKTOP_ICON_HEIGHT, DESKTOP_SAFE_TOP } from '../desktopConstants'
 
 const DesktopShaderBackground = lazy(() => import('./ui/DesktopShaderBackground'))
 
@@ -64,6 +64,11 @@ export default function Desktop({
   const selectionBoxRef = useRef(null)
   selectionBoxRef.current = selectionBox
 
+  const widgetLayoutRef = useRef(null)
+  const handleWidgetLayout = useCallback((layout) => {
+    widgetLayoutRef.current = layout
+  }, [])
+
   useEffect(() => {
     if (!selectionBox) return
     const handleMove = (e) => {
@@ -119,7 +124,7 @@ export default function Desktop({
     const maxY = Math.max(0, r.height - DESKTOP_ICON_HEIGHT)
     return {
       x: Math.max(0, Math.min(maxX, clientX - r.left)),
-      y: Math.max(0, Math.min(maxY, clientY - r.top)),
+      y: Math.max(DESKTOP_SAFE_TOP, Math.min(maxY, clientY - r.top)),
     }
   }, [])
 
@@ -165,10 +170,11 @@ export default function Desktop({
       <Suspense fallback={null}>
         <DesktopShaderBackground />
       </Suspense>
-      <DesktopWidgets />
+      <DesktopWidgets desktopItems={desktopItems} onLayoutChange={handleWidgetLayout} />
       <div ref={iconsRef} className="desktop__icons-wrap">
         <DesktopCustomIcons
           desktopItems={desktopItems}
+          widgetLayoutRef={widgetLayoutRef}
           selectedIds={selectedIds}
           onSelectIcons={handleSelectIcons}
           onItemsChange={onItemsChange}

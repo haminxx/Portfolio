@@ -127,14 +127,18 @@ export default function ChromeLanding({ onReboot }) {
     const loaded = loadDesktopItems()
     const hasDoom = loaded.some((i) => i.type === 'shortcut' && i.appKey === 'doom')
     const hasDadnme = loaded.some((i) => i.type === 'shortcut' && i.appKey === 'dadnme')
+    const hasTetris = loaded.some((i) => i.type === 'shortcut' && i.appKey === 'tetris')
     let next = [...loaded]
     if (!hasDoom) {
-      next = [...next, { id: 'doom-shortcut', type: 'shortcut', name: 'DOOM', appKey: 'doom', parentId: null, x: 24, y: 24 }]
+      next = [...next, { id: 'doom-shortcut', type: 'shortcut', name: 'DOOM', appKey: 'doom', parentId: null, x: 24, y: 40 }]
     }
     if (!hasDadnme) {
-      next = [...next, { id: 'dadnme-shortcut', type: 'shortcut', name: "Dad 'n Me", appKey: 'dadnme', parentId: null, x: 120, y: 24 }]
+      next = [...next, { id: 'dadnme-shortcut', type: 'shortcut', name: "Dad 'n Me", appKey: 'dadnme', parentId: null, x: 120, y: 40 }]
     }
-    if (!hasDoom || !hasDadnme) saveDesktopItems(next)
+    if (!hasTetris) {
+      next = [...next, { id: 'tetris-shortcut', type: 'shortcut', name: 'Tetris', appKey: 'tetris', parentId: null, x: 216, y: 40 }]
+    }
+    if (!hasDoom || !hasDadnme || !hasTetris) saveDesktopItems(next)
     return next
   })
   const [openFolderId, setOpenFolderId] = useState(null)

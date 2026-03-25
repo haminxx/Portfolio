@@ -1,11 +1,22 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { Folder, FileText, Gamepad2 } from 'lucide-react'
 import './DesktopCustomIcons.css'
-import { DESKTOP_ICON_WIDTH as ICON_WIDTH, DESKTOP_ICON_HEIGHT as ICON_HEIGHT } from '../desktopConstants'
+import {
+  DESKTOP_ICON_WIDTH as ICON_WIDTH,
+  DESKTOP_ICON_HEIGHT as ICON_HEIGHT,
+  DESKTOP_SAFE_TOP,
+} from '../desktopConstants'
+import {
+  getWidgetRectsFromLayout,
+  loadWidgetLayoutFromStorage,
+  groupOverlapsWidgetRects,
+  groupOverlapsOtherIcons,
+} from '../lib/widgetOverlapGeometry'
 const DRAG_THRESHOLD_PX = 6
 
 export default function DesktopCustomIcons({
   desktopItems = [],
+  widgetLayoutRef,
   selectedIds = [],
   onSelectIcons,
   onItemsChange,
@@ -149,9 +160,16 @@ export default function DesktopCustomIcons({
         onSelectIcons?.([item.id])
       }
 
+      const lastGoodPositions = {}
+      for (const id of groupIds) {
+        const s = itemStartPositions[id]
+        if (s) lastGoodPositions[id] = { x: s.x, y: s.y }
+      }
+
       const dragState = {
         groupIds,
         itemStartPositions,
+        lastGoodPositions,
         wrapEl,
         startClientX: e.clientX,
         startClientY: e.clientY,
@@ -178,11 +196,33 @@ export default function DesktopCustomIcons({
           let x = start.x + dx
           let y = start.y + dy
           x = Math.max(0, Math.min(wrap.width - ICON_WIDTH, x))
-          y = Math.max(0, Math.min(wrap.height - ICON_HEIGHT, y))
+          y = Math.max(DESKTOP_SAFE_TOP, Math.min(wrap.height - ICON_HEIGHT, y))
           next[id] = { x, y }
         }
 
-        pendingPosRef.current = next
+        const layoutSnapshot =
+          widgetLayoutRef?.current && typeof widgetLayoutRef.current === 'object'
+            ? widgetLayoutRef.current
+            : loadWidgetLayoutFromStorage()
+        const widgetRects = getWidgetRectsFromLayout(layoutSnapshot)
+        const items = desktopItemsRef.current
+        const badWidgets = groupOverlapsWidgetRects(next, dragState.groupIds, widgetRects)
+        const badIcons = groupOverlapsOtherIcons(next, dragState.groupIds, items)
+        let usePos = next
+        if (badWidgets || badIcons) {
+          usePos = {}
+          for (const id of dragState.groupIds) {
+            const g = dragState.lastGoodPositions[id]
+            if (g) usePos[id] = { x: g.x, y: g.y }
+          }
+        } else {
+          for (const id of dragState.groupIds) {
+            const p = next[id]
+            if (p) dragState.lastGoodPositions[id] = { x: p.x, y: p.y }
+          }
+        }
+
+        pendingPosRef.current = usePos
         if (rafRef.current == null) {
           rafRef.current = requestAnimationFrame(() => {
             rafRef.current = null
@@ -236,7 +276,7 @@ export default function DesktopCustomIcons({
       window.addEventListener('pointerup', onUp)
       window.addEventListener('pointercancel', onUp)
     },
-    [renamingId, selectedIds, rootItems, onSelectIcons, findFolderUnderPoint, flushPendingPosition, onItemsChange]
+    [renamingId, selectedIds, rootItems, onSelectIcons, findFolderUnderPoint, flushPendingPosition, onItemsChange, widgetLayoutRef]
   )
 
   return (
@@ -264,6 +304,8 @@ export default function DesktopCustomIcons({
                 <img src="/dock-icons/doom.png" alt="DOOM" className="desktop-custom-icons__icon-img" />
               ) : isShortcut && item.appKey === 'dadnme' ? (
                 <img src="/dock-icons/dadnme.png" alt="Dad n Me" className="desktop-custom-icons__icon-img desktop-custom-icons__icon-img--rounded-square" />
+              ) : isShortcut && item.appKey === 'tetris' ? (
+                <img src="/dock-icons/tetris.png" alt="Tetris" className="desktop-custom-icons__icon-img desktop-custom-icons__icon-img--rounded-square" />
               ) : (
                 <Icon size={40} strokeWidth={1.5} />
               )}

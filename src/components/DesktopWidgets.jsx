@@ -28,6 +28,8 @@ import {
   NOTES_CHANGED_EVENT,
 } from '../lib/notesStorage'
 import PhotoWidgetImportModal from './PhotoWidgetImportModal'
+import { DESKTOP_SAFE_TOP } from '../desktopConstants'
+import { getDesktopIconRects } from '../lib/widgetOverlapGeometry'
 import './DesktopWidgets.css'
 
 const SD_LAT = 32.72
@@ -88,7 +90,7 @@ function rectsOverlap(a, b) {
   return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom)
 }
 
-function hasOverlapWithAny(movingId, pos, layoutMap) {
+function hasOverlapWithAny(movingId, pos, layoutMap, desktopItems = []) {
   const entry = { ...layoutMap[movingId], ...pos }
   const r = getWidgetRect(movingId, entry)
   for (const id of WIDGET_IDS) {
@@ -97,6 +99,9 @@ function hasOverlapWithAny(movingId, pos, layoutMap) {
     if (!other) continue
     const r2 = getWidgetRect(id, other)
     if (rectsOverlap(r, r2)) return true
+  }
+  for (const ir of getDesktopIconRects(desktopItems)) {
+    if (rectsOverlap(r, ir)) return true
   }
   return false
 }
@@ -169,7 +174,7 @@ function readInitialPhotoMap() {
   return o
 }
 
-export default function DesktopWidgets() {
+export default function DesktopWidgets({ desktopItems = [], onLayoutChange }) {
   const [now, setNow] = useState(() => new Date())
   const [weather, setWeather] = useState({ status: 'idle', days: [], error: null })
   const [layout, setLayout] = useState(loadLayout)
@@ -202,6 +207,10 @@ export default function DesktopWidgets() {
       window.removeEventListener('storage', onStorage)
     }
   }, [])
+
+  useEffect(() => {
+    onLayoutChange?.(layout)
+  }, [layout, onLayoutChange])
 
   useEffect(() => {
     if (!sizeMenuFor) return
@@ -252,11 +261,11 @@ export default function DesktopWidgets() {
     const entry = layoutMap[id] || DEFAULT_LAYOUT[id]
     const { w, h } = getBoxSize(id, entry)
     const maxX = Math.max(0, rect.width - w)
-    const maxY = Math.max(0, rect.height - h)
-    const clamp = (v, max) => Math.max(0, Math.min(max, v))
+    const minY = DESKTOP_SAFE_TOP
+    const maxY = Math.max(minY, rect.height - h)
     return {
-      x: clamp(x, maxX),
-      y: clamp(y, maxY),
+      x: Math.max(0, Math.min(maxX, x)),
+      y: Math.max(minY, Math.min(maxY, y)),
     }
   }, [])
 
@@ -274,12 +283,12 @@ export default function DesktopWidgets() {
         for (let gx = 0; gx <= maxX; gx += step) {
           const cand = clampPos(movingId, gx, gy, layoutMap)
           const merged = { ...layoutMap, [movingId]: { ...base, ...cand } }
-          if (!hasOverlapWithAny(movingId, cand, merged)) return merged
+          if (!hasOverlapWithAny(movingId, cand, merged, desktopItems)) return merged
         }
       }
       return layoutMap
     },
-    [clampPos],
+    [clampPos, desktopItems],
   )
 
   const handleGripPointerDown = useCallback(
@@ -316,7 +325,7 @@ export default function DesktopWidgets() {
         setLayout((prev) => {
           const candidate = clampPos(d.id, d.origX + dx, d.origY + dy, prev)
           const testLayout = { ...prev, [d.id]: { ...prev[d.id], ...candidate } }
-          if (!hasOverlapWithAny(d.id, candidate, testLayout)) {
+          if (!hasOverlapWithAny(d.id, candidate, testLayout, desktopItems)) {
             d.lastGood = { ...candidate }
             return testLayout
           }
@@ -340,7 +349,7 @@ export default function DesktopWidgets() {
           for (const wid of WIDGET_IDS) {
             const p = next[wid]
             if (!p) continue
-            if (hasOverlapWithAny(wid, { x: p.x, y: p.y }, next)) {
+            if (hasOverlapWithAny(wid, { x: p.x, y: p.y }, next, desktopItems)) {
               next = nudgeToFreeSpot(wid, next)
             }
           }
@@ -353,7 +362,7 @@ export default function DesktopWidgets() {
       window.addEventListener('pointerup', onUp)
       window.addEventListener('pointercancel', onUp)
     },
-    [layout, clampPos, nudgeToFreeSpot],
+    [layout, clampPos, nudgeToFreeSpot, desktopItems],
   )
 
   const applyPhotoGrid = useCallback(
@@ -362,7 +371,7 @@ export default function DesktopWidgets() {
         const base = { ...prev[id], gridW: clampGrid(gridW), gridH: clampGrid(gridH) }
         const pos = clampPos(id, base.x, base.y, { ...prev, [id]: base })
         let next = { ...prev, [id]: { ...base, ...pos } }
-        if (hasOverlapWithAny(id, pos, next)) {
+        if (hasOverlapWithAny(id, pos, next, desktopItems)) {
           next = nudgeToFreeSpot(id, next)
         }
         saveLayout(next)
@@ -370,7 +379,7 @@ export default function DesktopWidgets() {
       })
       setSizeMenuFor(null)
     },
-    [clampPos, nudgeToFreeSpot],
+    [clampPos, nudgeToFreeSpot, desktopItems],
   )
 
   const handlePhotoApply = useCallback((pid, state) => {
