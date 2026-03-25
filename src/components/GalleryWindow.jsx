@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react'
 import { Search, Grid3X3, LayoutGrid, Heart } from 'lucide-react'
-import { useGallery } from '../context/GalleryContext'
-import { GALLERY_SIZE, getImagePath } from '../lib/gallery'
 import './GalleryWindow.css'
+
+const GALLERY_SIZE = 24
+const getImagePath = (i) => `/gallery/photo-${i + 1}.png`
 
 const PHOTO_METADATA = Object.fromEntries(
   Array.from({ length: GALLERY_SIZE }, (_, i) => [
@@ -65,13 +66,13 @@ function GalleryImage({ index, src, isFavorite, onToggleFavorite, onClick }) {
 }
 
 export default function GalleryWindow() {
-  const { selectedPhotoIndex, setSelectedPhotoIndex } = useGallery()
   const [activeSection, setActiveSection] = useState('recents')
   const [activeAlbum, setActiveAlbum] = useState(null)
   const [viewMode, setViewMode] = useState('grid')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('date')
   const [favorites, setFavoritesState] = useState(loadFavorites)
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(null)
 
   const setFavorites = useCallback((fn) => {
     setFavoritesState((prev) => {

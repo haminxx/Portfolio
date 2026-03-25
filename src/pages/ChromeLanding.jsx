@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useScreenshot } from '../hooks/useScreenshot'
 import ChromeFrame from '../components/ChromeFrame'
 import ChromeWindow from '../components/ChromeWindow'
@@ -21,7 +21,6 @@ import YouTubeMusicWindow from '../components/YouTubeMusicWindow'
 import SettingsWindow from '../components/SettingsWindow'
 import AppStoreWindow from '../components/AppStoreWindow'
 import GalleryWindow from '../components/GalleryWindow'
-import NotesWindow from '../components/NotesWindow'
 import FaceTimeWindow from '../components/FaceTimeWindow'
 import FinderWindow from '../components/FinderWindow'
 import MenuBar from '../components/MenuBar'
@@ -32,8 +31,7 @@ import { SHORTCUTS } from '../config/shortcuts'
 import { useLanguage } from '../context/LanguageContext'
 import { useTheme } from '../context/ThemeContext'
 import { MusicPlayerProvider } from '../context/MusicPlayerContext'
-import { GalleryProvider } from '../context/GalleryContext'
-import { Globe, Image, Film, Images, Video, ShoppingBag, Settings, Map, Folder, StickyNote } from 'lucide-react'
+import { Globe, Image, Film, Images, Video, ShoppingBag, Settings, Map, Folder } from 'lucide-react'
 import './ChromeLanding.css'
 
 const APP_ICONS = {
@@ -47,7 +45,6 @@ const APP_ICONS = {
   settings: Settings,
   map: Map,
   youtubeMusic: Film,
-  notes: StickyNote,
 }
 
 const HOME_TAB = { id: 'home', title: 'Home', type: 'home' }
@@ -149,14 +146,6 @@ export default function ChromeLanding({ onReboot }) {
   const { nightMode, setNightMode } = useTheme()
   const { isCapturing, takeScreenshot } = useScreenshot()
   const { t } = useLanguage()
-
-  const dockOpenIndicatorKeys = useMemo(() => {
-    const keys = openAppWindows.filter((w) => !w.isMinimized).map((w) => w.appKey)
-    if (!chromeMinimized && !keys.includes('chrome')) {
-      return [...keys, 'chrome']
-    }
-    return keys
-  }, [openAppWindows, chromeMinimized])
 
   const setDesktopItems = useCallback((fnOrValue) => {
     setDesktopItemsState((prev) => {
@@ -374,7 +363,6 @@ export default function ChromeLanding({ onReboot }) {
 
   return (
     <MusicPlayerProvider>
-    <GalleryProvider>
     <div className="chrome-landing">
       <Desktop
         onOpenApp={openAppTab}
@@ -416,7 +404,6 @@ export default function ChromeLanding({ onReboot }) {
         isChromeMaximized={chromeMaximized}
         anyMaximized={(chromeMaximized && !chromeMinimized) || openAppWindows.some((w) => w.isMaximized && !w.isMinimized)}
         openAppWindows={openAppWindows}
-        openAppIndicatorKeys={dockOpenIndicatorKeys}
       />
       {openFolderId && (
         <FolderWindow
@@ -545,8 +532,6 @@ export default function ChromeLanding({ onReboot }) {
           content = <AppStoreWindow />
         } else if (win.appKey === 'photos') {
           content = <GalleryWindow />
-        } else if (win.appKey === 'notes') {
-          content = <NotesWindow />
         } else if (win.appKey === 'finder') {
           content = <FinderWindow onOpenApp={openAppTab} />
         } else if (win.appKey === 'facetime') {
@@ -616,7 +601,6 @@ export default function ChromeLanding({ onReboot }) {
         />
       )}
     </div>
-    </GalleryProvider>
     </MusicPlayerProvider>
   )
 }

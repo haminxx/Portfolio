@@ -1,9 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap, GeoJSON, CircleMarker } from 'react-leaflet'
-import * as LeafletNS from 'leaflet'
-
-/** ESM / Rolldown-safe Leaflet namespace (avoids `default` interop breaking `L.divIcon` / `L.geoJSON`). */
-const L = LeafletNS.default ?? LeafletNS
+import L from 'leaflet'
 import {
   Home,
   GraduationCap,

@@ -1,16 +1,16 @@
+import path from 'node:path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
   resolve: {
-    dedupe: ['leaflet'],
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
   },
-  optimizeDeps: {
-    include: ['leaflet', 'react-leaflet'],
-  },
+  plugins: [react(), tailwindcss()],
   server: {
     proxy: {
       '/api/dos-proxy': {

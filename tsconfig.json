@@ -17,8 +17,12 @@
     "noFallthroughCasesInSwitch": true,
     "allowJs": true,
     "checkJs": false,
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "src/**/*.jsx", "src/vite-env.d.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "src/**/*.jsx"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

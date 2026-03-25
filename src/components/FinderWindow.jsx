@@ -19,7 +19,6 @@ import {
   Settings,
   Map,
   Gamepad2,
-  StickyNote,
 } from 'lucide-react'
 import { APPS } from '../config/apps'
 import './FinderWindow.css'
@@ -59,7 +58,6 @@ const APP_ICONS = {
   doom: Gamepad2,
   dadnme: Gamepad2,
   finder: Folder,
-  notes: StickyNote,
 }
 
 export default function FinderWindow({ onOpenApp }) {

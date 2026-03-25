@@ -64,7 +64,6 @@ export const translations = {
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
       dadnme: "Dad 'n Me",
-      notes: 'Notes',
     },
     desktopContextMenu: {
       open: 'Open',
@@ -234,7 +233,6 @@ export const translations = {
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
       dadnme: "Dad 'n Me",
-      notes: 'Notes',
     },
     desktopContextMenu: {
       open: '열기',
@@ -321,7 +319,6 @@ export const translations = {
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
       dadnme: "Dad 'n Me",
-      notes: 'Notes',
     },
     desktopContextMenu: {
       open: 'Abrir',
@@ -408,7 +405,6 @@ export const translations = {
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
       dadnme: "Dad 'n Me",
-      notes: 'Notes',
     },
     desktopContextMenu: {
       open: '打开',
@@ -495,7 +491,6 @@ export const translations = {
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
       dadnme: "Dad 'n Me",
-      notes: 'Notes',
     },
     desktopContextMenu: {
       open: 'Ouvrir',
@@ -582,7 +577,6 @@ export const translations = {
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
       dadnme: "Dad 'n Me",
-      notes: 'Notes',
     },
     desktopContextMenu: {
       open: '開く',
@@ -669,7 +663,6 @@ export const translations = {
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
       dadnme: "Dad 'n Me",
-      notes: 'Notes',
     },
     desktopContextMenu: {
       open: 'खोलें',
@@ -756,7 +749,6 @@ export const translations = {
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
       dadnme: "Dad 'n Me",
-      notes: 'Notes',
     },
     desktopContextMenu: {
       open: 'فتح',

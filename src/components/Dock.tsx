@@ -1,46 +1,20 @@
-import {
-  useState,
-  useCallback,
-  useMemo,
-  useRef,
-  type ComponentType,
-  type PointerEvent as ReactPointerEvent,
-} from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
+import type React from 'react'
 import { APPS } from '../config/apps'
 import { useLanguage } from '../context/LanguageContext'
-import {
-  Globe,
-  Image,
-  Film,
-  Images,
-  Video,
-  ShoppingBag,
-  Settings,
-  Map,
-  Folder,
-} from 'lucide-react'
-import MacOSDock, { type MacOSDockApp } from './ui/mac-os-dock'
+import MacOSDock from './ui/mac-os-dock'
+import type { DockApp } from './ui/mac-os-dock'
 import './Dock.css'
 
-const APP_ICONS: Record<string, ComponentType<{ size?: number; strokeWidth?: number }>> = {
-  finder: Folder,
-  chrome: Globe,
-  instagram: Image,
-  netflix: Film,
-  photos: Images,
-  facetime: Video,
-  appStore: ShoppingBag,
-  settings: Settings,
-  map: Map,
-  youtubeMusic: Film,
-  doom: Film,
-  dadnme: Film,
-}
+const SLOT_PX = 48
+const DRAG_THRESHOLD = 6
 
-const SLOT_PX = 52
-const DRAG_THRESHOLD_PX = 6
-
-function reorderDockWithInsertion(order: string[], dragKey: string, targetKey: string, placement: 'before' | 'after') {
+function reorderDockWithInsertion(
+  order: string[],
+  dragKey: string,
+  targetKey: string,
+  placement: 'before' | 'after',
+) {
   if (!dragKey || dragKey === targetKey) return order
   const next = order.filter((k) => k !== dragKey)
   let idx = next.indexOf(targetKey)
@@ -63,15 +37,24 @@ function shiftForIndex(i: number, fromIdx: number, insertIdx: number) {
   return 0
 }
 
-type DockProps = {
+type OpenWin = { appKey: string }
+
+interface DockProps {
   onOpenApp: (key: string) => void
   dockOrder?: string[]
   onDockReorder?: (order: string[]) => void
   isChromeMaximized?: boolean
   anyMaximized?: boolean
-  openAppWindows?: { appKey: string }[]
-  /** App keys that show a running indicator under the icon (Chrome + non-minimized windows). */
-  openAppIndicatorKeys?: string[]
+  openAppWindows?: OpenWin[]
+}
+
+type DragSession = {
+  appId: string
+  startX: number
+  startY: number
+  pointerId: number
+  active: boolean
+  target: HTMLElement | null
 }
 
 export default function Dock({
@@ -81,232 +64,200 @@ export default function Dock({
   isChromeMaximized,
   anyMaximized,
   openAppWindows = [],
-  openAppIndicatorKeys = [],
 }: DockProps) {
   const { t } = useLanguage()
   const [draggedKey, setDraggedKey] = useState<string | null>(null)
-  const [insertPreview, setInsertPreview] = useState<{ insertIdx: number; fromIdx: number } | null>(null)
-  const [ghost, setGhost] = useState<{ left: number; top: number } | null>(null)
-  const itemWrapRefs = useRef<Map<string, HTMLDivElement>>(new Map())
-  const suppressClickRef = useRef(false)
-  const dragSessionRef = useRef<{
-    key: string
-    startX: number
-    startY: number
-    active: boolean
-    grabLeft: number
-    grabTop: number
-    pointerId: number
+  const [insertPreview, setInsertPreview] = useState<{
+    insertIdx: number
+    fromIdx: number
   } | null>(null)
+  const [pauseMagnification, setPauseMagnification] = useState(false)
+  const suppressClickRef = useRef(false)
+  const dragSessionRef = useRef<DragSession | null>(null)
 
   const doomOpen = openAppWindows.some((w) => w.appKey === 'doom')
   const dadnmeOpen = openAppWindows.some((w) => w.appKey === 'dadnme')
   const visibleKeys = dockOrder.filter(
-    (key) => (key !== 'doom' && key !== 'dadnme') || (key === 'doom' && doomOpen) || (key === 'dadnme' && dadnmeOpen),
+    (key) =>
+      (key !== 'doom' && key !== 'dadnme') ||
+      (key === 'doom' && doomOpen) ||
+      (key === 'dadnme' && dadnmeOpen),
   )
 
-  const dockApps: MacOSDockApp[] = useMemo(
+  const fromIdx = useMemo(
+    () => (draggedKey ? visibleKeys.indexOf(draggedKey) : -1),
+    [draggedKey, visibleKeys],
+  )
+
+  const apps: DockApp[] = useMemo(
     () =>
-      visibleKeys
-        .map((key) => {
-          const app = APPS[key as keyof typeof APPS]
-          if (!app) return null
-          const name = t(`apps.${key}`)
-          if (app.iconPath) {
-            return { id: key, name, icon: app.iconPath } satisfies MacOSDockApp
-          }
-          const Icon = APP_ICONS[key] ?? Film
-          return {
-            id: key,
-            name,
-            renderIcon: (px: number) => <Icon size={Math.round(px)} strokeWidth={1.6} />,
-          } satisfies MacOSDockApp
-        })
-        .filter((x): x is MacOSDockApp => x != null),
+      visibleKeys.map((key) => {
+        const app = APPS[key as keyof typeof APPS]
+        const imgClass =
+          key === 'dadnme' || key === 'finder'
+            ? 'rounded-md'
+            : key === 'appStore'
+              ? 'max-h-[85%] max-w-[85%] object-contain'
+              : undefined
+        return {
+          id: key,
+          name: t(`apps.${key}`),
+          icon: app?.iconPath ?? '',
+          imgClassName: imgClass,
+        }
+      }),
     [visibleKeys, t],
   )
 
-  const fromIdx = useMemo(() => (draggedKey ? visibleKeys.indexOf(draggedKey) : -1), [draggedKey, visibleKeys])
-
-  const computeInsertPreview = useCallback(
-    (clientX: number, dragKey: string) => {
-      const f = visibleKeys.indexOf(dragKey)
-      if (f === -1) return null
-      let insertIdx = visibleKeys.length
-      for (let i = 0; i < visibleKeys.length; i++) {
-        const el = itemWrapRefs.current.get(visibleKeys[i])
-        if (!el) continue
-        const r = el.getBoundingClientRect()
-        const mid = r.left + r.width / 2
-        if (clientX < mid) {
-          insertIdx = i
-          break
-        }
-        insertIdx = i + 1
-      }
-      return { insertIdx, fromIdx: f }
-    },
-    [visibleKeys],
-  )
-
-  const commitReorder = useCallback(
-    (dragKey: string, clientX: number) => {
-      if (!onDockReorder) return
-      let targetKey: string | null = null
-      let placement: 'before' | 'after' = 'before'
-      for (let i = 0; i < visibleKeys.length; i++) {
-        const k = visibleKeys[i]
-        if (k === dragKey) continue
-        const el = itemWrapRefs.current.get(k)
-        if (!el) continue
-        const r = el.getBoundingClientRect()
-        if (clientX >= r.left && clientX <= r.right) {
-          targetKey = k
-          placement = clientX < r.left + r.width / 2 ? 'before' : 'after'
-          break
-        }
-      }
-      if (!targetKey) {
-        const last = visibleKeys[visibleKeys.length - 1]
-        if (last && last !== dragKey) {
-          targetKey = last
-          placement = 'after'
-        }
-      }
-      if (!targetKey || targetKey === dragKey) return
-      const next = reorderDockWithInsertion(dockOrder, dragKey, targetKey, placement)
-      if (next !== dockOrder) onDockReorder(next)
-    },
-    [dockOrder, onDockReorder, visibleKeys],
-  )
-
-  const endPointerDrag = useCallback(() => {
-    dragSessionRef.current = null
-    setDraggedKey(null)
-    setInsertPreview(null)
-    setGhost(null)
-  }, [])
-
-  const handleItemPointerDown = useCallback(
-    (e: ReactPointerEvent<HTMLDivElement>, key: string) => {
-      if (e.button !== 0) return
-      const wrap = itemWrapRefs.current.get(key)
-      if (!wrap) return
-      const r = wrap.getBoundingClientRect()
-      dragSessionRef.current = {
-        key,
-        startX: e.clientX,
-        startY: e.clientY,
-        active: false,
-        grabLeft: e.clientX - r.left,
-        grabTop: e.clientY - r.top,
-        pointerId: e.pointerId,
-      }
-
-      const onMove = (ev: PointerEvent) => {
-        const sess = dragSessionRef.current
-        if (!sess || ev.pointerId !== sess.pointerId) return
-        const dx = ev.clientX - sess.startX
-        const dy = ev.clientY - sess.startY
-        if (!sess.active) {
-          if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return
-          sess.active = true
-          setDraggedKey(sess.key)
-          try {
-            wrap.setPointerCapture(ev.pointerId)
-          } catch {
-            /* ignore */
-          }
-        }
-        setGhost({ left: ev.clientX - sess.grabLeft, top: ev.clientY - sess.grabTop })
-        const preview = computeInsertPreview(ev.clientX, sess.key)
-        setInsertPreview(preview)
-      }
-
-      const onUp = (ev: PointerEvent) => {
-        if (ev.pointerId !== dragSessionRef.current?.pointerId) return
-        window.removeEventListener('pointermove', onMove)
-        window.removeEventListener('pointerup', onUp)
-        window.removeEventListener('pointercancel', onUp)
-        const sess = dragSessionRef.current
-        try {
-          wrap.releasePointerCapture(ev.pointerId)
-        } catch {
-          /* ignore */
-        }
-        if (sess?.active) {
-          if (onDockReorder) {
-            suppressClickRef.current = true
-            commitReorder(sess.key, ev.clientX)
-          }
-        }
-        endPointerDrag()
-      }
-
-      window.addEventListener('pointermove', onMove)
-      window.addEventListener('pointerup', onUp)
-      window.addEventListener('pointercancel', onUp)
-    },
-    [computeInsertPreview, commitReorder, onDockReorder, endPointerDrag],
-  )
-
-  const handleAppClick = useCallback(
-    (id: string) => {
-      if (suppressClickRef.current) {
-        suppressClickRef.current = false
-        return
-      }
-      onOpenApp(id)
-    },
-    [onOpenApp],
-  )
+  const openApps = openAppWindows.map((w) => w.appKey)
 
   const insertIdx = insertPreview?.insertIdx ?? -1
   const previewFrom = insertPreview?.fromIdx ?? fromIdx
 
+  const shiftPxByIndex = useMemo(() => {
+    if (!draggedKey || insertIdx < 0) return undefined
+    return visibleKeys.map((_, i) =>
+      shiftForIndex(i, previewFrom, insertIdx),
+    )
+  }, [draggedKey, insertIdx, previewFrom, visibleKeys])
+
+  const endDragSession = useCallback(() => {
+    const s = dragSessionRef.current
+    if (s?.target) {
+      try {
+        s.target.releasePointerCapture(s.pointerId)
+      } catch {
+        // ignore
+      }
+    }
+    dragSessionRef.current = null
+    setDraggedKey(null)
+    setInsertPreview(null)
+    setPauseMagnification(false)
+  }, [])
+
+  const updateInsertPreviewFromPoint = useCallback(
+    (clientX: number, clientY: number, dragKey: string) => {
+      const el = document.elementFromPoint(clientX, clientY)
+      const tile = el?.closest('[data-dock-app-id]') as HTMLElement | null
+      const targetKey = tile?.getAttribute('data-dock-app-id')
+      if (!targetKey || !tile || targetKey === dragKey) {
+        setInsertPreview(null)
+        return
+      }
+      const rect = tile.getBoundingClientRect()
+      const placement: 'before' | 'after' =
+        clientX < rect.left + rect.width / 2 ? 'before' : 'after'
+      const h = visibleKeys.indexOf(targetKey)
+      if (h === -1) {
+        setInsertPreview(null)
+        return
+      }
+      const insertI = placement === 'before' ? h : h + 1
+      const f = visibleKeys.indexOf(dragKey)
+      setInsertPreview({ insertIdx: insertI, fromIdx: f })
+    },
+    [visibleKeys],
+  )
+
+  const onIconPointerDown: (
+    e: React.PointerEvent,
+    appId: string,
+  ) => void = useCallback((e, appId) => {
+    if (e.button !== 0 || !onDockReorder) return
+    const target = e.currentTarget as HTMLElement
+    dragSessionRef.current = {
+      appId,
+      startX: e.clientX,
+      startY: e.clientY,
+      pointerId: e.pointerId,
+      active: false,
+      target,
+    }
+    try {
+      target.setPointerCapture(e.pointerId)
+    } catch {
+      // ignore
+    }
+  }, [onDockReorder])
+
+  const onIconPointerMove: (e: React.PointerEvent) => void = useCallback(
+    (e) => {
+      const s = dragSessionRef.current
+      if (!s || !onDockReorder) return
+      const dx = e.clientX - s.startX
+      const dy = e.clientY - s.startY
+      if (!s.active) {
+        if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return
+        s.active = true
+        setDraggedKey(s.appId)
+        setPauseMagnification(true)
+      }
+      updateInsertPreviewFromPoint(e.clientX, e.clientY, s.appId)
+    },
+    [onDockReorder, updateInsertPreviewFromPoint],
+  )
+
+  const onIconPointerUp: (
+    e: React.PointerEvent,
+    appId: string,
+  ) => void = useCallback(
+    (e, appId) => {
+      const s = dragSessionRef.current
+      if (!s || s.appId !== appId) return
+
+      if (s.active && onDockReorder) {
+        const el = document.elementFromPoint(e.clientX, e.clientY)
+        const tile = el?.closest('[data-dock-app-id]') as HTMLElement | null
+        const targetKey = tile?.getAttribute('data-dock-app-id')
+        if (targetKey && tile && targetKey !== s.appId) {
+          const rect = tile.getBoundingClientRect()
+          const placement: 'before' | 'after' =
+            e.clientX < rect.left + rect.width / 2 ? 'before' : 'after'
+          const next = reorderDockWithInsertion(
+            dockOrder,
+            s.appId,
+            targetKey,
+            placement,
+          )
+          if (next !== dockOrder) {
+            onDockReorder(next)
+            suppressClickRef.current = true
+          }
+        }
+      }
+
+      endDragSession()
+    },
+    [onDockReorder, dockOrder, endDragSession],
+  )
+
   const isHidden = anyMaximized ?? isChromeMaximized
 
-  const ghostApp = draggedKey ? APPS[draggedKey as keyof typeof APPS] : null
-  const GhostIcon = draggedKey ? APP_ICONS[draggedKey] : null
-
-  const shiftXByIndex =
-    draggedKey != null
-      ? (i: number) => shiftForIndex(i, previewFrom, insertIdx)
-      : undefined
-
   return (
-    <div className={`dock-wrapper ${isHidden ? 'dock-wrapper--fullscreen-hidden' : ''}`}>
-      {ghost && ghostApp && (
-        <div
-          className="dock__ghost"
-          style={{ left: ghost.left, top: ghost.top }}
-          aria-hidden
-        >
-          <span className="dock__icon dock__ghost__icon">
-            {ghostApp.iconPath ? (
-              <img
-                src={ghostApp.iconPath}
-                alt=""
-                className={`dock__icon-img ${draggedKey === 'dadnme' ? 'dock__icon-img--rounded-square' : ''} ${draggedKey === 'finder' ? 'dock__icon-img--rounded-square' : ''} ${draggedKey === 'appStore' ? 'dock__icon-img--appstore' : ''}`}
-              />
-            ) : GhostIcon ? (
-              <GhostIcon size={26} strokeWidth={1.6} />
-            ) : null}
-          </span>
-        </div>
-      )}
+    <div
+      className={`dock-wrapper ${isHidden ? 'dock-wrapper--fullscreen-hidden' : ''}`}
+    >
       <footer className="dock dock--macos">
         <MacOSDock
-          apps={dockApps}
-          onAppClick={handleAppClick}
-          openAppIds={openAppIndicatorKeys}
-          shiftXByIndex={shiftXByIndex}
-          onAppPointerDown={(e, id) => handleItemPointerDown(e, id)}
-          onIconElementRef={(id, el) => {
-            if (el) itemWrapRefs.current.set(id, el)
-            else itemWrapRefs.current.delete(id)
-          }}
-          className="dock-macos-bar"
+          apps={apps}
+          onAppClick={onOpenApp}
+          openApps={openApps}
+          shiftPxByIndex={shiftPxByIndex}
+          draggingId={draggedKey}
+          pauseMagnification={pauseMagnification}
+          suppressClickRef={suppressClickRef}
+          onIconPointerDown={
+            onDockReorder
+              ? (e, appId) => onIconPointerDown(e, appId)
+              : undefined
+          }
+          onIconPointerMove={onDockReorder ? onIconPointerMove : undefined}
+          onIconPointerUp={
+            onDockReorder
+              ? (e, appId) => onIconPointerUp(e, appId)
+              : undefined
+          }
         />
       </footer>
     </div>
