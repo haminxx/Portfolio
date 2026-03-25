@@ -36,7 +36,7 @@ function mixColors(a: string, b: string, t: number): string {
 }
 
 /** Four mesh stops: deep base, mid blend, accent, near-highlight — driven by the two widget colors. */
-export function meshGradientColorsFromPair(color1: string, color2: string): string[] {
+function meshGradientColorsFromPair(color1: string, color2: string): string[] {
   return [color1, mixColors(color1, color2, 0.38), color2, mixColors(color2, '#ffffff', 0.84)]
 }
 
