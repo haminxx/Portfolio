@@ -3,28 +3,24 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 /**
- * Paper-style luxury wave (inspired by 21st.dev background paper shaders;
+ * Animated paper-style plane (inspired by 21st.dev background paper shaders;
  * https://21st.dev/community/components/reuno-ui/background-paper-shaders/default )
- * — custom GLSL, not a copy of third-party source.
+ * — wave vertex + noise fragment; tuned for smoother motion and stronger contrast.
  */
 const vertexShader = `
   uniform float time;
   uniform float intensity;
   varying vec2 vUv;
   varying vec3 vPosition;
-  varying float vWave;
   
   void main() {
     vUv = uv;
     vPosition = position;
     
     vec3 pos = position;
-    float w1 = sin(pos.x * 1.65 + pos.y * 0.95 + time * 0.2) * 0.11;
-    float w2 = sin((pos.x * 0.85 - pos.y * 1.15) + time * 0.14) * 0.042;
-    float w3 = sin(length(pos.xy) * 2.4 - time * 0.12) * 0.028;
-    float wave = (w1 + w2 + w3) * intensity;
-    vWave = wave;
-    pos.y += wave;
+    float t = time * 1.45;
+    pos.y += sin(pos.x * 10.0 + t) * 0.1 * intensity;
+    pos.x += cos(pos.y * 8.0 + t * 1.5) * 0.05 * intensity;
     
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   }
@@ -37,35 +33,26 @@ const fragmentShader = `
   uniform vec3 color2;
   varying vec2 vUv;
   varying vec3 vPosition;
-  varying float vWave;
   
   void main() {
     vec2 uv = vUv;
+    float t = time * 1.45;
     
-    float flow = sin(uv.x * 2.8 + uv.y * 1.9 + time * 0.12) * 0.5 + 0.5;
-    vec3 base = mix(color1, color2, smoothstep(0.08, 0.95, flow * 0.65 + uv.y * 0.28 + vWave * 0.35));
+    float noise = sin(uv.x * 20.0 + t) * cos(uv.y * 15.0 + t * 0.8);
+    noise += sin(uv.x * 35.0 - t * 2.0) * cos(uv.y * 25.0 + t * 1.2) * 0.5;
     
-    float silk = sin(uv.x * 5.2 + uv.y * 4.1 - time * 0.11);
-    silk = pow(smoothstep(0.2, 0.92, silk * 0.5 + 0.5), 2.8);
-    vec3 sheen = vec3(0.99, 0.995, 1.0);
-    base = mix(base, sheen, silk * 0.2 * intensity);
+    vec3 color = mix(color1, color2, noise * 0.5 + 0.5);
+    color = mix(color, vec3(1.0), pow(abs(noise), 2.0) * intensity * 0.42);
     
-    float sweep = sin(uv.x * 1.1 + uv.y * 0.7 - time * 0.09);
-    sweep = smoothstep(0.35, 0.95, sweep * 0.5 + 0.5);
-    base = mix(base, vec3(1.0), sweep * 0.1 * intensity);
-    
-    float vignette = length(uv - 0.5) * 1.12;
-    float dim = mix(1.0, 0.9, smoothstep(0.32, 1.02, vignette));
-    
-    gl_FragColor = vec4(base * dim, 0.91);
+    gl_FragColor = vec4(color, 1.0);
   }
 `
 
 export function ShaderPlane({
   position,
   scale,
-  color1 = '#1a1520',
-  color2 = '#3d3550',
+  color1 = '#9eb0cc',
+  color2 = '#f0f4fa',
 }: {
   position: [number, number, number]
   scale?: [number, number, number]
@@ -87,46 +74,20 @@ export function ShaderPlane({
   useFrame((state) => {
     if (mesh.current) {
       uniforms.time.value = state.clock.elapsedTime
-      uniforms.intensity.value = 0.88 + Math.sin(state.clock.elapsedTime * 0.38) * 0.1
+      uniforms.intensity.value = 1.0 + Math.sin(state.clock.elapsedTime * 1.8) * 0.22
     }
   })
 
   return (
     <mesh ref={mesh} position={position} scale={scale ?? [1, 1, 1]}>
-      <planeGeometry args={[2, 2, 96, 96]} />
+      <planeGeometry args={[2, 2, 64, 64]} />
       <shaderMaterial
         uniforms={uniforms}
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}
-        transparent
+        transparent={false}
         side={THREE.DoubleSide}
       />
-    </mesh>
-  )
-}
-
-export function EnergyRing({
-  radius = 1,
-  position = [0, 0, 0],
-}: {
-  radius?: number
-  position?: [number, number, number]
-}) {
-  const mesh = useRef<THREE.Mesh>(null)
-
-  useFrame((state) => {
-    const m = mesh.current
-    if (m) {
-      m.rotation.z = state.clock.elapsedTime
-      const mat = m.material as THREE.MeshBasicMaterial
-      mat.opacity = 0.5 + Math.sin(state.clock.elapsedTime * 3) * 0.3
-    }
-  })
-
-  return (
-    <mesh ref={mesh} position={position}>
-      <ringGeometry args={[radius * 0.8, radius, 32]} />
-      <meshBasicMaterial color="#4a3f6b" transparent opacity={0.6} side={THREE.DoubleSide} />
     </mesh>
   )
 }

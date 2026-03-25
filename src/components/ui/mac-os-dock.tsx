@@ -82,7 +82,7 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
 
   const getResponsiveConfig = useCallback(() => {
     if (typeof window === 'undefined') {
-      return { baseIconSize: 64, maxScale: 1.6, effectWidth: 240 }
+      return { baseIconSize: 64, maxScale: 1.34, effectWidth: 200 }
     }
 
     const smallerDimension = Math.min(window.innerWidth, window.innerHeight)
@@ -90,33 +90,33 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
     if (smallerDimension < 480) {
       return {
         baseIconSize: Math.max(40, smallerDimension * 0.08),
-        maxScale: 1.4,
-        effectWidth: smallerDimension * 0.4,
+        maxScale: 1.22,
+        effectWidth: smallerDimension * 0.32,
       }
     }
     if (smallerDimension < 768) {
       return {
         baseIconSize: Math.max(48, smallerDimension * 0.07),
-        maxScale: 1.5,
-        effectWidth: smallerDimension * 0.35,
+        maxScale: 1.28,
+        effectWidth: smallerDimension * 0.28,
       }
     }
     if (smallerDimension < 1024) {
       return {
         baseIconSize: Math.max(56, smallerDimension * 0.06),
-        maxScale: 1.6,
-        effectWidth: smallerDimension * 0.3,
+        maxScale: 1.32,
+        effectWidth: smallerDimension * 0.24,
       }
     }
     return {
       baseIconSize: Math.max(64, Math.min(80, smallerDimension * 0.05)),
-      maxScale: 1.8,
-      effectWidth: 300,
+      maxScale: 1.36,
+      effectWidth: 220,
     }
   }, [])
 
   const [config, setConfig] = useState(getResponsiveConfig)
-  const { baseIconSize, maxScale, effectWidth } = config
+  const { baseIconSize, maxScale } = config
   const minScale = 1.0
   const baseSpacing = Math.max(4, baseIconSize * 0.08)
 
@@ -128,31 +128,24 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
 
   const activeMouseX = pauseMagnification ? null : mouseX
 
+  /** Gaussian bump from mouse → one dominant “hovered” icon; neighbors stay smaller. */
   const calculateTargetMagnification = useCallback(
     (mousePosition: number | null) => {
       if (mousePosition === null) {
         return apps.map(() => minScale)
       }
 
+      const sigma = baseIconSize * 0.42
+
       return apps.map((_, index) => {
-        const normalIconCenter =
+        const slotCenter =
           index * (baseIconSize + baseSpacing) + baseIconSize / 2
-        const minX = mousePosition - effectWidth / 2
-        const maxX = mousePosition + effectWidth / 2
-
-        if (normalIconCenter < minX || normalIconCenter > maxX) {
-          return minScale
-        }
-
-        const theta =
-          ((normalIconCenter - minX) / effectWidth) * 2 * Math.PI
-        const cappedTheta = Math.min(Math.max(theta, 0), 2 * Math.PI)
-        const scaleFactor = (1 - Math.cos(cappedTheta)) / 2
-
-        return minScale + scaleFactor * (maxScale - minScale)
+        const d = mousePosition - slotCenter
+        const g = Math.exp(-(d * d) / (2 * sigma * sigma))
+        return minScale + g * (maxScale - minScale)
       })
     },
-    [apps, baseIconSize, baseSpacing, effectWidth, maxScale, minScale],
+    [apps, baseIconSize, baseSpacing, maxScale, minScale],
   )
 
   const calculatePositions = useCallback(
@@ -186,7 +179,7 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
   const animateToTarget = useCallback(() => {
     const targetScales = calculateTargetMagnification(activeMouseX ?? null)
     const targetPositions = calculatePositions(targetScales)
-    const lerpFactor = activeMouseX !== null ? 0.2 : 0.12
+    const lerpFactor = activeMouseX !== null ? 0.22 : 0.12
 
     setCurrentScales((prevScales) => {
       if (prevScales.length !== targetScales.length) return targetScales
@@ -337,6 +330,11 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
           const scaledSize = baseIconSize * scale
           const shift = shiftPxByIndex?.[index] ?? 0
           const isDraggingTile = draggingId === app.id
+          const peakScale = Math.max(...currentScales, minScale)
+          const isHoverFocus =
+            activeMouseX !== null &&
+            scale >= peakScale - 0.012 &&
+            peakScale > 1.04
 
           return (
             <div
@@ -376,15 +374,22 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
                 className={`object-contain ${app.imgClassName ?? ''}`}
                 draggable={false}
                 style={{
-                  filter: `drop-shadow(0 ${
-                    scale > 1.2
-                      ? Math.max(2, baseIconSize * 0.05)
-                      : Math.max(1, baseIconSize * 0.03)
-                  }px ${
-                    scale > 1.2
-                      ? Math.max(4, baseIconSize * 0.1)
-                      : Math.max(2, baseIconSize * 0.06)
-                  }px rgba(0,0,0,${0.2 + (scale - 1) * 0.15}))`,
+                  borderRadius: 12,
+                  outline: isHoverFocus
+                    ? '2px solid rgba(255, 255, 255, 0.65)'
+                    : '2px solid transparent',
+                  outlineOffset: 2,
+                  filter: isHoverFocus
+                    ? `drop-shadow(0 ${Math.max(2, baseIconSize * 0.06)}px ${Math.max(6, baseIconSize * 0.14)}px rgba(0,0,0,0.35)) brightness(1.06)`
+                    : `drop-shadow(0 ${
+                        scale > 1.12
+                          ? Math.max(2, baseIconSize * 0.04)
+                          : Math.max(1, baseIconSize * 0.03)
+                      }px ${
+                        scale > 1.12
+                          ? Math.max(3, baseIconSize * 0.08)
+                          : Math.max(2, baseIconSize * 0.06)
+                      }px rgba(0,0,0,${0.18 + (scale - 1) * 0.12}))`,
                 }}
               />
 

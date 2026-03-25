@@ -1,68 +1,7 @@
-.about-page--simple {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.about-page--empty {
   min-height: 100%;
-  padding: 32px 20px;
-  box-sizing: border-box;
-  background: #f8f9fa;
-  color-scheme: light;
-}
-
-.about-page__panel {
-  width: 100%;
-  max-width: 28rem;
-  padding: 32px 28px 36px;
-  box-sizing: border-box;
-  border-radius: 12px;
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-  text-align: center;
-}
-
-.about-page__title {
-  margin: 0 0 12px;
-  font-size: 1.5rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: #1d1d1f;
-}
-
-.about-page__intro {
+  height: 100%;
   margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  color: #6e6e73;
-}
-
-.about-page__lang-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
-  margin-top: 24px;
-}
-
-.about-page__btn {
-  min-width: 120px;
-  padding: 10px 20px;
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  background: #f5f5f7;
-  color: #1d1d1f;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.about-page__btn:hover {
-  background: #e8e8ed;
-  border-color: rgba(0, 122, 255, 0.35);
-  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.12);
-}
-
-.about-page__btn:active {
-  transform: scale(0.98);
+  background: #f8f9fa;
+  box-sizing: border-box;
 }
