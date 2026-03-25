@@ -5,6 +5,15 @@ const STORAGE_KEY = 'desktop-bg-shader-v1'
 const DEFAULTS = {
   color1: '#1a1a1a',
   color2: '#e8e4df',
+  speed: 0.72,
+}
+
+const SPEED_MIN = 0.15
+const SPEED_MAX = 1.5
+
+function clampSpeed(n) {
+  if (!Number.isFinite(n)) return DEFAULTS.speed
+  return Math.min(SPEED_MAX, Math.max(SPEED_MIN, n))
 }
 
 function loadPrefs() {
@@ -15,6 +24,7 @@ function loadPrefs() {
     return {
       color1: typeof p.color1 === 'string' ? p.color1 : DEFAULTS.color1,
       color2: typeof p.color2 === 'string' ? p.color2 : DEFAULTS.color2,
+      speed: clampSpeed(typeof p.speed === 'number' ? p.speed : DEFAULTS.speed),
     }
   } catch {
     return { ...DEFAULTS }
@@ -44,14 +54,18 @@ export function DesktopBackgroundProvider({ children }) {
   const setColor2 = useCallback((color2) => {
     setPrefs((p) => ({ ...p, color2 }))
   }, [])
+  const setSpeed = useCallback((speed) => {
+    setPrefs((p) => ({ ...p, speed: clampSpeed(speed) }))
+  }, [])
 
   const value = useMemo(
     () => ({
       ...prefs,
       setColor1,
       setColor2,
+      setSpeed,
     }),
-    [prefs, setColor1, setColor2],
+    [prefs, setColor1, setColor2, setSpeed],
   )
 
   return <DesktopBackgroundContext.Provider value={value}>{children}</DesktopBackgroundContext.Provider>
@@ -64,6 +78,7 @@ export function useDesktopBackground() {
       ...DEFAULTS,
       setColor1: () => {},
       setColor2: () => {},
+      setSpeed: () => {},
     }
   }
   return ctx

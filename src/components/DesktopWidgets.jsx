@@ -61,7 +61,7 @@ const STATIC_SIZES = {
   clock: { w: 200, h: 120 },
   weather: { w: 200, h: 130 },
   music: { w: 312, h: 136 },
-  bgControls: { w: 232, h: 132 },
+  bgControls: { w: 232, h: 176 },
   notesChecklist: { w: 200, h: 200 },
 }
 
@@ -217,8 +217,10 @@ export default function DesktopWidgets({
   const {
     color1: bgColor1,
     color2: bgColor2,
+    speed: bgSpeed,
     setColor1: setBgColor1,
     setColor2: setBgColor2,
+    setSpeed: setBgSpeed,
   } = useDesktopBackground()
 
   const calYM = calCursor ?? { y: now.getFullYear(), m: now.getMonth() }
@@ -614,6 +616,18 @@ export default function DesktopWidgets({
               value={bgColor2}
               onChange={(e) => setBgColor2(e.target.value)}
               className="desktop-widgets__bg-color-input"
+            />
+          </label>
+          <label className="desktop-widgets__bg-field desktop-widgets__bg-field--range">
+            <span className="desktop-widgets__bg-label">Motion speed</span>
+            <input
+              type="range"
+              min={0.15}
+              max={1.5}
+              step={0.03}
+              value={bgSpeed}
+              onChange={(e) => setBgSpeed(Number(e.target.value))}
+              className="desktop-widgets__bg-range"
             />
           </label>
         </div>

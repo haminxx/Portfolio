@@ -9,8 +9,8 @@ import { DesktopBackgroundProvider, useDesktopBackground } from '../context/Desk
 const DesktopShaderBackground = lazy(() => import('./ui/DesktopShaderBackground'))
 
 function DesktopShaderBackgroundGate() {
-  const { color1, color2 } = useDesktopBackground()
-  return <DesktopShaderBackground color1={color1} color2={color2} />
+  const { color1, color2, speed } = useDesktopBackground()
+  return <DesktopShaderBackground color1={color1} color2={color2} speed={speed} />
 }
 
 const DESKTOP_ITEMS_KEY = 'desktop-items'

@@ -30,7 +30,7 @@ const STATIC_SIZES = {
   clock: { w: 200, h: 120 },
   weather: { w: 200, h: 130 },
   music: { w: 312, h: 136 },
-  bgControls: { w: 232, h: 132 },
+  bgControls: { w: 232, h: 176 },
   notesChecklist: { w: 200, h: 200 },
 }
 
