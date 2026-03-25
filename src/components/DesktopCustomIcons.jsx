@@ -1,9 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { Folder, FileText, Gamepad2 } from 'lucide-react'
 import './DesktopCustomIcons.css'
-
-const ICON_WIDTH = 80
-const ICON_HEIGHT = 96
+import { DESKTOP_ICON_WIDTH as ICON_WIDTH, DESKTOP_ICON_HEIGHT as ICON_HEIGHT } from '../desktopConstants'
 const DRAG_THRESHOLD_PX = 6
 
 export default function DesktopCustomIcons({

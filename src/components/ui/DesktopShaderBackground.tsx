@@ -1,22 +1,16 @@
 import { Canvas, useThree } from '@react-three/fiber'
-import { EnergyRing, ShaderPlane } from './background-paper-shaders'
+import { ShaderPlane } from './background-paper-shaders'
 
 function Scene() {
   const { width, height } = useThree((s) => s.viewport)
   const pad = 1.08
   return (
-    <>
-      <ShaderPlane
-        position={[0, 0, 0]}
-        scale={[width * pad, height * pad, 1]}
-        color1="#121018"
-        color2="#2c2438"
-      />
-      <EnergyRing
-        radius={Math.min(width, height) * 0.14}
-        position={[0, 0, 0.05]}
-      />
-    </>
+    <ShaderPlane
+      position={[0, 0, 0]}
+      scale={[width * pad, height * pad, 1]}
+      color1="#121018"
+      color2="#2c2438"
+    />
   )
 }
 

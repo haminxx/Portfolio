@@ -1,5 +1,6 @@
 'use client'
 
+import { useRef } from 'react'
 import { motion } from 'framer-motion'
 
 const drawEllipse = {
@@ -33,12 +34,16 @@ const drawLine = {
 export interface HandWrittenAboutHeroProps {
   title?: string
   revealName: string
+  /** Fires once when the main ellipse sketch stroke completes. */
+  onEllipseDrawComplete?: () => void
 }
 
 export function HandWrittenAboutHero({
   title = 'My name is',
   revealName,
+  onEllipseDrawComplete,
 }: HandWrittenAboutHeroProps) {
+  const ellipseCompleteRef = useRef(false)
   return (
     <div className="relative mx-auto w-full max-w-4xl py-10">
       <div className="pointer-events-none absolute inset-0">
@@ -60,6 +65,12 @@ export function HandWrittenAboutHero({
             strokeLinejoin="round"
             variants={drawEllipse}
             className="text-neutral-900"
+            onAnimationComplete={(def) => {
+              if (def !== 'visible') return
+              if (ellipseCompleteRef.current) return
+              ellipseCompleteRef.current = true
+              onEllipseDrawComplete?.()
+            }}
           />
           <motion.path
             d="M 380 392 L 820 392"
@@ -76,7 +87,7 @@ export function HandWrittenAboutHero({
 
       <div className="relative z-10 flex min-h-[280px] flex-col items-center justify-center text-center text-neutral-900">
         <motion.h1
-          className="px-4 text-4xl font-extrabold tracking-tight text-neutral-900 md:text-6xl lg:text-7xl"
+          className="about-sketch__title px-4 text-4xl font-extrabold tracking-tight text-neutral-900 md:text-6xl lg:text-7xl"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35, duration: 0.75 }}

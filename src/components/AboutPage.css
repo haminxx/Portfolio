@@ -5,17 +5,58 @@
   min-height: 100%;
   padding: 32px 20px;
   box-sizing: border-box;
-  background: #faf9f6;
+  background: #e8e4dc;
   color-scheme: light;
+}
+
+.about-page--sketch {
+  background: #d9d4c8;
+}
+
+.about-page__sketch-paper {
+  width: 100%;
+  max-width: 56rem;
+  min-height: min(70vh, 640px);
+  padding: 36px 28px 48px 44px;
+  box-sizing: border-box;
+  border-radius: 4px;
+  background-color: #f7f4eb;
+  background-image:
+    linear-gradient(90deg, rgba(200, 80, 90, 0.22) 0 3px, transparent 3px),
+    repeating-linear-gradient(
+      transparent 0,
+      transparent 27px,
+      rgba(120, 130, 160, 0.16) 27px,
+      rgba(120, 130, 160, 0.16) 28px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 1px,
+      rgba(0, 0, 0, 0.025) 1px,
+      rgba(0, 0, 0, 0.025) 2px
+    );
+  background-size:
+    100% 100%,
+    100% 100%,
+    8px 8px;
+  background-position: 52px 0, 0 18px, 0 0;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 10px 40px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .about-page__landing-inner {
   width: 100%;
-  max-width: 56rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
+}
+
+.about-sketch__title {
+  letter-spacing: -0.03em;
 }
 
 .about-page__lang-row {
@@ -23,5 +64,44 @@
   flex-wrap: wrap;
   gap: 16px;
   justify-content: center;
-  margin-top: 16px;
+  margin-top: 20px;
+}
+
+.sketch-outline-btn {
+  position: relative;
+  min-width: 128px;
+  padding: 12px 28px;
+  border: none;
+  background: transparent;
+  color: #1a1a1f;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  border-radius: 14px;
+}
+
+.sketch-outline-btn__border {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  color: #252528;
+}
+
+.sketch-outline-btn:hover .sketch-outline-btn__border {
+  color: #0d0d10;
+  filter: drop-shadow(0 0 0.5px rgba(0, 0, 0, 0.35));
+}
+
+.sketch-outline-btn__text {
+  position: relative;
+  z-index: 1;
+}
+
+.sketch-outline-btn:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.35);
+  outline-offset: 3px;
 }

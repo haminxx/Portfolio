@@ -3,12 +3,11 @@ import DesktopCustomIcons from './DesktopCustomIcons'
 import DesktopContextMenu from './DesktopContextMenu'
 import DesktopWidgets from './DesktopWidgets'
 import './Desktop.css'
+import { DESKTOP_ICON_WIDTH, DESKTOP_ICON_HEIGHT } from '../desktopConstants'
 
 const DesktopShaderBackground = lazy(() => import('./ui/DesktopShaderBackground'))
 
 const DESKTOP_ITEMS_KEY = 'desktop-items'
-const ICON_WIDTH = 80
-const ICON_HEIGHT = 96
 
 function loadDesktopItems() {
   try {
@@ -95,8 +94,8 @@ export default function Desktop({
         const iconRect = {
           left: iconLeft,
           top: iconTop,
-          right: iconLeft + ICON_WIDTH,
-          bottom: iconTop + ICON_HEIGHT,
+          right: iconLeft + DESKTOP_ICON_WIDTH,
+          bottom: iconTop + DESKTOP_ICON_HEIGHT,
         }
         return rectsIntersect(boxRect, iconRect)
       }).map((i) => i.id)
@@ -111,6 +110,34 @@ export default function Desktop({
       document.removeEventListener('mouseup', handleUp)
     }
   }, [selectionBox, desktopItems])
+
+  const clientToIconCoords = useCallback((clientX, clientY) => {
+    const wrap = iconsRef.current
+    if (!wrap) return { x: 24, y: 24 }
+    const r = wrap.getBoundingClientRect()
+    const maxX = Math.max(0, r.width - DESKTOP_ICON_WIDTH)
+    const maxY = Math.max(0, r.height - DESKTOP_ICON_HEIGHT)
+    return {
+      x: Math.max(0, Math.min(maxX, clientX - r.left)),
+      y: Math.max(0, Math.min(maxY, clientY - r.top)),
+    }
+  }, [])
+
+  const handleNewFolderAtClient = useCallback(
+    (clientX, clientY) => {
+      const { x, y } = clientToIconCoords(clientX, clientY)
+      onNewFolder?.(x, y)
+    },
+    [clientToIconCoords, onNewFolder],
+  )
+
+  const handleNewFileAtClient = useCallback(
+    (clientX, clientY) => {
+      const { x, y } = clientToIconCoords(clientX, clientY)
+      onNewFile?.(x, y)
+    },
+    [clientToIconCoords, onNewFile],
+  )
 
   const handleContextMenu = useCallback((e) => {
     e.preventDefault()
@@ -173,8 +200,8 @@ export default function Desktop({
           onOpenApp={onOpenApp}
           onSortByChange={onSortByChange}
           sortBy={sortBy}
-          onNewFolder={onNewFolder}
-          onNewFile={onNewFile}
+          onNewFolder={handleNewFolderAtClient}
+          onNewFile={handleNewFileAtClient}
           onOpenFolder={onOpenFolder}
           onStartRename={onStartRename}
         />

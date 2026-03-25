@@ -307,10 +307,10 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
   return (
     <div
       ref={setRefs}
-      className={`backdrop-blur-md ${className}`}
+      className={className}
       style={{
         width: `${contentWidth + padding * 2}px`,
-        background: 'rgba(45, 45, 45, 0.75)',
+        background: 'rgba(38, 38, 40, 0.92)',
         borderRadius: `${Math.max(12, baseIconSize * 0.4)}px`,
         border: '1px solid rgba(255, 255, 255, 0.15)',
         boxShadow: `

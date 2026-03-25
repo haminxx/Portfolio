@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { HandWrittenAboutHero } from './ui/hand-writing-text'
-import { FlowButton } from './ui/flow-button'
+import { SketchOutlineButton } from './ui/sketch-outline-button'
+import { playSketchScratch, resumeAboutAudio } from '../lib/aboutSketchAudio'
 import './AboutPage.css'
 
 const NAMES = {
@@ -10,27 +11,56 @@ const NAMES = {
 
 export default function AboutPage() {
   const [reveal, setReveal] = useState(null)
+  const audioUnlocked = useRef(false)
 
-  const bindLang = useCallback((key) => {
-    return {
-      onMouseEnter: () => setReveal(key),
-      onMouseLeave: () => setReveal((r) => (r === key ? null : r)),
-      onFocus: () => setReveal(key),
-      onBlur: () => setReveal((r) => (r === key ? null : r)),
-    }
+  const ensureAudio = useCallback(() => {
+    if (audioUnlocked.current) return
+    audioUnlocked.current = true
+    void resumeAboutAudio()
   }, [])
 
-  const displayName =
-    reveal === 'en' ? NAMES.en : reveal === 'ko' ? NAMES.ko : ''
+  const bindLang = useCallback(
+    (key) => {
+      return {
+        onMouseEnter: () => {
+          ensureAudio()
+          playSketchScratch()
+          setReveal(key)
+        },
+        onMouseLeave: () => setReveal((r) => (r === key ? null : r)),
+        onFocus: () => setReveal(key),
+        onBlur: () => setReveal((r) => (r === key ? null : r)),
+      }
+    },
+    [ensureAudio],
+  )
+
+  const displayName = reveal === 'en' ? NAMES.en : reveal === 'ko' ? NAMES.ko : ''
 
   return (
-    <div className="about-page about-page--landing">
-      <div className="about-page__landing-inner">
-        <HandWrittenAboutHero revealName={displayName} title="My name is" />
+    <div
+      className="about-page about-page--landing about-page--sketch"
+      onPointerDownCapture={() => ensureAudio()}
+    >
+      <div className="about-page__sketch-paper">
+        <div className="about-page__landing-inner">
+          <HandWrittenAboutHero
+            revealName={displayName}
+            title="My name is"
+            onEllipseDrawComplete={() => {
+              ensureAudio()
+              playSketchScratch()
+            }}
+          />
 
-        <div className="about-page__lang-row">
-          <FlowButton text="English" {...bindLang('en')} />
-          <FlowButton text="한국어" {...bindLang('ko')} />
+          <div className="about-page__lang-row">
+            <SketchOutlineButton type="button" {...bindLang('en')}>
+              English
+            </SketchOutlineButton>
+            <SketchOutlineButton type="button" {...bindLang('ko')}>
+              한국어
+            </SketchOutlineButton>
+          </div>
         </div>
       </div>
     </div>

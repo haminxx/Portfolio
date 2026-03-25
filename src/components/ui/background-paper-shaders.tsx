@@ -35,12 +35,12 @@ const fragmentShader = `
     noise += sin(uv.x * 35.0 - time * 2.0) * cos(uv.y * 25.0 + time * 1.2) * 0.5;
     
     vec3 color = mix(color1, color2, noise * 0.5 + 0.5);
-    color = mix(color, vec3(1.0), pow(abs(noise), 2.0) * intensity);
+    color = mix(color, vec3(1.0), pow(abs(noise), 2.0) * intensity * 0.45);
     
-    float glow = 1.0 - length(uv - 0.5) * 2.0;
-    glow = pow(glow, 2.0);
+    float v = length(uv - 0.5) * 1.35;
+    float glow = mix(1.0, 0.88, smoothstep(0.0, 0.92, v));
     
-    gl_FragColor = vec4(color * glow, glow * 0.8);
+    gl_FragColor = vec4(color * glow, 0.94);
   }
 `
 
