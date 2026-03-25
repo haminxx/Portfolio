@@ -7,35 +7,117 @@
   overflow: visible;
 }
 
+/*
+ * mix-blend-mode: difference inverts foreground against the composited backdrop
+ * (mesh + frosted card), not raw wallpaper pixels behind the widget.
+ */
+.desktop-widgets__blend {
+  mix-blend-mode: difference;
+  color: #fff;
+  text-shadow: none;
+}
+
+.desktop-widgets__blend .desktop-widgets__adaptive {
+  color: #fff;
+  text-shadow: none;
+}
+
+.desktop-widgets__blend svg {
+  color: #fff;
+  stroke: currentColor;
+}
+
+.desktop-widgets__no-blend {
+  mix-blend-mode: normal;
+  isolation: isolate;
+}
+
+/* Liquid glass: gradient rim + specular edge; content stays above pseudos */
 .desktop-widgets__card {
   position: absolute;
   pointer-events: auto;
   padding: 12px 14px 14px;
   padding-top: 14px;
   border-radius: 22px;
+  isolation: isolate;
   transition:
     width 0.22s ease,
     height 0.22s ease,
     box-shadow 0.2s ease,
     border-color 0.2s ease;
-  background: rgba(22, 22, 26, 0.42);
-  backdrop-filter: blur(22px) saturate(1.25);
-  -webkit-backdrop-filter: blur(22px) saturate(1.25);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(22, 22, 26, 0.38);
+  backdrop-filter: blur(28px) saturate(1.45);
+  -webkit-backdrop-filter: blur(28px) saturate(1.45);
+  border: 1px solid transparent;
+  background-clip: padding-box;
   box-shadow:
-    0 10px 36px rgba(0, 0, 0, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    0 12px 44px rgba(0, 0, 0, 0.32),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12);
   color: var(--portfolio-chrome-fg, #f5f5f7);
   box-sizing: border-box;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-[data-theme='light'] .desktop-widgets__card {
-  background: rgba(255, 255, 255, 0.52);
-  border-color: rgba(0, 0, 0, 0.08);
+.desktop-widgets__card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.12) 38%,
+    rgba(255, 255, 255, 0.06) 55%,
+    rgba(120, 180, 255, 0.15) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.desktop-widgets__card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
   box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    inset 0 1px 1px rgba(255, 255, 255, 0.35),
+    inset 0 -8px 24px rgba(80, 120, 200, 0.06);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.desktop-widgets__card > * {
+  position: relative;
+  z-index: 1;
+}
+
+[data-theme='light'] .desktop-widgets__card {
+  background: rgba(255, 255, 255, 0.48);
+  box-shadow:
+    0 14px 48px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04);
+}
+
+[data-theme='light'] .desktop-widgets__card::before {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0.35) 45%,
+    rgba(200, 210, 230, 0.25) 100%
+  );
 }
 
 .desktop-widgets__card--resizing {
@@ -43,14 +125,19 @@
 }
 
 .desktop-widgets__card:hover {
-  border-color: rgba(255, 255, 255, 0.26);
   box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    0 16px 52px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
 [data-theme='light'] .desktop-widgets__card:hover {
-  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05);
 }
 
 .desktop-widgets__card--calendar {
@@ -141,6 +228,12 @@
   --rdp-today-color: var(--portfolio-on-accent, #fafafa);
   --rdp-day_button-border-radius: 8px;
   color: var(--portfolio-chrome-fg, #f5f5f7);
+}
+
+.desktop-widgets__blend .desktop-widgets__cal-rdp {
+  --rdp-accent-color: #ffffff;
+  --rdp-accent-background-color: rgba(255, 255, 255, 0.22);
+  --rdp-today-color: #0a0a0a;
 }
 
 .desktop-widgets__cal-rdp > * {
@@ -721,6 +814,11 @@
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
+.desktop-widgets__blend.desktop-widgets__ipod-times {
+  text-shadow: none;
+  color: #fff;
+}
+
 .desktop-widgets__ipod-idle {
   display: flex;
   align-items: center;
@@ -1027,8 +1125,13 @@
 .desktop-widgets__world-clock__col {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  align-items: center;
+  gap: 4px;
   min-width: 0;
+}
+
+.desktop-widgets__world-clock__col .analog-clock-face {
+  flex-shrink: 0;
 }
 
 .desktop-widgets__world-clock__col--home {
@@ -1048,6 +1151,8 @@
   text-transform: uppercase;
   opacity: 0.72;
   line-height: 1.2;
+  text-align: center;
+  width: 100%;
 }
 
 .desktop-widgets__world-clock__time {
@@ -1063,6 +1168,8 @@
   font-weight: 600;
   opacity: 0.62;
   line-height: 1.2;
+  text-align: center;
+  width: 100%;
 }
 
 /* Flip-clock style time (reference: split panels + hinge line) */

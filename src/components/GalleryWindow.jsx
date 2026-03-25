@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Grid3X3, LayoutGrid, Heart, ChevronLeft, Images } from 'lucide-react'
+import { Search, Grid3X3, LayoutGrid, Heart, ChevronLeft, Images, PanelLeft } from 'lucide-react'
 import {
   GALLERY_SIZE,
   getImagePath,
@@ -69,7 +69,8 @@ function GalleryImage({ index, src, isFavorite, onToggleFavorite, onClick }) {
 
 export default function GalleryWindow() {
   const albums = useMemo(() => getGalleryAlbums(), [])
-  const [activeSection, setActiveSection] = useState('all')
+  const [activeSection, setActiveSection] = useState('albums')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   /** 'root' = album tiles; 'detail' = photos inside one album */
   const [albumBrowse, setAlbumBrowse] = useState('root')
   const [activeAlbumId, setActiveAlbumId] = useState(null)
@@ -108,11 +109,13 @@ export default function GalleryWindow() {
     setActiveSection('albums')
     setAlbumBrowse('detail')
     setActiveAlbumId(albumId)
+    setSidebarOpen(false)
   }, [])
 
   const openAlbumFromGrid = useCallback((albumId) => {
     setAlbumBrowse('detail')
     setActiveAlbumId(albumId)
+    setSidebarOpen(false)
   }, [])
 
   const indices = useMemo(() => {
@@ -170,7 +173,22 @@ export default function GalleryWindow() {
   })()
 
   return (
-    <div className="gallery-window">
+    <div
+      className={`gallery-window${sidebarOpen ? ' gallery-window--sidebar-open' : ''}`}
+    >
+      <button
+        type="button"
+        className="gallery-window__sidebar-toggle"
+        aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+        onClick={() => setSidebarOpen((o) => !o)}
+      >
+        <PanelLeft size={20} strokeWidth={2} />
+      </button>
+      <div
+        className="gallery-window__sidebar-scrim"
+        aria-hidden
+        onClick={() => setSidebarOpen(false)}
+      />
       <aside className="gallery-window__sidebar">
         <div className="gallery-window__sidebar-brand">
           <Images size={20} strokeWidth={1.75} aria-hidden />
@@ -184,6 +202,7 @@ export default function GalleryWindow() {
             onClick={() => {
               setActiveSection('all')
               goAlbumRoot()
+              setSidebarOpen(false)
             }}
           >
             All Photos
@@ -194,6 +213,7 @@ export default function GalleryWindow() {
             onClick={() => {
               setActiveSection('recents')
               goAlbumRoot()
+              setSidebarOpen(false)
             }}
           >
             Recents
@@ -204,6 +224,7 @@ export default function GalleryWindow() {
             onClick={() => {
               setActiveSection('favorites')
               goAlbumRoot()
+              setSidebarOpen(false)
             }}
           >
             Favorites
@@ -218,6 +239,7 @@ export default function GalleryWindow() {
           onClick={() => {
             setActiveSection('albums')
             goAlbumRoot()
+            setSidebarOpen(false)
           }}
         >
           Albums
@@ -305,13 +327,7 @@ export default function GalleryWindow() {
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
               >
-                <p className="gallery-window__picker-hint">
-                  Organize images in{' '}
-                  <code className="gallery-window__code">src/config/galleryManifest.js</code>{' '}
-                  — album <code className="gallery-window__code">photoIndexes</code> map to each
-                  photo’s order in <code className="gallery-window__code">GALLERY_PHOTOS</code>{' '}
-                  (same index the desktop photo widget uses).
-                </p>
+                <p className="gallery-window__picker-subtitle">Browse by album</p>
                 <div className="gallery-window__album-picker-grid">
                   {albums.map((album) => {
                     const first = album.photoIndexes?.[0]

@@ -46,6 +46,7 @@ import {
   ADD_PHOTO_WIDGET_EVENT,
 } from '../lib/photoWidgetRegistry'
 import PhotoWidgetImportModal from './PhotoWidgetImportModal'
+import AnalogClockFace from './AnalogClockFace'
 import { DESKTOP_SAFE_TOP } from '../desktopConstants'
 import { getDesktopIconRects } from '../lib/widgetOverlapGeometry'
 import './DesktopWidgets.css'
@@ -689,137 +690,150 @@ export default function DesktopWidgets({
       )}
 
       <div className={cardClass('calendar', 'desktop-widgets__card--calendar')} style={cardStyle('calendar')}>
-        <button
-          type="button"
-          className="desktop-widgets__grip"
-          aria-label="Move calendar widget"
-          onPointerDown={(e) => handleGripPointerDown(e, 'calendar')}
-        >
-          <GripVertical size={14} strokeWidth={2} />
-        </button>
-        <div className="desktop-widgets__adaptive desktop-widgets__cal-rdp">
-          <Calendar
-            mode="single"
-            month={calMonth}
-            onMonthChange={(d) => setCalMonth(new Date(d.getFullYear(), d.getMonth(), 1))}
-            selected={selectedDate}
-            onSelect={(d) => {
-              if (d) {
-                setSelectedDate(d)
-                setCalMonth(new Date(d.getFullYear(), d.getMonth(), 1))
-              }
-            }}
-            today={now}
-            weekStartsOn={0}
-            className="w-full rounded-xl [--cell-size:1.65rem] sm:[--cell-size:1.65rem]"
+        <div className="desktop-widgets__blend">
+          <button
+            type="button"
+            className="desktop-widgets__grip"
+            aria-label="Move calendar widget"
+            onPointerDown={(e) => handleGripPointerDown(e, 'calendar')}
+          >
+            <GripVertical size={14} strokeWidth={2} />
+          </button>
+          <div className="desktop-widgets__adaptive desktop-widgets__cal-rdp">
+            <Calendar
+              mode="single"
+              month={calMonth}
+              onMonthChange={(d) => setCalMonth(new Date(d.getFullYear(), d.getMonth(), 1))}
+              selected={selectedDate}
+              onSelect={(d) => {
+                if (d) {
+                  setSelectedDate(d)
+                  setCalMonth(new Date(d.getFullYear(), d.getMonth(), 1))
+                }
+              }}
+              today={now}
+              weekStartsOn={0}
+              className="w-full rounded-xl [--cell-size:1.65rem] sm:[--cell-size:1.65rem]"
+            />
+          </div>
+          <button
+            type="button"
+            className="desktop-widgets__widget-resize-handle"
+            aria-label="Resize calendar widget"
+            onPointerDown={(e) => handleWidgetResizePointerDown(e, 'calendar')}
           />
         </div>
-        <button
-          type="button"
-          className="desktop-widgets__widget-resize-handle"
-          aria-label="Resize calendar widget"
-          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'calendar')}
-        />
       </div>
 
       <div className={cardClass('clock', 'desktop-widgets__card--clock')} style={cardStyle('clock')}>
-        <button
-          type="button"
-          className="desktop-widgets__grip"
-          aria-label="Move clock widget"
-          onPointerDown={(e) => handleGripPointerDown(e, 'clock')}
-        >
-          <GripVertical size={14} strokeWidth={2} />
-        </button>
-        <div
-          className="desktop-widgets__adaptive desktop-widgets__world-clock"
-          role="timer"
-          aria-live="polite"
-          aria-label={`World clock, home ${homeTimeLabel}`}
-        >
-          {WORLD_ZONES.map((z) => {
-            const off = offsetHoursCityVsUser(userTz, z.tz, now)
-            const timeStr = now.toLocaleTimeString(undefined, {
-              timeZone: z.tz,
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-              hour12: true,
-            })
-            return (
-              <div key={z.key} className="desktop-widgets__world-clock__col">
-                <span className="desktop-widgets__world-clock__city">{z.label}</span>
-                <span className="desktop-widgets__world-clock__time">{timeStr}</span>
-                <span className="desktop-widgets__world-clock__delta">{formatOffsetVersusUser(off)}</span>
-              </div>
-            )
-          })}
-          <div className="desktop-widgets__world-clock__col desktop-widgets__world-clock__col--home">
-            <span className="desktop-widgets__world-clock__city">
-              {userLoc.status === 'pending' ? 'Locating…' : userLoc.label || 'Your time'}
-            </span>
-            <span className="desktop-widgets__world-clock__time">{homeTimeLabel}</span>
-            <span className="desktop-widgets__world-clock__delta">Base</span>
+        <div className="desktop-widgets__blend">
+          <button
+            type="button"
+            className="desktop-widgets__grip"
+            aria-label="Move clock widget"
+            onPointerDown={(e) => handleGripPointerDown(e, 'clock')}
+          >
+            <GripVertical size={14} strokeWidth={2} />
+          </button>
+          <div
+            className="desktop-widgets__adaptive desktop-widgets__world-clock"
+            role="timer"
+            aria-live="polite"
+            aria-label={`World clock, home ${homeTimeLabel}`}
+          >
+            {WORLD_ZONES.map((z) => {
+              const off = offsetHoursCityVsUser(userTz, z.tz, now)
+              const timeStr = now.toLocaleTimeString(undefined, {
+                timeZone: z.tz,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true,
+              })
+              return (
+                <div key={z.key} className="desktop-widgets__world-clock__col">
+                  <span className="desktop-widgets__world-clock__city">{z.label}</span>
+                  <AnalogClockFace
+                    now={now}
+                    timeZone={z.tz}
+                    size={50}
+                    ariaLabel={`${z.label} ${timeStr}`}
+                  />
+                  <span className="desktop-widgets__world-clock__delta">{formatOffsetVersusUser(off)}</span>
+                </div>
+              )
+            })}
+            <div className="desktop-widgets__world-clock__col desktop-widgets__world-clock__col--home">
+              <span className="desktop-widgets__world-clock__city">
+                {userLoc.status === 'pending' ? 'Locating…' : userLoc.label || 'Your time'}
+              </span>
+              <AnalogClockFace now={now} size={50} ariaLabel={`Home ${homeTimeLabel}`} />
+              <span className="desktop-widgets__world-clock__delta">Base</span>
+            </div>
           </div>
+          <button
+            type="button"
+            className="desktop-widgets__widget-resize-handle"
+            aria-label="Resize clock widget"
+            onPointerDown={(e) => handleWidgetResizePointerDown(e, 'clock')}
+          />
         </div>
-        <button
-          type="button"
-          className="desktop-widgets__widget-resize-handle"
-          aria-label="Resize clock widget"
-          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'clock')}
-        />
       </div>
 
       <div className={cardClass('weather', 'desktop-widgets__card--weather')} style={cardStyle('weather')}>
-        <button
-          type="button"
-          className="desktop-widgets__grip"
-          aria-label="Move weather widget"
-          onPointerDown={(e) => handleGripPointerDown(e, 'weather')}
-        >
-          <GripVertical size={14} strokeWidth={2} />
-        </button>
-        <div className="desktop-widgets__adaptive desktop-widgets__weather-body">
-          <div className="desktop-widgets__card-title desktop-widgets__weather-city">
-            {userLoc.status === 'pending' ? '…' : userLoc.label || 'Weather'}
-          </div>
-          {weather.status === 'loading' && <p className="desktop-widgets__muted">Loading…</p>}
-          {weather.status === 'error' && <p className="desktop-widgets__muted">{weather.error}</p>}
-          {weather.status === 'ready' && weather.current && WeatherTodayIcon ? (
-            <div className="desktop-widgets__weather-today">
-              <span className="desktop-widgets__weather-today-icon" aria-hidden>
-                <WeatherTodayIcon size={36} strokeWidth={1.75} />
-              </span>
-              <div className="desktop-widgets__weather-today-meta">
-                <span className="desktop-widgets__weather-today-temp">
-                  {weather.current.temp != null && Number.isFinite(weather.current.temp)
-                    ? Math.round(weather.current.temp)
-                    : '—'}
-                  °
-                </span>
-                <span className="desktop-widgets__weather-today-sub">Now</span>
-              </div>
+        <div className="desktop-widgets__blend">
+          <button
+            type="button"
+            className="desktop-widgets__grip"
+            aria-label="Move weather widget"
+            onPointerDown={(e) => handleGripPointerDown(e, 'weather')}
+          >
+            <GripVertical size={14} strokeWidth={2} />
+          </button>
+          <div className="desktop-widgets__adaptive desktop-widgets__weather-body">
+            <div className="desktop-widgets__card-title desktop-widgets__weather-city">
+              {userLoc.status === 'pending' ? '…' : userLoc.label || 'Weather'}
             </div>
-          ) : null}
+            {weather.status === 'loading' && <p className="desktop-widgets__muted">Loading…</p>}
+            {weather.status === 'error' && <p className="desktop-widgets__muted">{weather.error}</p>}
+            {weather.status === 'ready' && weather.current && WeatherTodayIcon ? (
+              <div className="desktop-widgets__weather-today">
+                <span className="desktop-widgets__weather-today-icon" aria-hidden>
+                  <WeatherTodayIcon size={36} strokeWidth={1.75} />
+                </span>
+                <div className="desktop-widgets__weather-today-meta">
+                  <span className="desktop-widgets__weather-today-temp">
+                    {weather.current.temp != null && Number.isFinite(weather.current.temp)
+                      ? Math.round(weather.current.temp)
+                      : '—'}
+                    °
+                  </span>
+                  <span className="desktop-widgets__weather-today-sub">Now</span>
+                </div>
+              </div>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            className="desktop-widgets__widget-resize-handle"
+            aria-label="Resize weather widget"
+            onPointerDown={(e) => handleWidgetResizePointerDown(e, 'weather')}
+          />
         </div>
-        <button
-          type="button"
-          className="desktop-widgets__widget-resize-handle"
-          aria-label="Resize weather widget"
-          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'weather')}
-        />
       </div>
 
       <div className={cardClass('bgControls', 'desktop-widgets__card--bg-controls')} style={cardStyle('bgControls')}>
-        <button
-          type="button"
-          className="desktop-widgets__grip"
-          aria-label="Move background controls widget"
-          onPointerDown={(e) => handleGripPointerDown(e, 'bgControls')}
-        >
-          <GripVertical size={14} strokeWidth={2} />
-        </button>
-        <div className="desktop-widgets__bg-controls-body desktop-widgets__bg-controls-body--compact">
+        <div className="desktop-widgets__blend">
+          <button
+            type="button"
+            className="desktop-widgets__grip"
+            aria-label="Move background controls widget"
+            onPointerDown={(e) => handleGripPointerDown(e, 'bgControls')}
+          >
+            <GripVertical size={14} strokeWidth={2} />
+          </button>
+        </div>
+        <div className="desktop-widgets__no-blend desktop-widgets__bg-controls-body desktop-widgets__bg-controls-body--compact">
           <div className="desktop-widgets__bg-wheel-square">
             <ColorPicker
               size={100}
@@ -845,100 +859,110 @@ export default function DesktopWidgets({
             />
           </div>
         </div>
-        <button
-          type="button"
-          className="desktop-widgets__widget-resize-handle"
-          aria-label="Resize background controls widget"
-          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'bgControls')}
-        />
+        <div className="desktop-widgets__blend">
+          <button
+            type="button"
+            className="desktop-widgets__widget-resize-handle"
+            aria-label="Resize background controls widget"
+            onPointerDown={(e) => handleWidgetResizePointerDown(e, 'bgControls')}
+          />
+        </div>
       </div>
 
       <div className={cardClass('music', 'desktop-widgets__card--music')} style={cardStyle('music')}>
-        <button
-          type="button"
-          className="desktop-widgets__grip"
-          aria-label="Move music widget"
-          onPointerDown={(e) => handleGripPointerDown(e, 'music')}
-        >
-          <GripVertical size={14} strokeWidth={2} />
-        </button>
+        <div className="desktop-widgets__blend">
+          <button
+            type="button"
+            className="desktop-widgets__grip"
+            aria-label="Move music widget"
+            onPointerDown={(e) => handleGripPointerDown(e, 'music')}
+          >
+            <GripVertical size={14} strokeWidth={2} />
+          </button>
+        </div>
         <div className="desktop-widgets__ipod">
           <div className="desktop-widgets__ipod-chassis">
             <div className="desktop-widgets__ipod-screen">
               {currentTrack ? (
                 <>
-                  <div className="desktop-widgets__ipod-screen-bezel" />
-                  <div
-                    className="desktop-widgets__ipod-screen-glass"
-                    style={{
-                      backgroundImage: `url(${currentTrack.thumbnail})`,
-                    }}
-                  />
+                  <div className="desktop-widgets__no-blend">
+                    <div className="desktop-widgets__ipod-screen-bezel" />
+                    <div
+                      className="desktop-widgets__ipod-screen-glass"
+                      style={{
+                        backgroundImage: `url(${currentTrack.thumbnail})`,
+                      }}
+                    />
+                  </div>
                   <div className="desktop-widgets__ipod-screen-content">
                     <img
                       src={currentTrack.thumbnail}
                       alt=""
-                      className="desktop-widgets__ipod-art"
+                      className="desktop-widgets__ipod-art desktop-widgets__no-blend"
                       width={44}
                       height={44}
                     />
-                    <div className="desktop-widgets__adaptive desktop-widgets__ipod-meta">
+                    <div className="desktop-widgets__blend desktop-widgets__adaptive desktop-widgets__ipod-meta">
                       <div className="desktop-widgets__ipod-title">{currentTrack.title}</div>
                       <div className="desktop-widgets__ipod-artist">
                         {currentTrack.artist || 'YouTube Music'}
                       </div>
                     </div>
                   </div>
-                  <div
-                    role="slider"
-                    tabIndex={0}
-                    aria-valuemin={0}
-                    aria-valuemax={Math.max(0, durationSec || 0)}
-                    aria-valuenow={progressSec}
-                    className="desktop-widgets__ipod-bar"
-                    onPointerDown={(e) => {
-                      e.stopPropagation()
-                      const el = e.currentTarget
-                      const apply = (clientX) => {
-                        const rect = el.getBoundingClientRect()
-                        const d = durationSec > 0 ? durationSec : 1
-                        const p = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
-                        seekTo(p * d)
-                      }
-                      apply(e.clientX)
-                      const move = (ev) => apply(ev.clientX)
-                      const up = () => {
-                        window.removeEventListener('pointermove', move)
-                        window.removeEventListener('pointerup', up)
-                      }
-                      window.addEventListener('pointermove', move)
-                      window.addEventListener('pointerup', up)
-                    }}
-                    onKeyDown={(e) => {
-                      const d = durationSec > 0 ? durationSec : 0
-                      if (!d) return
-                      if (e.key === 'ArrowRight') seekTo(Math.min(d, progressSec + 5))
-                      if (e.key === 'ArrowLeft') seekTo(Math.max(0, progressSec - 5))
-                    }}
-                  >
+                  <div className="desktop-widgets__no-blend">
                     <div
-                      className="desktop-widgets__ipod-bar-fill"
-                      style={{
-                        width: `${durationSec > 0 ? Math.min(100, (100 * progressSec) / durationSec) : 0}%`,
+                      role="slider"
+                      tabIndex={0}
+                      aria-valuemin={0}
+                      aria-valuemax={Math.max(0, durationSec || 0)}
+                      aria-valuenow={progressSec}
+                      className="desktop-widgets__ipod-bar"
+                      onPointerDown={(e) => {
+                        e.stopPropagation()
+                        const el = e.currentTarget
+                        const apply = (clientX) => {
+                          const rect = el.getBoundingClientRect()
+                          const d = durationSec > 0 ? durationSec : 1
+                          const p = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+                          seekTo(p * d)
+                        }
+                        apply(e.clientX)
+                        const move = (ev) => apply(ev.clientX)
+                        const up = () => {
+                          window.removeEventListener('pointermove', move)
+                          window.removeEventListener('pointerup', up)
+                        }
+                        window.addEventListener('pointermove', move)
+                        window.addEventListener('pointerup', up)
                       }}
-                    />
+                      onKeyDown={(e) => {
+                        const d = durationSec > 0 ? durationSec : 0
+                        if (!d) return
+                        if (e.key === 'ArrowRight') seekTo(Math.min(d, progressSec + 5))
+                        if (e.key === 'ArrowLeft') seekTo(Math.max(0, progressSec - 5))
+                      }}
+                    >
+                      <div
+                        className="desktop-widgets__ipod-bar-fill"
+                        style={{
+                          width: `${durationSec > 0 ? Math.min(100, (100 * progressSec) / durationSec) : 0}%`,
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="desktop-widgets__adaptive desktop-widgets__ipod-times">
+                  <div className="desktop-widgets__blend desktop-widgets__adaptive desktop-widgets__ipod-times">
                     <span>{formatTrackTime(progressSec)}</span>
                     <span>{formatTrackTime(durationSec)}</span>
                   </div>
                 </>
               ) : (
-                <div className="desktop-widgets__adaptive desktop-widgets__ipod-idle">Nothing playing</div>
+                <div className="desktop-widgets__blend desktop-widgets__adaptive desktop-widgets__ipod-idle">
+                  Nothing playing
+                </div>
               )}
             </div>
             <div className="desktop-widgets__ipod-wheel-wrap">
-              <div className="desktop-widgets__adaptive desktop-widgets__ipod-wheel">
+              <div className="desktop-widgets__blend desktop-widgets__adaptive desktop-widgets__ipod-wheel">
                 <button
                   type="button"
                   className="desktop-widgets__ipod-wheel-label desktop-widgets__ipod-wheel-label--menu"
@@ -974,59 +998,63 @@ export default function DesktopWidgets({
             </div>
           </div>
         </div>
-        <button
-          type="button"
-          className="desktop-widgets__widget-resize-handle"
-          aria-label="Resize music widget"
-          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'music')}
-        />
+        <div className="desktop-widgets__blend">
+          <button
+            type="button"
+            className="desktop-widgets__widget-resize-handle"
+            aria-label="Resize music widget"
+            onPointerDown={(e) => handleWidgetResizePointerDown(e, 'music')}
+          />
+        </div>
       </div>
 
       <div className={cardClass('notesChecklist', 'desktop-widgets__card--notes')} style={cardStyle('notesChecklist')}>
-        <button
-          type="button"
-          className="desktop-widgets__grip"
-          aria-label="Move notes widget"
-          onPointerDown={(e) => handleGripPointerDown(e, 'notesChecklist')}
-        >
-          <GripVertical size={14} strokeWidth={2} />
-        </button>
-        <div className="desktop-widgets__adaptive desktop-widgets__notes-head">
-          <ListTodo size={14} strokeWidth={2} aria-hidden />
-          <span className="desktop-widgets__card-title desktop-widgets__card-title--inline">Pinned note</span>
+        <div className="desktop-widgets__blend">
+          <button
+            type="button"
+            className="desktop-widgets__grip"
+            aria-label="Move notes widget"
+            onPointerDown={(e) => handleGripPointerDown(e, 'notesChecklist')}
+          >
+            <GripVertical size={14} strokeWidth={2} />
+          </button>
+          <div className="desktop-widgets__adaptive desktop-widgets__notes-head">
+            <ListTodo size={14} strokeWidth={2} aria-hidden />
+            <span className="desktop-widgets__card-title desktop-widgets__card-title--inline">Pinned note</span>
+          </div>
+          {!notesStore.pinnedNoteId ? (
+            <p className="desktop-widgets__adaptive desktop-widgets__muted desktop-widgets__muted--small">
+              Open Notes and pin a note for this list.
+            </p>
+          ) : pinnedItems.length === 0 ? (
+            <p className="desktop-widgets__adaptive desktop-widgets__muted desktop-widgets__muted--small">
+              No checklist items yet.
+            </p>
+          ) : (
+            <ul className="desktop-widgets__adaptive desktop-widgets__notes-list">
+              {pinnedItems.map((it) => (
+                <li key={it.id} className="desktop-widgets__notes-item">
+                  <label className="desktop-widgets__notes-check-label">
+                    <input
+                      type="checkbox"
+                      checked={!!it.done}
+                      onChange={(e) => togglePinnedItem(it.id, e.target.checked)}
+                    />
+                    <span className={it.done ? 'desktop-widgets__notes-text desktop-widgets__notes-text--done' : 'desktop-widgets__notes-text'}>
+                      {it.text || '—'}
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button
+            type="button"
+            className="desktop-widgets__widget-resize-handle"
+            aria-label="Resize notes widget"
+            onPointerDown={(e) => handleWidgetResizePointerDown(e, 'notesChecklist')}
+          />
         </div>
-        {!notesStore.pinnedNoteId ? (
-          <p className="desktop-widgets__adaptive desktop-widgets__muted desktop-widgets__muted--small">
-            Open Notes and pin a note for this list.
-          </p>
-        ) : pinnedItems.length === 0 ? (
-          <p className="desktop-widgets__adaptive desktop-widgets__muted desktop-widgets__muted--small">
-            No checklist items yet.
-          </p>
-        ) : (
-          <ul className="desktop-widgets__adaptive desktop-widgets__notes-list">
-            {pinnedItems.map((it) => (
-              <li key={it.id} className="desktop-widgets__notes-item">
-                <label className="desktop-widgets__notes-check-label">
-                  <input
-                    type="checkbox"
-                    checked={!!it.done}
-                    onChange={(e) => togglePinnedItem(it.id, e.target.checked)}
-                  />
-                  <span className={it.done ? 'desktop-widgets__notes-text desktop-widgets__notes-text--done' : 'desktop-widgets__notes-text'}>
-                    {it.text || '—'}
-                  </span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        )}
-        <button
-          type="button"
-          className="desktop-widgets__widget-resize-handle"
-          aria-label="Resize notes widget"
-          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'notesChecklist')}
-        />
       </div>
 
       {photoIds.map((pid) => {
@@ -1042,12 +1070,12 @@ export default function DesktopWidgets({
                   style={{ clipPath: `inset(${pdata.cropPadding ?? 0}%)` }}
                 />
               ) : (
-                <div className="desktop-widgets__photo-placeholder">
+                <div className="desktop-widgets__photo-placeholder desktop-widgets__blend">
                   <ImageIcon size={28} strokeWidth={1.25} aria-hidden />
                   <span className="desktop-widgets__photo-hint">Photo</span>
                 </div>
               )}
-              <div className="desktop-widgets__photo-overlay">
+              <div className="desktop-widgets__photo-overlay desktop-widgets__blend">
                 <button
                   type="button"
                   className="desktop-widgets__grip desktop-widgets__grip--photo"
@@ -1069,12 +1097,14 @@ export default function DesktopWidgets({
                   <RefreshCw size={14} strokeWidth={2} />
                 </button>
               </div>
-              <button
-                type="button"
-                className="desktop-widgets__widget-resize-handle"
-                aria-label="Resize photo widget"
-                onPointerDown={(e) => handleWidgetResizePointerDown(e, pid)}
-              />
+              <div className="desktop-widgets__blend">
+                <button
+                  type="button"
+                  className="desktop-widgets__widget-resize-handle"
+                  aria-label="Resize photo widget"
+                  onPointerDown={(e) => handleWidgetResizePointerDown(e, pid)}
+                />
+              </div>
             </div>
           </div>
         )

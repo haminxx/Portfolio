@@ -145,6 +145,8 @@ export default function MenuBar({
   return (
     <>
       <header className="menu-bar" ref={barRef}>
+        <div className="menu-bar__glass" aria-hidden />
+        <div className="menu-bar__content">
         <div className="menu-bar__left">
           <div
             className="menu-bar__cnl-wrap"
@@ -153,7 +155,7 @@ export default function MenuBar({
           >
             <button
               type="button"
-              className={`menu-bar__logo menu-bar__logo--btn ${openCnl ? 'menu-bar__logo--open' : ''}`}
+              className={`menu-bar__logo menu-bar__logo--btn menu-bar__invert ${openCnl ? 'menu-bar__logo--open' : ''}`}
               aria-expanded={openCnl}
             >
               CNL
@@ -186,7 +188,7 @@ export default function MenuBar({
             >
               <button
                 type="button"
-                className={`menu-bar__menu-trigger ${openMenu === menu.id ? 'menu-bar__menu-trigger--open' : ''}`}
+                className={`menu-bar__menu-trigger menu-bar__invert ${openMenu === menu.id ? 'menu-bar__menu-trigger--open' : ''}`}
                 aria-expanded={openMenu === menu.id}
               >
                 {t(menu.labelKey)}
@@ -216,7 +218,7 @@ export default function MenuBar({
             </div>
           ))}
         </div>
-        <div className="menu-bar__right">
+        <div className="menu-bar__right menu-bar__invert">
           <SystemTray
             nightMode={nightMode ?? true}
             onNightModeToggle={onNightModeToggle ?? (() => {})}
@@ -225,6 +227,7 @@ export default function MenuBar({
             onFullScreenToggle={onFullScreenToggle}
             isFullscreen={isFullscreen ?? false}
           />
+        </div>
         </div>
       </header>
       {showHelp && (
