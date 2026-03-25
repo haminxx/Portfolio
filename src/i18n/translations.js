@@ -64,6 +64,8 @@ export const translations = {
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
       dadnme: "Dad 'n Me",
+      notes: 'Notes',
+      tetris: 'Tetris',
     },
     desktopContextMenu: {
       open: 'Open',
@@ -233,6 +235,8 @@ export const translations = {
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
       dadnme: "Dad 'n Me",
+      notes: 'Notes',
+      tetris: 'Tetris',
     },
     desktopContextMenu: {
       open: '열기',
@@ -319,6 +323,8 @@ export const translations = {
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
       dadnme: "Dad 'n Me",
+      notes: 'Notes',
+      tetris: 'Tetris',
     },
     desktopContextMenu: {
       open: 'Abrir',
@@ -405,6 +411,8 @@ export const translations = {
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
       dadnme: "Dad 'n Me",
+      notes: 'Notes',
+      tetris: 'Tetris',
     },
     desktopContextMenu: {
       open: '打开',
@@ -491,6 +499,8 @@ export const translations = {
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
       dadnme: "Dad 'n Me",
+      notes: 'Notes',
+      tetris: 'Tetris',
     },
     desktopContextMenu: {
       open: 'Ouvrir',
@@ -577,6 +587,8 @@ export const translations = {
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
       dadnme: "Dad 'n Me",
+      notes: 'Notes',
+      tetris: 'Tetris',
     },
     desktopContextMenu: {
       open: '開く',
@@ -663,6 +675,8 @@ export const translations = {
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
       dadnme: "Dad 'n Me",
+      notes: 'Notes',
+      tetris: 'Tetris',
     },
     desktopContextMenu: {
       open: 'खोलें',
@@ -749,6 +763,8 @@ export const translations = {
       youtubeMusic: 'YouTube Music',
       doom: 'Doom',
       dadnme: "Dad 'n Me",
+      notes: 'Notes',
+      tetris: 'Tetris',
     },
     desktopContextMenu: {
       open: 'فتح',

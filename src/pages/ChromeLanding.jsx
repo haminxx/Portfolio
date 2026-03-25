@@ -23,6 +23,8 @@ import AppStoreWindow from '../components/AppStoreWindow'
 import GalleryWindow from '../components/GalleryWindow'
 import FaceTimeWindow from '../components/FaceTimeWindow'
 import FinderWindow from '../components/FinderWindow'
+import NotesWindow from '../components/NotesWindow'
+import TetrisWindow from '../components/TetrisWindow'
 import MenuBar from '../components/MenuBar'
 import Dock from '../components/Dock'
 import AppWindow from '../components/AppWindow'
@@ -31,7 +33,7 @@ import { SHORTCUTS } from '../config/shortcuts'
 import { useLanguage } from '../context/LanguageContext'
 import { useTheme } from '../context/ThemeContext'
 import { MusicPlayerProvider } from '../context/MusicPlayerContext'
-import { Globe, Image, Film, Images, Video, ShoppingBag, Settings, Map, Folder } from 'lucide-react'
+import { Globe, Image, Film, Images, Video, ShoppingBag, Settings, Map, Folder, StickyNote, LayoutGrid } from 'lucide-react'
 import './ChromeLanding.css'
 
 const APP_ICONS = {
@@ -45,6 +47,8 @@ const APP_ICONS = {
   settings: Settings,
   map: Map,
   youtubeMusic: Film,
+  notes: StickyNote,
+  tetris: LayoutGrid,
 }
 
 const HOME_TAB = { id: 'home', title: 'Home', type: 'home' }
@@ -203,8 +207,16 @@ export default function ChromeLanding({ onReboot }) {
       }
       const vw = typeof window !== 'undefined' ? window.innerWidth : 1200
       const vh = typeof window !== 'undefined' ? window.innerHeight : 800
-      const winWidth = Math.min(880, Math.max(400, vw * 0.85))
-      const winHeight = Math.min(660, Math.max(400, vh * 0.8))
+      let winWidth = Math.min(880, Math.max(400, vw * 0.85))
+      let winHeight = Math.min(660, Math.max(400, vh * 0.8))
+      if (appKey === 'tetris') {
+        winWidth = Math.min(460, Math.max(380, vw * 0.42))
+        winHeight = Math.min(560, Math.max(400, vh * 0.72))
+      }
+      if (appKey === 'notes') {
+        winWidth = Math.min(760, Math.max(520, vw * 0.72))
+        winHeight = Math.min(620, Math.max(400, vh * 0.78))
+      }
       const x = Math.max(0, (vw - winWidth) / 2 + prev.length * 24)
       const y = Math.max(32, (vh - winHeight) / 2 + prev.length * 24 - 36)
       const id = `app-${appKey}-${Date.now()}`
@@ -540,6 +552,10 @@ export default function ChromeLanding({ onReboot }) {
           content = <DoomWindow isMinimized={win.isMinimized} isMinimizing={win.isMinimizing} />
         } else if (win.appKey === 'dadnme') {
           content = <DadNMeWindow />
+        } else if (win.appKey === 'notes') {
+          content = <NotesWindow />
+        } else if (win.appKey === 'tetris') {
+          content = <TetrisWindow keyboardActive={focusedAppWindowId === win.id && !win.isMinimized} />
         } else if (profileUrl) {
           content = <iframe src={profileUrl} className="chrome-landing__iframe" title={app.label} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} />
         } else {

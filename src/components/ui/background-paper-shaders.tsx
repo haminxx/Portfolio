@@ -13,8 +13,8 @@ const vertexShader = `
     vPosition = position;
     
     vec3 pos = position;
-    pos.y += sin(pos.x * 10.0 + time) * 0.1 * intensity;
-    pos.x += cos(pos.y * 8.0 + time * 1.5) * 0.05 * intensity;
+    float wavePhase = pos.x * 2.8 + pos.y * 0.4 + time * 0.32;
+    pos.y += sin(wavePhase) * 0.12 * intensity;
     
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   }
@@ -31,16 +31,18 @@ const fragmentShader = `
   void main() {
     vec2 uv = vUv;
     
-    float noise = sin(uv.x * 20.0 + time) * cos(uv.y * 15.0 + time * 0.8);
-    noise += sin(uv.x * 35.0 - time * 2.0) * cos(uv.y * 25.0 + time * 1.2) * 0.5;
+    float softWave = sin(uv.x * 3.14159 * 1.4 + uv.y * 2.1 + time * 0.35) * 0.5 + 0.5;
+    vec3 base = mix(color1, color2, smoothstep(0.0, 1.0, softWave * 0.72 + uv.y * 0.28));
     
-    vec3 color = mix(color1, color2, noise * 0.5 + 0.5);
-    color = mix(color, vec3(1.0), pow(abs(noise), 2.0) * intensity * 0.45);
+    float lightBand = sin(uv.x * 2.4 + uv.y * 1.1 - time * 0.22);
+    lightBand = smoothstep(0.25, 1.0, lightBand * 0.5 + 0.5);
+    vec3 highlight = vec3(0.97, 0.98, 1.0);
+    base = mix(base, highlight, lightBand * 0.22 * intensity);
     
-    float v = length(uv - 0.5) * 1.35;
-    float glow = mix(1.0, 0.88, smoothstep(0.0, 0.92, v));
+    float vignette = length(uv - 0.5) * 1.15;
+    float dim = mix(1.0, 0.91, smoothstep(0.35, 1.05, vignette));
     
-    gl_FragColor = vec4(color * glow, 0.94);
+    gl_FragColor = vec4(base * dim, 0.92);
   }
 `
 
@@ -70,7 +72,7 @@ export function ShaderPlane({
   useFrame((state) => {
     if (mesh.current) {
       uniforms.time.value = state.clock.elapsedTime
-      uniforms.intensity.value = 1.0 + Math.sin(state.clock.elapsedTime * 2) * 0.3
+      uniforms.intensity.value = 0.92 + Math.sin(state.clock.elapsedTime * 0.45) * 0.08
     }
   })
 

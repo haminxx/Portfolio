@@ -75,6 +75,18 @@ export const APPS = {
     icon: 'dadnme',
     iconPath: '/dock-icons/dadnme.png',
   },
+  notes: {
+    label: 'Notes',
+    domain: 'notes.local',
+    icon: 'notes',
+    iconPath: '/dock-icons/notes.png',
+  },
+  tetris: {
+    label: 'Tetris',
+    domain: 'tetris.local',
+    icon: 'tetris',
+    iconPath: '/dock-icons/tetris.png',
+  },
 }
 
 export function getDomainForApp(appKey) {

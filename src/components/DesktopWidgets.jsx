@@ -15,36 +15,40 @@ import {
   CloudDrizzle,
   ImageIcon,
   LayoutGrid,
+  RefreshCw,
+  ListTodo,
 } from 'lucide-react'
 import { useMusicPlayer } from '../context/MusicPlayerContext'
+import { getImagePath } from '../lib/gallery'
+import { loadPhotoWidgetState, savePhotoWidgetState } from '../lib/photoWidgetStorage'
+import {
+  loadNotesStore,
+  getPinnedChecklistItems,
+  setPinnedChecklistItemDone,
+  NOTES_CHANGED_EVENT,
+} from '../lib/notesStorage'
+import PhotoWidgetImportModal from './PhotoWidgetImportModal'
 import './DesktopWidgets.css'
 
 const SD_LAT = 32.72
 const SD_LON = -117.16
 const LAYOUT_KEY = 'desktop-widget-layout'
 const CELL = 40
+const GRID_MIN = 8
+const GRID_MAX = 16
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
 const PHOTO_IDS = ['photoA', 'photoB', 'photoC']
 
-const PHOTO_SIZE_PRESETS = [
-  { gridW: 2, gridH: 2, label: '2×2' },
-  { gridW: 2, gridH: 4, label: '2×4' },
-  { gridW: 4, gridH: 2, label: '4×2' },
-  { gridW: 4, gridH: 4, label: '4×4' },
-  { gridW: 4, gridH: 8, label: '4×8' },
-  { gridW: 8, gridH: 4, label: '8×4' },
-  { gridW: 8, gridH: 8, label: '8×8' },
-]
-
-const WIDGET_IDS = ['calendar', 'clock', 'weather', 'music', ...PHOTO_IDS]
+const WIDGET_IDS = ['calendar', 'clock', 'weather', 'music', 'notesChecklist', ...PHOTO_IDS]
 
 const STATIC_SIZES = {
   calendar: { w: 200, h: 220 },
   clock: { w: 200, h: 120 },
   weather: { w: 200, h: 130 },
   music: { w: 200, h: 120 },
+  notesChecklist: { w: 200, h: 200 },
 }
 
 const DEFAULT_LAYOUT = {
@@ -52,18 +56,49 @@ const DEFAULT_LAYOUT = {
   clock: { x: 240, y: 56 },
   weather: { x: 20, y: 300 },
   music: { x: 240, y: 300 },
-  photoA: { x: 480, y: 56, gridW: 4, gridH: 4 },
-  photoB: { x: 680, y: 56, gridW: 4, gridH: 4 },
-  photoC: { x: 480, y: 280, gridW: 4, gridH: 4 },
+  notesChecklist: { x: 480, y: 300 },
+  photoA: { x: 480, y: 56, gridW: 8, gridH: 8 },
+  photoB: { x: 720, y: 56, gridW: 8, gridH: 8 },
+  photoC: { x: 480, y: 360, gridW: 8, gridH: 8 },
+}
+
+function clampGrid(n) {
+  const v = Math.round(Number(n))
+  if (Number.isNaN(v)) return GRID_MIN
+  return Math.max(GRID_MIN, Math.min(GRID_MAX, v))
 }
 
 function getBoxSize(id, entry) {
   if (PHOTO_IDS.includes(id)) {
-    const gw = entry?.gridW ?? 4
-    const gh = entry?.gridH ?? 4
+    const gw = clampGrid(entry?.gridW ?? GRID_MIN)
+    const gh = clampGrid(entry?.gridH ?? GRID_MIN)
     return { w: gw * CELL, h: gh * CELL }
   }
   return STATIC_SIZES[id] || { w: 200, h: 150 }
+}
+
+function getWidgetRect(id, entry) {
+  const { w, h } = getBoxSize(id, entry)
+  const x = entry.x ?? 0
+  const y = entry.y ?? 0
+  return { left: x, top: y, right: x + w, bottom: y + h }
+}
+
+function rectsOverlap(a, b) {
+  return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom)
+}
+
+function hasOverlapWithAny(movingId, pos, layoutMap) {
+  const entry = { ...layoutMap[movingId], ...pos }
+  const r = getWidgetRect(movingId, entry)
+  for (const id of WIDGET_IDS) {
+    if (id === movingId) continue
+    const other = layoutMap[id]
+    if (!other) continue
+    const r2 = getWidgetRect(id, other)
+    if (rectsOverlap(r, r2)) return true
+  }
+  return false
 }
 
 function loadLayout() {
@@ -80,8 +115,8 @@ function loadLayout() {
           y: parsed[id].y,
         }
         if (PHOTO_IDS.includes(id)) {
-          if (parsed[id].gridW != null) out[id].gridW = parsed[id].gridW
-          if (parsed[id].gridH != null) out[id].gridH = parsed[id].gridH
+          if (parsed[id].gridW != null) out[id].gridW = clampGrid(parsed[id].gridW)
+          if (parsed[id].gridH != null) out[id].gridH = clampGrid(parsed[id].gridH)
         }
       }
     }
@@ -126,12 +161,23 @@ function weatherCodeToIcon(code) {
   return Cloud
 }
 
+function readInitialPhotoMap() {
+  const o = {}
+  for (const id of PHOTO_IDS) {
+    o[id] = loadPhotoWidgetState(id)
+  }
+  return o
+}
+
 export default function DesktopWidgets() {
   const [now, setNow] = useState(() => new Date())
   const [weather, setWeather] = useState({ status: 'idle', days: [], error: null })
   const [layout, setLayout] = useState(loadLayout)
   const [calCursor, setCalCursor] = useState(null)
   const [sizeMenuFor, setSizeMenuFor] = useState(null)
+  const [photoImportFor, setPhotoImportFor] = useState(null)
+  const [photoData, setPhotoData] = useState(readInitialPhotoMap)
+  const [notesStore, setNotesStore] = useState(() => loadNotesStore())
   const dragRef = useRef(null)
   const containerRef = useRef(null)
   const sizePopoverRef = useRef(null)
@@ -142,6 +188,19 @@ export default function DesktopWidgets() {
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    const sync = () => setNotesStore(loadNotesStore())
+    window.addEventListener(NOTES_CHANGED_EVENT, sync)
+    const onStorage = (e) => {
+      if (e.key === 'portfolio-notes-v1') sync()
+    }
+    window.addEventListener('storage', onStorage)
+    return () => {
+      window.removeEventListener(NOTES_CHANGED_EVENT, sync)
+      window.removeEventListener('storage', onStorage)
+    }
   }, [])
 
   useEffect(() => {
@@ -201,6 +260,28 @@ export default function DesktopWidgets() {
     }
   }, [])
 
+  const nudgeToFreeSpot = useCallback(
+    (movingId, layoutMap) => {
+      const el = containerRef.current
+      if (!el) return layoutMap
+      const base = { ...layoutMap[movingId] }
+      const rect = el.getBoundingClientRect()
+      const { w, h } = getBoxSize(movingId, base)
+      const maxX = Math.max(0, rect.width - w)
+      const maxY = Math.max(0, rect.height - h)
+      const step = 8
+      for (let gy = 0; gy <= maxY; gy += step) {
+        for (let gx = 0; gx <= maxX; gx += step) {
+          const cand = clampPos(movingId, gx, gy, layoutMap)
+          const merged = { ...layoutMap, [movingId]: { ...base, ...cand } }
+          if (!hasOverlapWithAny(movingId, cand, merged)) return merged
+        }
+      }
+      return layoutMap
+    },
+    [clampPos],
+  )
+
   const handleGripPointerDown = useCallback(
     (e, id) => {
       if (e.button !== 0) return
@@ -219,6 +300,7 @@ export default function DesktopWidgets() {
         origY: pos.y,
         gripEl,
         pointerId,
+        lastGood: { x: pos.x, y: pos.y },
       }
       try {
         gripEl.setPointerCapture(pointerId)
@@ -232,8 +314,13 @@ export default function DesktopWidgets() {
         const dx = ev.clientX - d.startX
         const dy = ev.clientY - d.startY
         setLayout((prev) => {
-          const nextPos = clampPos(d.id, d.origX + dx, d.origY + dy, prev)
-          return { ...prev, [d.id]: { ...prev[d.id], ...nextPos } }
+          const candidate = clampPos(d.id, d.origX + dx, d.origY + dy, prev)
+          const testLayout = { ...prev, [d.id]: { ...prev[d.id], ...candidate } }
+          if (!hasOverlapWithAny(d.id, candidate, testLayout)) {
+            d.lastGood = { ...candidate }
+            return testLayout
+          }
+          return { ...prev, [d.id]: { ...prev[d.id], ...d.lastGood } }
         })
       }
 
@@ -249,8 +336,16 @@ export default function DesktopWidgets() {
         }
         dragRef.current = null
         setLayout((prev) => {
-          saveLayout(prev)
-          return prev
+          let next = prev
+          for (const wid of WIDGET_IDS) {
+            const p = next[wid]
+            if (!p) continue
+            if (hasOverlapWithAny(wid, { x: p.x, y: p.y }, next)) {
+              next = nudgeToFreeSpot(wid, next)
+            }
+          }
+          saveLayout(next)
+          return next
         })
       }
 
@@ -258,22 +353,40 @@ export default function DesktopWidgets() {
       window.addEventListener('pointerup', onUp)
       window.addEventListener('pointercancel', onUp)
     },
-    [layout, clampPos],
+    [layout, clampPos, nudgeToFreeSpot],
   )
 
   const applyPhotoGrid = useCallback(
     (id, gridW, gridH) => {
       setLayout((prev) => {
-        const base = { ...prev[id], gridW, gridH }
+        const base = { ...prev[id], gridW: clampGrid(gridW), gridH: clampGrid(gridH) }
         const pos = clampPos(id, base.x, base.y, { ...prev, [id]: base })
-        const next = { ...prev, [id]: { ...base, ...pos } }
+        let next = { ...prev, [id]: { ...base, ...pos } }
+        if (hasOverlapWithAny(id, pos, next)) {
+          next = nudgeToFreeSpot(id, next)
+        }
         saveLayout(next)
         return next
       })
       setSizeMenuFor(null)
     },
-    [clampPos],
+    [clampPos, nudgeToFreeSpot],
   )
+
+  const handlePhotoApply = useCallback((pid, state) => {
+    savePhotoWidgetState(pid, state)
+    setPhotoData((prev) => ({ ...prev, [pid]: state }))
+    setPhotoImportFor(null)
+  }, [])
+
+  const pinnedItems = useMemo(
+    () => getPinnedChecklistItems(notesStore.pinnedNoteId, notesStore.notes),
+    [notesStore],
+  )
+
+  const togglePinnedItem = useCallback((itemId, done) => {
+    setPinnedChecklistItemDone(notesStore, itemId, done)
+  }, [notesStore])
 
   const cal = useMemo(() => {
     const y = calYM.y
@@ -321,8 +434,21 @@ export default function DesktopWidgets() {
     return { left: p.x, top: p.y, width: w, height: h }
   }
 
+  const gridRange = useMemo(
+    () => Array.from({ length: GRID_MAX - GRID_MIN + 1 }, (_, i) => GRID_MIN + i),
+    [],
+  )
+
   return (
     <div ref={containerRef} className="desktop-widgets" aria-hidden>
+      {photoImportFor && (
+        <PhotoWidgetImportModal
+          lastState={photoData[photoImportFor]}
+          onClose={() => setPhotoImportFor(null)}
+          onApply={(state) => handlePhotoApply(photoImportFor, state)}
+        />
+      )}
+
       <div className="desktop-widgets__card desktop-widgets__card--calendar" style={cardStyle('calendar')}>
         <button
           type="button"
@@ -453,8 +579,47 @@ export default function DesktopWidgets() {
         )}
       </div>
 
+      <div className="desktop-widgets__card desktop-widgets__card--notes" style={cardStyle('notesChecklist')}>
+        <button
+          type="button"
+          className="desktop-widgets__grip"
+          aria-label="Move notes widget"
+          onPointerDown={(e) => handleGripPointerDown(e, 'notesChecklist')}
+        >
+          <GripVertical size={14} strokeWidth={2} />
+        </button>
+        <div className="desktop-widgets__notes-head">
+          <ListTodo size={14} strokeWidth={2} aria-hidden />
+          <span className="desktop-widgets__card-title desktop-widgets__card-title--inline">Pinned note</span>
+        </div>
+        {!notesStore.pinnedNoteId ? (
+          <p className="desktop-widgets__muted desktop-widgets__muted--small">Open Notes and pin a note for this list.</p>
+        ) : pinnedItems.length === 0 ? (
+          <p className="desktop-widgets__muted desktop-widgets__muted--small">No checklist items yet.</p>
+        ) : (
+          <ul className="desktop-widgets__notes-list">
+            {pinnedItems.map((it) => (
+              <li key={it.id} className="desktop-widgets__notes-item">
+                <label className="desktop-widgets__notes-check-label">
+                  <input
+                    type="checkbox"
+                    checked={!!it.done}
+                    onChange={(e) => togglePinnedItem(it.id, e.target.checked)}
+                  />
+                  <span className={it.done ? 'desktop-widgets__notes-text desktop-widgets__notes-text--done' : 'desktop-widgets__notes-text'}>
+                    {it.text || '—'}
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       {PHOTO_IDS.map((pid) => {
         const open = sizeMenuFor === pid
+        const pdata = photoData[pid]
+        const layoutEntry = layout[pid] || DEFAULT_LAYOUT[pid]
         return (
           <div key={pid} className="desktop-widgets__card desktop-widgets__card--photo" style={cardStyle(pid)}>
             <div className="desktop-widgets__photo-chrome">
@@ -465,6 +630,18 @@ export default function DesktopWidgets() {
                 onPointerDown={(e) => handleGripPointerDown(e, pid)}
               >
                 <GripVertical size={14} strokeWidth={2} />
+              </button>
+              <button
+                type="button"
+                className="desktop-widgets__sync-trigger"
+                aria-label="Import from Photos gallery"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setPhotoImportFor(pid)
+                }}
+              >
+                <RefreshCw size={14} strokeWidth={2} />
               </button>
               <button
                 type="button"
@@ -481,25 +658,54 @@ export default function DesktopWidgets() {
               </button>
             </div>
             {open && (
-              <div ref={sizePopoverRef} className="desktop-widgets__size-popover" role="listbox" aria-label="Photo widget size">
-                {PHOTO_SIZE_PRESETS.map((preset) => (
-                  <button
-                    key={`${preset.gridW}x${preset.gridH}`}
-                    type="button"
-                    className="desktop-widgets__size-tile"
-                    role="option"
-                    onClick={() => applyPhotoGrid(pid, preset.gridW, preset.gridH)}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
+              <div ref={sizePopoverRef} className="desktop-widgets__size-popover desktop-widgets__size-popover--grid" role="group" aria-label="Photo widget grid size">
+                <div className="desktop-widgets__size-select-row">
+                  <label className="desktop-widgets__size-select-label">
+                    Width
+                    <select
+                      className="desktop-widgets__size-select"
+                      value={clampGrid(layoutEntry.gridW)}
+                      onChange={(e) => applyPhotoGrid(pid, Number(e.target.value), clampGrid(layoutEntry.gridH))}
+                    >
+                      {gridRange.map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <span className="desktop-widgets__size-mul">×</span>
+                  <label className="desktop-widgets__size-select-label">
+                    Height
+                    <select
+                      className="desktop-widgets__size-select"
+                      value={clampGrid(layoutEntry.gridH)}
+                      onChange={(e) => applyPhotoGrid(pid, clampGrid(layoutEntry.gridW), Number(e.target.value))}
+                    >
+                      {gridRange.map((n) => (
+                        <option key={`h-${n}`} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
               </div>
             )}
             <div className="desktop-widgets__photo-body">
-              <div className="desktop-widgets__photo-placeholder">
-                <ImageIcon size={28} strokeWidth={1.25} aria-hidden />
-                <span className="desktop-widgets__photo-hint">Photo</span>
-              </div>
+              {pdata ? (
+                <img
+                  src={getImagePath(pdata.galleryIndex)}
+                  alt=""
+                  className="desktop-widgets__photo-img"
+                  style={{ clipPath: `inset(${pdata.cropPadding ?? 0}%)` }}
+                />
+              ) : (
+                <div className="desktop-widgets__photo-placeholder">
+                  <ImageIcon size={28} strokeWidth={1.25} aria-hidden />
+                  <span className="desktop-widgets__photo-hint">Photo</span>
+                </div>
+              )}
             </div>
           </div>
         )

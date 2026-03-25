@@ -10,20 +10,20 @@
 .desktop-widgets__card {
   position: absolute;
   pointer-events: auto;
-  padding: 10px 12px 12px;
-  padding-top: 12px;
-  border-radius: 18px;
+  padding: 12px 14px 14px;
+  padding-top: 14px;
+  border-radius: 22px;
   transition: padding-top 0.22s ease, box-shadow 0.2s ease;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.09) 0%, transparent 45%),
-    linear-gradient(125deg, rgba(18, 16, 24, 0.82) 0%, rgba(28, 24, 38, 0.78) 50%, rgba(20, 18, 28, 0.85) 100%),
-    radial-gradient(120% 80% at 100% 0%, rgba(80, 70, 110, 0.22), transparent 55%);
-  backdrop-filter: blur(22px) saturate(150%);
-  -webkit-backdrop-filter: blur(22px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+    linear-gradient(155deg, rgba(255, 255, 255, 0.11) 0%, transparent 42%),
+    linear-gradient(125deg, rgba(22, 20, 30, 0.78) 0%, rgba(30, 26, 40, 0.72) 48%, rgba(24, 22, 32, 0.8) 100%),
+    radial-gradient(130% 90% at 90% -10%, rgba(120, 115, 160, 0.18), transparent 52%);
+  backdrop-filter: blur(26px) saturate(160%);
+  -webkit-backdrop-filter: blur(26px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow:
-    0 14px 44px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    0 18px 50px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
   color: rgba(255, 255, 255, 0.94);
   box-sizing: border-box;
 }
@@ -55,6 +55,50 @@
   padding-top: 8px;
   min-width: 0;
   min-height: 0;
+}
+
+.desktop-widgets__sync-trigger {
+  position: absolute;
+  right: 34px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.desktop-widgets__sync-trigger:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.desktop-widgets__card--photo:hover .desktop-widgets__sync-trigger {
+  opacity: 1;
+  visibility: visible;
+}
+
+[data-theme='light'] .desktop-widgets__sync-trigger {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.desktop-widgets__photo-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .desktop-widgets__photo-chrome {
@@ -105,6 +149,48 @@
 .desktop-widgets__size-trigger:hover {
   color: rgba(255, 255, 255, 0.9);
   background: rgba(255, 255, 255, 0.16);
+}
+
+.desktop-widgets__size-popover--grid {
+  display: block;
+  min-width: 200px;
+}
+
+.desktop-widgets__size-select-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.desktop-widgets__size-select-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.65;
+  flex: 1;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.desktop-widgets__size-select {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.25);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.desktop-widgets__size-mul {
+  padding-bottom: 10px;
+  font-size: 14px;
+  opacity: 0.5;
+  flex-shrink: 0;
 }
 
 .desktop-widgets__size-popover {
@@ -242,6 +328,16 @@
   color: rgba(20, 18, 24, 0.9);
 }
 
+[data-theme='light'] .desktop-widgets__size-select {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  color: rgba(20, 18, 24, 0.92);
+}
+
+[data-theme='light'] .desktop-widgets__size-select-label {
+  color: rgba(20, 18, 24, 0.65);
+}
+
 [data-theme='light'] .desktop-widgets__photo-body {
   background: rgba(0, 0, 0, 0.04);
   border-color: rgba(0, 0, 0, 0.08);
@@ -313,6 +409,71 @@
   opacity: 0.65;
 }
 
+.desktop-widgets__muted--small {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.desktop-widgets__card--notes {
+  width: 200px;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+}
+
+.desktop-widgets__notes-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  opacity: 0.9;
+}
+
+.desktop-widgets__notes-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  overflow-y: auto;
+  max-height: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.desktop-widgets__notes-item {
+  margin: 0;
+}
+
+.desktop-widgets__notes-check-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.desktop-widgets__notes-check-label input {
+  margin-top: 2px;
+  accent-color: #5eead4;
+  flex-shrink: 0;
+}
+
+.desktop-widgets__notes-text {
+  color: rgba(255, 255, 255, 0.88);
+  word-break: break-word;
+}
+
+.desktop-widgets__notes-text--done {
+  text-decoration: line-through;
+  opacity: 0.55;
+}
+
+[data-theme='light'] .desktop-widgets__notes-text {
+  color: rgba(20, 18, 24, 0.88);
+}
+
 .desktop-widgets__week-row {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -348,10 +509,10 @@
 }
 
 .desktop-widgets__cal-cell--today {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.95);
   color: #0d0d0f;
   font-weight: 800;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 [data-theme='light'] .desktop-widgets__cal-cell--today {
@@ -445,9 +606,9 @@
 }
 
 .desktop-widgets__weather-day--active {
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 [data-theme='light'] .desktop-widgets__weather-day--active {

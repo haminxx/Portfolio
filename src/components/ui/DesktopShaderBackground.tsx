@@ -8,8 +8,8 @@ function Scene() {
     <ShaderPlane
       position={[0, 0, 0]}
       scale={[width * pad, height * pad, 1]}
-      color1="#121018"
-      color2="#2c2438"
+      color1="#c8ccd4"
+      color2="#dfe3ea"
     />
   )
 }

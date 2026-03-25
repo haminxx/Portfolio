@@ -19,6 +19,8 @@ import {
   Settings,
   Map,
   Gamepad2,
+  StickyNote,
+  LayoutGrid,
 } from 'lucide-react'
 import { APPS } from '../config/apps'
 import './FinderWindow.css'
@@ -57,6 +59,8 @@ const APP_ICONS = {
   youtubeMusic: Film,
   doom: Gamepad2,
   dadnme: Gamepad2,
+  notes: StickyNote,
+  tetris: LayoutGrid,
   finder: Folder,
 }
 

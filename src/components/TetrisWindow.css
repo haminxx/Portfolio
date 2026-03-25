@@ -1,0 +1,101 @@
+.tetris-window {
+  height: 100%;
+  min-height: 360px;
+  padding: 16px;
+  box-sizing: border-box;
+  background: linear-gradient(165deg, #2a2830 0%, #1a1820 100%);
+  outline: none;
+}
+
+.tetris-window__main {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  justify-content: center;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.tetris-window__grid {
+  display: grid;
+  gap: 1px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tetris-window__cell {
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+}
+
+.tetris-window__side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 120px;
+}
+
+.tetris-window__score-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.tetris-window__score-val {
+  font-size: 22px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.95);
+  font-variant-numeric: tabular-nums;
+}
+
+.tetris-window__next-label {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.tetris-window__mini {
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  width: fit-content;
+}
+
+.tetris-window__mini-cell {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+.tetris-window__start {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
+  color: #1c1917;
+}
+
+.tetris-window__start:hover {
+  filter: brightness(1.05);
+}
+
+.tetris-window__hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.4);
+}
