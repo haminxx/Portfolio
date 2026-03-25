@@ -150,6 +150,13 @@ function saveLayout(layout) {
   }
 }
 
+function formatLocalYMD(d) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 function weatherCodeToIcon(code) {
   if (code == null || Number.isNaN(code)) return Cloud
   const c = code
@@ -297,6 +304,29 @@ export default function DesktopWidgets({
   useEffect(() => {
     loadWeather()
   }, [loadWeather])
+
+  const weatherWeekSlots = useMemo(() => {
+    if (weather.status !== 'ready' || !weather.days?.length) return []
+    const byDate = Object.fromEntries(weather.days.map((x) => [x.date, x]))
+    const today = new Date()
+    const keyToday = formatLocalYMD(today)
+    const sun = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay())
+    const slots = []
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(sun.getFullYear(), sun.getMonth(), sun.getDate() + i)
+      const key = formatLocalYMD(d)
+      const data = byDate[key]
+      slots.push({
+        key,
+        dayNum: d.getDate(),
+        isToday: key === keyToday,
+        dowLabel: d.toLocaleDateString(undefined, { weekday: 'short' }),
+        high: data?.high,
+        code: data?.code,
+      })
+    }
+    return slots
+  }, [weather])
 
   const clampPos = useCallback((id, x, y, layoutMap) => {
     const el = containerRef.current
@@ -510,13 +540,7 @@ export default function DesktopWidgets({
                 setCalMonth(new Date(d.getFullYear(), d.getMonth(), 1))
               }
             }}
-            modifiersStyles={{
-              today: {
-                borderRadius: 9999,
-                outline: '2px solid rgba(255, 255, 255, 0.92)',
-                outlineOffset: 1,
-              },
-            }}
+            weekStartsOn={0}
             className="w-full rounded-xl [--cell-size:1.65rem] sm:[--cell-size:1.65rem]"
           />
         </div>
@@ -556,16 +580,22 @@ export default function DesktopWidgets({
           {weather.status === 'error' && <p className="desktop-widgets__muted">{weather.error}</p>}
           {weather.status === 'ready' && (
           <div className="desktop-widgets__weather-strip">
-            {weather.days.map((d, i) => {
-              const label = new Date(d.date + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short' })
-              const hi = d.high != null ? Math.round(d.high) : '—'
-              const Ico = weatherCodeToIcon(d.code)
+            {weatherWeekSlots.map((slot) => {
+              const hi = slot.high != null ? Math.round(slot.high) : '—'
+              const Ico = weatherCodeToIcon(slot.code)
               return (
                 <div
-                  key={d.date}
-                  className={`desktop-widgets__weather-day ${i === 0 ? 'desktop-widgets__weather-day--active' : ''}`}
+                  key={slot.key}
+                  className={`desktop-widgets__weather-day ${slot.isToday ? 'desktop-widgets__weather-day--today' : ''}`}
                 >
-                  <span className="desktop-widgets__weather-dow">{label}</span>
+                  <div className="desktop-widgets__weather-day-top">
+                    {slot.isToday ? (
+                      <span className="desktop-widgets__weather-date-badge">{slot.dayNum}</span>
+                    ) : (
+                      <span className="desktop-widgets__weather-date-placeholder" aria-hidden />
+                    )}
+                  </div>
+                  <span className="desktop-widgets__weather-dow">{slot.dowLabel}</span>
                   <span className="desktop-widgets__weather-icon" aria-hidden>
                     <Ico size={18} strokeWidth={1.75} />
                   </span>

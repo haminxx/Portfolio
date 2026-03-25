@@ -2,13 +2,14 @@ import { cn } from '@/lib/utils'
 import { ChevronLeftIcon, ChevronRightIcon, ChevronsUpDownIcon } from 'lucide-react'
 import type * as React from 'react'
 import { DayPicker } from 'react-day-picker'
+import 'react-day-picker/style.css'
 import type { ClassNames, CustomComponents, DayPickerProps, Formatters } from 'react-day-picker'
 
 const buttonClassNames =
   "relative flex size-(--cell-size) text-base sm:text-sm items-center justify-center rounded-lg text-foreground not-in-data-selected:hover:bg-accent disabled:pointer-events-none disabled:opacity-64 [&_svg:not([class*='opacity-'])]:opacity-80 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0"
 
 const defaultClassNames = {
-  root: 'w-fit p-0',
+  root: cn('rdp-root', 'w-fit border-0 bg-transparent p-0 shadow-none'),
   chevron: '',
   months: 'relative flex flex-col sm:flex-row gap-2',
   month: 'w-full',
@@ -116,8 +117,9 @@ export function Calendar({
   return (
     <DayPicker
       {...props}
+      data-slot="calendar"
       className={cn(
-        'w-fit [--cell-size:2.5rem] sm:[--cell-size:2.25rem]',
+        'w-full max-w-full [--cell-size:1.65rem] sm:[--cell-size:1.65rem]',
         className,
       )}
       classNames={mergedClassNames}

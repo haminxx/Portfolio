@@ -268,7 +268,7 @@
   padding: 0;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--portfolio-chrome-fg, rgba(255, 255, 255, 0.95));
   cursor: pointer;
   border-radius: 4px;
 }
@@ -298,7 +298,7 @@
   justify-content: center;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--portfolio-chrome-fg, rgba(255, 255, 255, 0.9));
   cursor: pointer;
   border-radius: 4px;
 }
@@ -315,7 +315,7 @@
   justify-content: center;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--portfolio-chrome-fg, rgba(255, 255, 255, 0.9));
   cursor: pointer;
   border-radius: 4px;
 }
@@ -329,6 +329,7 @@
   font-size: 13px;
   padding: 4px 10px;
   font-variant-numeric: tabular-nums;
+  color: var(--portfolio-chrome-fg, rgba(255, 255, 255, 0.95));
 }
 
 .system-tray__dropdown-wrap {

@@ -19,11 +19,9 @@
   -webkit-backdrop-filter: none;
   border: 1px solid transparent;
   box-shadow: none;
-  color: rgba(255, 255, 255, 0.97);
+  color: var(--portfolio-chrome-fg, #f5f5f7);
   box-sizing: border-box;
-  text-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.92),
-    0 0 20px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .desktop-widgets__card:hover {
@@ -92,7 +90,9 @@
 }
 
 .desktop-widgets__bg-speed-wrap {
-  width: 100%;
+  width: 100px;
+  max-width: 100%;
+  align-self: center;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -102,19 +102,23 @@
 }
 
 .desktop-widgets__adaptive {
-  mix-blend-mode: difference;
-  color: #ffffff;
-  text-shadow: none;
+  color: var(--portfolio-chrome-fg, #f5f5f7);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
 }
 
 .desktop-widgets__adaptive svg {
-  color: inherit;
+  color: currentColor;
 }
 
 .desktop-widgets__cal-rdp {
   margin-top: 2px;
   width: 100%;
   max-width: 100%;
+  --rdp-accent-color: var(--portfolio-accent, #818cf8);
+  --rdp-accent-background-color: color-mix(in srgb, var(--portfolio-accent, #818cf8) 30%, transparent);
+  --rdp-today-color: var(--portfolio-on-accent, #fafafa);
+  --rdp-day_button-border-radius: 8px;
+  color: var(--portfolio-chrome-fg, #f5f5f7);
 }
 
 .desktop-widgets__cal-rdp > * {
@@ -122,11 +126,34 @@
   margin-right: auto;
 }
 
-/* Today: react-day-picker adds `today` class on the day cell */
-.desktop-widgets__cal-rdp .today:not(.selected) button,
-.desktop-widgets__cal-rdp td.today:not([data-selected]) .rdp-day_button {
-  border-radius: 9999px;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+.desktop-widgets__cal-rdp .rdp-weekday {
+  color: color-mix(in srgb, var(--portfolio-chrome-fg) 70%, transparent);
+  opacity: 1;
+}
+
+.desktop-widgets__cal-rdp .rdp-caption_label {
+  color: var(--portfolio-chrome-fg);
+}
+
+.desktop-widgets__cal-rdp .rdp-button_previous,
+.desktop-widgets__cal-rdp .rdp-button_next {
+  color: var(--portfolio-chrome-fg);
+}
+
+.desktop-widgets__cal-rdp .rdp-day_button {
+  color: var(--portfolio-chrome-fg);
+}
+
+.desktop-widgets__cal-rdp .rdp-today:not(.rdp-selected):not(.rdp-range_start):not(.rdp-range_end) .rdp-day_button {
+  background-color: var(--portfolio-accent, #818cf8) !important;
+  color: var(--portfolio-on-accent, #fafafa) !important;
+  border-radius: 8px !important;
+  border-color: transparent !important;
+  font-weight: 700;
+}
+
+.desktop-widgets__cal-rdp .rdp-today.rdp-selected .rdp-day_button {
+  border-radius: 8px !important;
 }
 
 .desktop-widgets__bg-controls-head {
@@ -812,7 +839,8 @@
 .desktop-widgets__muted {
   margin: 0;
   font-size: 13px;
-  opacity: 0.65;
+  color: var(--portfolio-chrome-muted, rgba(245, 245, 247, 0.62));
+  opacity: 1;
 }
 
 .desktop-widgets__muted--small {
@@ -867,7 +895,7 @@
 }
 
 .desktop-widgets__notes-text {
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--portfolio-chrome-fg, #f5f5f7);
   word-break: break-word;
 }
 
@@ -972,7 +1000,7 @@
 .desktop-widgets__clock-loc {
   font-size: 11px;
   margin-top: 6px;
-  opacity: 0.52;
+  color: color-mix(in srgb, var(--portfolio-chrome-fg) 52%, transparent);
   font-weight: 500;
 }
 
@@ -1011,23 +1039,52 @@
   transition: background 0.18s ease;
 }
 
-.desktop-widgets__weather-day--active {
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+.desktop-widgets__weather-day-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  margin-bottom: 2px;
 }
 
-[data-theme='light'] .desktop-widgets__weather-day--active {
-  background: rgba(255, 255, 255, 0.65);
-  border-color: rgba(0, 0, 0, 0.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+.desktop-widgets__weather-date-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: var(--portfolio-accent, #818cf8);
+  color: var(--portfolio-on-accent, #fafafa);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.desktop-widgets__weather-date-placeholder {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+.desktop-widgets__weather-day--today {
+  background: color-mix(in srgb, var(--portfolio-accent, #818cf8) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--portfolio-accent) 45%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--portfolio-chrome-fg) 12%, transparent);
+}
+
+[data-theme='light'] .desktop-widgets__weather-day--today {
+  background: color-mix(in srgb, var(--portfolio-accent) 22%, transparent);
+  border-color: color-mix(in srgb, var(--portfolio-accent) 50%, transparent);
 }
 
 .desktop-widgets__weather-dow {
   display: block;
   font-size: 9px;
   font-weight: 700;
-  opacity: 0.5;
+  color: color-mix(in srgb, var(--portfolio-chrome-fg) 58%, transparent);
   margin-bottom: 4px;
   letter-spacing: 0.02em;
 }

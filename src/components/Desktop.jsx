@@ -4,7 +4,7 @@ import DesktopContextMenu from './DesktopContextMenu'
 import DesktopWidgets from './DesktopWidgets'
 import './Desktop.css'
 import { DESKTOP_ICON_WIDTH, DESKTOP_ICON_HEIGHT, DESKTOP_SAFE_TOP } from '../desktopConstants'
-import { DesktopBackgroundProvider, useDesktopBackground } from '../context/DesktopBackgroundContext'
+import { useDesktopBackground } from '../context/DesktopBackgroundContext'
 
 const DesktopShaderBackground = lazy(() => import('./ui/DesktopShaderBackground'))
 
@@ -229,9 +229,5 @@ function DesktopContent({
 }
 
 export default function Desktop(props) {
-  return (
-    <DesktopBackgroundProvider>
-      <DesktopContent {...props} />
-    </DesktopBackgroundProvider>
-  )
+  return <DesktopContent {...props} />
 }

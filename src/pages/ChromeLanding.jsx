@@ -33,6 +33,7 @@ import { SHORTCUTS } from '../config/shortcuts'
 import { useLanguage } from '../context/LanguageContext'
 import { useTheme } from '../context/ThemeContext'
 import { MusicPlayerProvider } from '../context/MusicPlayerContext'
+import { DesktopBackgroundProvider } from '../context/DesktopBackgroundContext'
 import { Globe, Image, Film, Images, Video, ShoppingBag, Settings, Map, Folder, StickyNote, LayoutGrid } from 'lucide-react'
 import './ChromeLanding.css'
 
@@ -386,6 +387,7 @@ export default function ChromeLanding({ onReboot }) {
 
   return (
     <MusicPlayerProvider>
+    <DesktopBackgroundProvider>
     <div className="chrome-landing">
       <Desktop
         onOpenApp={openAppTab}
@@ -628,6 +630,7 @@ export default function ChromeLanding({ onReboot }) {
         />
       )}
     </div>
+    </DesktopBackgroundProvider>
     </MusicPlayerProvider>
   )
 }
