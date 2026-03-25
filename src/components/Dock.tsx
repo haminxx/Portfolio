@@ -96,11 +96,9 @@ export default function Dock({
       visibleKeys.map((key) => {
         const app = APPS[key as keyof typeof APPS]
         const imgClass =
-          key === 'dadnme' || key === 'finder'
-            ? 'rounded-md'
-            : key === 'appStore'
-              ? 'max-h-[92%] max-w-[92%] object-contain -translate-y-0.5'
-              : undefined
+          key === 'dadnme' || key === 'finder' || key === 'tetris'
+            ? 'h-full w-full object-contain rounded-md'
+            : 'h-full w-full object-contain'
         return {
           id: key,
           name: t(`apps.${key}`),

@@ -21,11 +21,12 @@ import {
   Train,
 } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext'
-import { fetchOsrmRoutePublic } from '../lib/osrmRoute'
+import { fetchOsrmRoutePublic, fetchMapboxDirections } from '../lib/osrmRoute'
 import 'leaflet/dist/leaflet.css'
 import './MapWindow.css'
 
 const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+const MAPBOX_TOKEN = (import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || '').trim()
 
 const MAP_STYLE_KEYS = {
   minimal: {
@@ -286,6 +287,34 @@ export default function MapWindow() {
           if (res.ok) {
             const data = await res.json()
             setRouteGeometry(data.geometry || null)
+            setRouteMeta({
+              duration: data.duration,
+              distance: data.distance,
+              steps: data.steps || [],
+            })
+            setRouteHint(null)
+            setRouteLoading(false)
+            return
+          }
+        } catch {
+          // fall through to Mapbox / OSRM
+        }
+      }
+
+      if (cancelled) return
+      if (MAPBOX_TOKEN) {
+        try {
+          const data = await fetchMapboxDirections(
+            MAPBOX_TOKEN,
+            ulat,
+            ulng,
+            dlat,
+            dlng,
+            routeProfile,
+          )
+          if (cancelled) return
+          if (data.geometry) {
+            setRouteGeometry(data.geometry)
             setRouteMeta({
               duration: data.duration,
               distance: data.distance,
@@ -710,7 +739,7 @@ export default function MapWindow() {
                     <ol className="map-window__directions-steps">
                       {routeMeta.steps.slice(0, 12).map((step, i) => (
                         <li key={i} className="map-window__directions-step">
-                          {step.name || step.maneuver || '—'}
+                          {step.instruction || step.name || step.maneuver || '—'}
                         </li>
                       ))}
                     </ol>

@@ -51,6 +51,10 @@ export const translations = {
       linkedin: 'LinkedIn',
       github: 'GitHub',
     },
+    aboutPage: {
+      intro:
+        'Pick a language to continue. You will return to the Chrome home page; only the site language changes.',
+    },
     apps: {
       finder: 'Finder',
       chrome: 'Chrome',
@@ -221,6 +225,10 @@ export const translations = {
       contact: '연락처',
       linkedin: 'LinkedIn',
       github: 'GitHub',
+    },
+    aboutPage: {
+      intro:
+        '언어를 선택하면 Chrome 홈으로 돌아갑니다. 사이트 표시 언어만 바뀌며, 두 버튼 모두 같은 홈 페이지로 이동합니다.',
     },
     apps: {
       finder: 'Finder',

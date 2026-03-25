@@ -153,7 +153,7 @@ export default function ChromeLanding({ onReboot }) {
   const [dockOrder, setDockOrder] = useState(loadDockOrder)
   const { nightMode, setNightMode } = useTheme()
   const { isCapturing, takeScreenshot } = useScreenshot()
-  const { t } = useLanguage()
+  const { t, setLanguage } = useLanguage()
 
   const setDesktopItems = useCallback((fnOrValue) => {
     setDesktopItemsState((prev) => {
@@ -274,7 +274,27 @@ export default function ChromeLanding({ onReboot }) {
     if (willBeEmpty) setChromeMinimized(true)
   }, [activeTabId, tabs])
 
-  const goHome = useCallback(() => setActiveTabId('home'), [])
+  const goHome = useCallback(() => {
+    setTabs((prev) =>
+      prev.map((tab) =>
+        tab.type === 'about' ? { ...tab, type: 'home', title: 'Home' } : tab,
+      ),
+    )
+    setActiveTabId('home')
+  }, [])
+
+  const handleAboutLanguageContinue = useCallback(
+    (langId) => {
+      setLanguage(langId)
+      setTabs((prev) =>
+        prev.map((tab) =>
+          tab.id === activeTabId ? { ...tab, type: 'home', title: 'Home' } : tab,
+        ),
+      )
+      setChromeMinimized(false)
+    },
+    [activeTabId, setLanguage],
+  )
 
   const tabHistoryRef = useRef([])
   const historyIndexRef = useRef(-1)
@@ -487,7 +507,7 @@ export default function ChromeLanding({ onReboot }) {
                 {activeTab.type === 'home' ? (
                   <ChromeHome onNavigateShortcut={navigateToShortcut} onShortcutInNewTab={openShortcutTab} />
                 ) : activeTab.type === 'about' ? (
-                  <AboutPage />
+                  <AboutPage onLanguageContinue={handleAboutLanguageContinue} />
                 ) : activeTab.type === 'project' ? (
                   <ProjectPage />
                 ) : activeTab.type === 'contact' ? (
