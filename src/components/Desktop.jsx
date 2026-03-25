@@ -13,27 +13,6 @@ function DesktopShaderBackgroundGate() {
   return <DesktopShaderBackground color1={color1} color2={color2} speed={speed} />
 }
 
-const DESKTOP_ITEMS_KEY = 'desktop-items'
-
-function loadDesktopItems() {
-  try {
-    const raw = localStorage.getItem(DESKTOP_ITEMS_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
-}
-
-function saveDesktopItems(items) {
-  try {
-    localStorage.setItem(DESKTOP_ITEMS_KEY, JSON.stringify(items))
-  } catch {
-    // ignore
-  }
-}
-
 function rectsIntersect(r1, r2) {
   return !(r1.right < r2.left || r1.left > r2.right || r1.bottom < r2.top || r1.top > r2.bottom)
 }

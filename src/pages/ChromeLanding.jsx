@@ -1,30 +1,32 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, Suspense } from 'react'
 import { useScreenshot } from '../hooks/useScreenshot'
 import ChromeFrame from '../components/ChromeFrame'
 import ChromeWindow from '../components/ChromeWindow'
 import ChromeHome from '../components/ChromeHome'
 import ChromeContextMenu from '../components/ChromeContextMenu'
 import Desktop from '../components/Desktop'
-import GitHubProfileCard from '../components/GitHubProfileCard'
-import LinkedInProfileCard from '../components/LinkedInProfileCard'
-import InstagramWindow from '../components/InstagramWindow'
-import AboutPage from '../components/AboutPage'
-import ProjectPage from '../components/ProjectPage'
-import ContactPage from '../components/ContactPage'
-import SocialProfileWindow from '../components/SocialProfileWindow'
-import FolderWindow from '../components/FolderWindow'
-import MapWindow from '../components/MapWindow'
-import DoomWindow from '../components/DoomWindow'
-import DadNMeWindow from '../components/DadNMeWindow'
-import NetflixWindow from '../components/NetflixWindow'
-import YouTubeMusicWindow from '../components/YouTubeMusicWindow'
-import SettingsWindow from '../components/SettingsWindow'
-import AppStoreWindow from '../components/AppStoreWindow'
-import GalleryWindow from '../components/GalleryWindow'
-import FaceTimeWindow from '../components/FaceTimeWindow'
-import FinderWindow from '../components/FinderWindow'
-import NotesWindow from '../components/NotesWindow'
-import TetrisWindow from '../components/TetrisWindow'
+import {
+  LazyInstagramWindow,
+  LazyAboutPage,
+  LazyProjectPage,
+  LazyContactPage,
+  LazySocialProfileWindow,
+  LazyFolderWindow,
+  LazyMapWindow,
+  LazyDoomWindow,
+  LazyDadNMeWindow,
+  LazyNetflixWindow,
+  LazyYouTubeMusicWindow,
+  LazySettingsWindow,
+  LazyAppStoreWindow,
+  LazyGalleryWindow,
+  LazyFaceTimeWindow,
+  LazyFinderWindow,
+  LazyNotesWindow,
+  LazyTetrisWindow,
+  LazyGitHubProfileCard,
+  LazyLinkedInProfileCard,
+} from './chromeLazyComponents'
 import MenuBar from '../components/MenuBar'
 import Dock from '../components/Dock'
 import AppWindow from '../components/AppWindow'
@@ -431,14 +433,16 @@ export default function ChromeLanding({ onReboot }) {
         openAppWindows={openAppWindows}
       />
       {openFolderId && (
-        <FolderWindow
-          folderId={openFolderId}
-          folderName={desktopItems.find((i) => i.id === openFolderId)?.name ?? 'Folder'}
-          desktopItems={desktopItems}
-          onItemsChange={setDesktopItems}
-          onClose={() => setOpenFolderId(null)}
-          onOpenFolder={handleOpenFolder}
-        />
+        <Suspense fallback={null}>
+          <LazyFolderWindow
+            folderId={openFolderId}
+            folderName={desktopItems.find((i) => i.id === openFolderId)?.name ?? 'Folder'}
+            desktopItems={desktopItems}
+            onItemsChange={setDesktopItems}
+            onClose={() => setOpenFolderId(null)}
+            onOpenFolder={handleOpenFolder}
+          />
+        </Suspense>
       )}
       {[
         ...openAppWindows
@@ -496,19 +500,29 @@ export default function ChromeLanding({ onReboot }) {
                 {activeTab.type === 'home' ? (
                   <ChromeHome onNavigateShortcut={navigateToShortcut} onShortcutInNewTab={openShortcutTab} />
                 ) : activeTab.type === 'about' ? (
-                  <AboutPage />
+                  <Suspense fallback={null}>
+                    <LazyAboutPage />
+                  </Suspense>
                 ) : activeTab.type === 'project' ? (
-                  <ProjectPage />
+                  <Suspense fallback={null}>
+                    <LazyProjectPage />
+                  </Suspense>
                 ) : activeTab.type === 'contact' ? (
-                  <ContactPage />
+                  <Suspense fallback={null}>
+                    <LazyContactPage />
+                  </Suspense>
                 ) : activeTab.type === 'github' ? (
-                  <SocialProfileWindow profileUrl={getUrlForTab(activeTab)} cardOnly>
-                    <GitHubProfileCard profileUrl={getUrlForTab(activeTab)} />
-                  </SocialProfileWindow>
+                  <Suspense fallback={null}>
+                    <LazySocialProfileWindow profileUrl={getUrlForTab(activeTab)} cardOnly>
+                      <LazyGitHubProfileCard profileUrl={getUrlForTab(activeTab)} />
+                    </LazySocialProfileWindow>
+                  </Suspense>
                 ) : activeTab.type === 'linkedin' ? (
-                  <SocialProfileWindow profileUrl={getUrlForTab(activeTab)} cardOnly>
-                    <LinkedInProfileCard profileUrl={getUrlForTab(activeTab)} />
-                  </SocialProfileWindow>
+                  <Suspense fallback={null}>
+                    <LazySocialProfileWindow profileUrl={getUrlForTab(activeTab)} cardOnly>
+                      <LazyLinkedInProfileCard profileUrl={getUrlForTab(activeTab)} />
+                    </LazySocialProfileWindow>
+                  </Suspense>
                 ) : (() => {
                   const url = getUrlForTab(activeTab)
                   if (url) {
@@ -532,43 +546,43 @@ export default function ChromeLanding({ onReboot }) {
         const profileUrl = app.url ?? SHORTCUTS.find((s) => s.type === win.appKey)?.url
         let content
         if (win.appKey === 'map') {
-          content = <MapWindow />
+          content = <LazyMapWindow />
         } else if (win.appKey === 'netflix') {
-          content = <NetflixWindow />
+          content = <LazyNetflixWindow />
         } else if (win.appKey === 'youtubeMusic') {
-          content = <YouTubeMusicWindow />
+          content = <LazyYouTubeMusicWindow />
         } else if (win.appKey === 'instagram') {
-          content = <InstagramWindow />
+          content = <LazyInstagramWindow />
         } else if (win.appKey === 'github') {
           content = (
-            <SocialProfileWindow profileUrl={profileUrl}>
-              <GitHubProfileCard profileUrl={profileUrl} />
-            </SocialProfileWindow>
+            <LazySocialProfileWindow profileUrl={profileUrl}>
+              <LazyGitHubProfileCard profileUrl={profileUrl} />
+            </LazySocialProfileWindow>
           )
         } else if (win.appKey === 'linkedin') {
           content = (
-            <SocialProfileWindow profileUrl={profileUrl}>
-              <LinkedInProfileCard profileUrl={profileUrl} />
-            </SocialProfileWindow>
+            <LazySocialProfileWindow profileUrl={profileUrl}>
+              <LazyLinkedInProfileCard profileUrl={profileUrl} />
+            </LazySocialProfileWindow>
           )
         } else if (win.appKey === 'settings') {
-          content = <SettingsWindow />
+          content = <LazySettingsWindow />
         } else if (win.appKey === 'appStore') {
-          content = <AppStoreWindow />
+          content = <LazyAppStoreWindow />
         } else if (win.appKey === 'photos') {
-          content = <GalleryWindow />
+          content = <LazyGalleryWindow />
         } else if (win.appKey === 'finder') {
-          content = <FinderWindow onOpenApp={openAppTab} />
+          content = <LazyFinderWindow onOpenApp={openAppTab} />
         } else if (win.appKey === 'facetime') {
-          content = <FaceTimeWindow />
+          content = <LazyFaceTimeWindow />
         } else if (win.appKey === 'doom') {
-          content = <DoomWindow isMinimized={win.isMinimized} isMinimizing={win.isMinimizing} />
+          content = <LazyDoomWindow isMinimized={win.isMinimized} isMinimizing={win.isMinimizing} />
         } else if (win.appKey === 'dadnme') {
-          content = <DadNMeWindow />
+          content = <LazyDadNMeWindow />
         } else if (win.appKey === 'notes') {
-          content = <NotesWindow />
+          content = <LazyNotesWindow />
         } else if (win.appKey === 'tetris') {
-          content = <TetrisWindow keyboardActive={focusedAppWindowId === win.id && !win.isMinimized} />
+          content = <LazyTetrisWindow keyboardActive={focusedAppWindowId === win.id && !win.isMinimized} />
         } else if (profileUrl) {
           content = <iframe src={profileUrl} className="chrome-landing__iframe" title={app.label} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} />
         } else {
@@ -606,7 +620,7 @@ export default function ChromeLanding({ onReboot }) {
             isFocused={focusedAppWindowId === win.id}
             onFocus={() => { setFocusedAppWindowId(win.id); setChromeFocused(false) }}
           >
-            {content}
+            <Suspense fallback={null}>{content}</Suspense>
           </AppWindow>
         )
       })}

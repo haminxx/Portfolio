@@ -1,0 +1,23 @@
+import { lazy } from 'react'
+
+/** Code-split heavy app / tab bodies so the initial landing bundle stays smaller. */
+export const LazyInstagramWindow = lazy(() => import('../components/InstagramWindow'))
+export const LazyAboutPage = lazy(() => import('../components/AboutPage'))
+export const LazyProjectPage = lazy(() => import('../components/ProjectPage'))
+export const LazyContactPage = lazy(() => import('../components/ContactPage'))
+export const LazySocialProfileWindow = lazy(() => import('../components/SocialProfileWindow'))
+export const LazyFolderWindow = lazy(() => import('../components/FolderWindow'))
+export const LazyMapWindow = lazy(() => import('../components/MapWindow'))
+export const LazyDoomWindow = lazy(() => import('../components/DoomWindow'))
+export const LazyDadNMeWindow = lazy(() => import('../components/DadNMeWindow'))
+export const LazyNetflixWindow = lazy(() => import('../components/NetflixWindow'))
+export const LazyYouTubeMusicWindow = lazy(() => import('../components/YouTubeMusicWindow'))
+export const LazySettingsWindow = lazy(() => import('../components/SettingsWindow'))
+export const LazyAppStoreWindow = lazy(() => import('../components/AppStoreWindow'))
+export const LazyGalleryWindow = lazy(() => import('../components/GalleryWindow'))
+export const LazyFaceTimeWindow = lazy(() => import('../components/FaceTimeWindow'))
+export const LazyFinderWindow = lazy(() => import('../components/FinderWindow'))
+export const LazyNotesWindow = lazy(() => import('../components/NotesWindow'))
+export const LazyTetrisWindow = lazy(() => import('../components/TetrisWindow'))
+export const LazyGitHubProfileCard = lazy(() => import('../components/GitHubProfileCard'))
+export const LazyLinkedInProfileCard = lazy(() => import('../components/LinkedInProfileCard'))
