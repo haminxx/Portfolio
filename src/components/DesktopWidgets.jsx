@@ -3,6 +3,8 @@ import {
   Play,
   Pause,
   GripVertical,
+  SkipBack,
+  SkipForward,
   ChevronLeft,
   ChevronRight,
   Sun,
@@ -45,11 +47,18 @@ const PHOTO_IDS = ['photoA', 'photoB', 'photoC']
 
 const WIDGET_IDS = ['calendar', 'clock', 'weather', 'music', 'notesChecklist', ...PHOTO_IDS]
 
+function formatTrackTime(sec) {
+  if (sec == null || !Number.isFinite(sec) || sec < 0) return '0:00'
+  const m = Math.floor(sec / 60)
+  const s = Math.floor(sec % 60)
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
 const STATIC_SIZES = {
   calendar: { w: 200, h: 220 },
   clock: { w: 200, h: 120 },
   weather: { w: 200, h: 130 },
-  music: { w: 200, h: 120 },
+  music: { w: 312, h: 136 },
   notesChecklist: { w: 200, h: 200 },
 }
 
@@ -174,7 +183,11 @@ function readInitialPhotoMap() {
   return o
 }
 
-export default function DesktopWidgets({ desktopItems = [], onLayoutChange }) {
+export default function DesktopWidgets({
+  desktopItems = [],
+  onLayoutChange,
+  onOpenApp,
+}) {
   const [now, setNow] = useState(() => new Date())
   const [weather, setWeather] = useState({ status: 'idle', days: [], error: null })
   const [layout, setLayout] = useState(loadLayout)
@@ -186,7 +199,16 @@ export default function DesktopWidgets({ desktopItems = [], onLayoutChange }) {
   const dragRef = useRef(null)
   const containerRef = useRef(null)
   const sizePopoverRef = useRef(null)
-  const { currentTrack, isPlaying, togglePlay } = useMusicPlayer()
+  const {
+    currentTrack,
+    isPlaying,
+    togglePlay,
+    next: playNext,
+    prev: playPrev,
+    progressSec,
+    durationSec,
+    seekTo,
+  } = useMusicPlayer()
 
   const calYM = calCursor ?? { y: now.getFullYear(), m: now.getMonth() }
 
@@ -558,34 +580,124 @@ export default function DesktopWidgets({ desktopItems = [], onLayoutChange }) {
         >
           <GripVertical size={14} strokeWidth={2} />
         </button>
-        <div className="desktop-widgets__music-head">
-          <span className="desktop-widgets__card-title desktop-widgets__card-title--inline">Music</span>
-        </div>
-        {currentTrack ? (
-          <div className="desktop-widgets__music-row">
-            <img
-              src={currentTrack.thumbnail}
-              alt=""
-              className="desktop-widgets__music-art"
-              width={40}
-              height={40}
-            />
-            <div className="desktop-widgets__music-meta">
-              <div className="desktop-widgets__music-title">{currentTrack.title}</div>
-              <div className="desktop-widgets__music-artist">{currentTrack.artist || 'YouTube'}</div>
+        <div className="desktop-widgets__ipod">
+          <div className="desktop-widgets__ipod-chassis">
+            <div className="desktop-widgets__ipod-screen">
+              {currentTrack ? (
+                <>
+                  <div className="desktop-widgets__ipod-screen-bezel" />
+                  <div
+                    className="desktop-widgets__ipod-screen-glass"
+                    style={{
+                      backgroundImage: `url(${currentTrack.thumbnail})`,
+                    }}
+                  />
+                  <div className="desktop-widgets__ipod-screen-content">
+                    <img
+                      src={currentTrack.thumbnail}
+                      alt=""
+                      className="desktop-widgets__ipod-art"
+                      width={44}
+                      height={44}
+                    />
+                    <div className="desktop-widgets__ipod-meta">
+                      <div className="desktop-widgets__ipod-title">{currentTrack.title}</div>
+                      <div className="desktop-widgets__ipod-artist">
+                        {currentTrack.artist || 'YouTube Music'}
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    role="slider"
+                    tabIndex={0}
+                    aria-valuemin={0}
+                    aria-valuemax={Math.max(0, durationSec || 0)}
+                    aria-valuenow={progressSec}
+                    className="desktop-widgets__ipod-bar"
+                    onPointerDown={(e) => {
+                      e.stopPropagation()
+                      const el = e.currentTarget
+                      const apply = (clientX) => {
+                        const rect = el.getBoundingClientRect()
+                        const d = durationSec > 0 ? durationSec : 1
+                        const p = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+                        seekTo(p * d)
+                      }
+                      apply(e.clientX)
+                      const move = (ev) => apply(ev.clientX)
+                      const up = () => {
+                        window.removeEventListener('pointermove', move)
+                        window.removeEventListener('pointerup', up)
+                      }
+                      window.addEventListener('pointermove', move)
+                      window.addEventListener('pointerup', up)
+                    }}
+                    onKeyDown={(e) => {
+                      const d = durationSec > 0 ? durationSec : 0
+                      if (!d) return
+                      if (e.key === 'ArrowRight') seekTo(Math.min(d, progressSec + 5))
+                      if (e.key === 'ArrowLeft') seekTo(Math.max(0, progressSec - 5))
+                    }}
+                  >
+                    <div
+                      className="desktop-widgets__ipod-bar-fill"
+                      style={{
+                        width: `${durationSec > 0 ? Math.min(100, (100 * progressSec) / durationSec) : 0}%`,
+                      }}
+                    />
+                  </div>
+                  <div className="desktop-widgets__ipod-times">
+                    <span>{formatTrackTime(progressSec)}</span>
+                    <span>{formatTrackTime(durationSec)}</span>
+                  </div>
+                </>
+              ) : (
+                <div className="desktop-widgets__ipod-idle">Nothing playing</div>
+              )}
             </div>
-            <button
-              type="button"
-              className="desktop-widgets__music-play"
-              onClick={() => togglePlay()}
-              aria-label={isPlaying ? 'Pause' : 'Play'}
-            >
-              {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-            </button>
+            <div className="desktop-widgets__ipod-wheel-wrap">
+              <div className="desktop-widgets__ipod-wheel">
+                <button
+                  type="button"
+                  className="desktop-widgets__ipod-wheel-label desktop-widgets__ipod-wheel-label--menu"
+                  onClick={() => onOpenApp?.('youtubeMusic')}
+                >
+                  MENU
+                </button>
+                <button
+                  type="button"
+                  className="desktop-widgets__ipod-wheel-btn desktop-widgets__ipod-wheel-btn--prev"
+                  onClick={() => playPrev()}
+                  aria-label="Previous track"
+                >
+                  <SkipBack size={14} strokeWidth={2.2} />
+                </button>
+                <button
+                  type="button"
+                  className="desktop-widgets__ipod-wheel-btn desktop-widgets__ipod-wheel-btn--next"
+                  onClick={() => playNext()}
+                  aria-label="Next track"
+                >
+                  <SkipForward size={14} strokeWidth={2.2} />
+                </button>
+                <button
+                  type="button"
+                  className="desktop-widgets__ipod-wheel-btn desktop-widgets__ipod-wheel-btn--play"
+                  onClick={() => togglePlay()}
+                  aria-label={isPlaying ? 'Pause' : 'Play'}
+                >
+                  {isPlaying ? <Pause size={15} strokeWidth={2.2} /> : <Play size={15} strokeWidth={2.2} />}
+                </button>
+                <button
+                  type="button"
+                  className="desktop-widgets__ipod-wheel-center"
+                  onClick={() => togglePlay()}
+                  aria-label={isPlaying ? 'Pause' : 'Play'}
+                />
+              </div>
+            </div>
           </div>
-        ) : (
-          <p className="desktop-widgets__muted">Nothing playing</p>
-        )}
+        </div>
       </div>
 
       <div className="desktop-widgets__card desktop-widgets__card--notes" style={cardStyle('notesChecklist')}>

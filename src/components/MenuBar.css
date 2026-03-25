@@ -8,10 +8,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(24px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: saturate(200%) blur(28px);
+  -webkit-backdrop-filter: saturate(200%) blur(28px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
   z-index: 50;
 }
 
@@ -24,9 +24,12 @@
 .menu-bar__logo {
   font-size: 15px;
   font-weight: 800;
-  color: rgba(255, 255, 255, 0.95);
+  color: rgba(255, 255, 255, 0.97);
   letter-spacing: 0.5px;
   margin-right: 16px;
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.9),
+    0 0 18px rgba(0, 0, 0, 0.35);
 }
 
 .menu-bar__logo--btn {
@@ -55,10 +58,13 @@
   padding: 4px 10px;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.94);
   font-size: 13px;
   cursor: pointer;
   border-radius: 4px;
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.88),
+    0 0 14px rgba(0, 0, 0, 0.3);
 }
 
 .menu-bar__menu-trigger:hover,

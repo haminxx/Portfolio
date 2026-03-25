@@ -82,7 +82,7 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
 
   const getResponsiveConfig = useCallback(() => {
     if (typeof window === 'undefined') {
-      return { baseIconSize: 64, maxScale: 1.34, effectWidth: 200 }
+      return { baseIconSize: 64, maxScale: 1.48, effectWidth: 200 }
     }
 
     const smallerDimension = Math.min(window.innerWidth, window.innerHeight)
@@ -90,27 +90,27 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
     if (smallerDimension < 480) {
       return {
         baseIconSize: Math.max(40, smallerDimension * 0.08),
-        maxScale: 1.22,
+        maxScale: 1.34,
         effectWidth: smallerDimension * 0.32,
       }
     }
     if (smallerDimension < 768) {
       return {
         baseIconSize: Math.max(48, smallerDimension * 0.07),
-        maxScale: 1.28,
+        maxScale: 1.4,
         effectWidth: smallerDimension * 0.28,
       }
     }
     if (smallerDimension < 1024) {
       return {
         baseIconSize: Math.max(56, smallerDimension * 0.06),
-        maxScale: 1.32,
+        maxScale: 1.44,
         effectWidth: smallerDimension * 0.24,
       }
     }
     return {
       baseIconSize: Math.max(64, Math.min(80, smallerDimension * 0.05)),
-      maxScale: 1.36,
+      maxScale: 1.5,
       effectWidth: 220,
     }
   }, [])
@@ -303,14 +303,15 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
       className={className}
       style={{
         width: `${contentWidth + padding * 2}px`,
-        background: 'rgba(38, 38, 40, 0.92)',
+        background: 'rgba(255, 255, 255, 0.12)',
+        backdropFilter: 'saturate(200%) blur(22px)',
+        WebkitBackdropFilter: 'saturate(200%) blur(22px)',
         borderRadius: `${Math.max(12, baseIconSize * 0.4)}px`,
-        border: '1px solid rgba(255, 255, 255, 0.15)',
+        border: '1px solid rgba(255, 255, 255, 0.28)',
         boxShadow: `
-          0 ${Math.max(4, baseIconSize * 0.1)}px ${Math.max(16, baseIconSize * 0.4)}px rgba(0, 0, 0, 0.4),
-          0 ${Math.max(2, baseIconSize * 0.05)}px ${Math.max(8, baseIconSize * 0.2)}px rgba(0, 0, 0, 0.3),
-          inset 0 1px 0 rgba(255, 255, 255, 0.15),
-          inset 0 -1px 0 rgba(0, 0, 0, 0.2)
+          0 ${Math.max(4, baseIconSize * 0.1)}px ${Math.max(20, baseIconSize * 0.45)}px rgba(0, 0, 0, 0.22),
+          inset 0 1px 0 rgba(255, 255, 255, 0.35),
+          inset 0 -1px 0 rgba(0, 0, 0, 0.08)
         `,
         padding: `${padding}px`,
       }}
@@ -330,11 +331,6 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
           const scaledSize = baseIconSize * scale
           const shift = shiftPxByIndex?.[index] ?? 0
           const isDraggingTile = draggingId === app.id
-          const peakScale = Math.max(...currentScales, minScale)
-          const isHoverFocus =
-            activeMouseX !== null &&
-            scale >= peakScale - 0.012 &&
-            peakScale > 1.04
 
           return (
             <div
@@ -342,7 +338,7 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
               ref={(el) => {
                 iconRefs.current[index] = el
               }}
-              className="absolute flex cursor-grab flex-col items-center justify-end active:cursor-grabbing"
+              className="absolute flex cursor-grab flex-col items-center justify-center active:cursor-grabbing"
               data-dock-app-id={app.id}
               title={app.name}
               role="presentation"
@@ -355,10 +351,10 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
               onClick={() => handleAppClick(app.id, index)}
               style={{
                 left: `${position - scaledSize / 2 + shift}px`,
-                bottom: '0px',
+                bottom: `${(baseIconSize * (scale - 1)) / 2}px`,
                 width: `${scaledSize}px`,
                 height: `${scaledSize}px`,
-                transformOrigin: 'bottom center',
+                transformOrigin: 'center center',
                 zIndex: Math.round(scale * 10),
                 opacity: isDraggingTile ? 0.42 : 1,
                 transition: isDraggingTile
@@ -375,21 +371,16 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
                 draggable={false}
                 style={{
                   borderRadius: 12,
-                  outline: isHoverFocus
-                    ? '2px solid rgba(255, 255, 255, 0.65)'
-                    : '2px solid transparent',
-                  outlineOffset: 2,
-                  filter: isHoverFocus
-                    ? `drop-shadow(0 ${Math.max(2, baseIconSize * 0.06)}px ${Math.max(6, baseIconSize * 0.14)}px rgba(0,0,0,0.35)) brightness(1.06)`
-                    : `drop-shadow(0 ${
-                        scale > 1.12
-                          ? Math.max(2, baseIconSize * 0.04)
-                          : Math.max(1, baseIconSize * 0.03)
-                      }px ${
-                        scale > 1.12
-                          ? Math.max(3, baseIconSize * 0.08)
-                          : Math.max(2, baseIconSize * 0.06)
-                      }px rgba(0,0,0,${0.18 + (scale - 1) * 0.12}))`,
+                  display: 'block',
+                  filter: `drop-shadow(0 ${
+                    scale > 1.12
+                      ? Math.max(2, baseIconSize * 0.04)
+                      : Math.max(1, baseIconSize * 0.03)
+                  }px ${
+                    scale > 1.12
+                      ? Math.max(3, baseIconSize * 0.08)
+                      : Math.max(2, baseIconSize * 0.06)
+                  }px rgba(0,0,0,${0.2 + (scale - 1) * 0.14}))`,
                 }}
               />
 

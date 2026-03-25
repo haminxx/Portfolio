@@ -22,9 +22,11 @@
   -webkit-backdrop-filter: none;
   border: 1px solid transparent;
   box-shadow: none;
-  color: rgba(255, 255, 255, 0.94);
+  color: rgba(255, 255, 255, 0.97);
   box-sizing: border-box;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.92),
+    0 0 20px rgba(0, 0, 0, 0.4);
 }
 
 .desktop-widgets__card:hover {
@@ -56,8 +58,10 @@
 }
 
 .desktop-widgets__card--music {
-  width: 200px;
-  min-height: 108px;
+  width: 312px;
+  min-height: 136px;
+  padding: 10px 12px 12px;
+  padding-top: 12px;
 }
 
 .desktop-widgets__card--photo {
@@ -310,9 +314,12 @@
 [data-theme='light'] .desktop-widgets__card {
   background: transparent;
   border-color: transparent;
-  color: rgba(20, 18, 24, 0.92);
+  color: rgba(20, 18, 24, 0.94);
   box-shadow: none;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95),
+    0 0 14px rgba(255, 255, 255, 0.55),
+    0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 [data-theme='light'] .desktop-widgets__card:hover {
@@ -380,8 +387,269 @@
   margin-bottom: 0;
 }
 
-.desktop-widgets__music-head {
-  margin-bottom: 8px;
+/* —— iPod-style YouTube Music widget —— */
+.desktop-widgets__ipod {
+  margin-top: 2px;
+}
+
+.desktop-widgets__ipod-chassis {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 20px;
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.52) 0%,
+    rgba(180, 186, 198, 0.38) 22%,
+    rgba(140, 145, 158, 0.45) 48%,
+    rgba(200, 204, 214, 0.4) 100%
+  );
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.desktop-widgets__ipod-screen {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 108px;
+  border-radius: 11px;
+  overflow: hidden;
+  background: #080809;
+  border: 2px solid #1c1c1e;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.desktop-widgets__ipod-screen-bezel {
+  display: none;
+}
+
+.desktop-widgets__ipod-screen-glass {
+  position: absolute;
+  inset: -8px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(26px) saturate(1.35);
+  opacity: 0.5;
+  transform: scale(1.12);
+  pointer-events: none;
+}
+
+.desktop-widgets__ipod-screen-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px 6px;
+}
+
+.desktop-widgets__ipod-art {
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+}
+
+.desktop-widgets__ipod-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.desktop-widgets__ipod-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.96);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+  letter-spacing: -0.02em;
+}
+
+.desktop-widgets__ipod-artist {
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.desktop-widgets__ipod-bar {
+  position: relative;
+  z-index: 2;
+  height: 5px;
+  margin: 0 12px 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.desktop-widgets__ipod-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, rgba(220, 220, 228, 0.85), rgba(255, 255, 255, 0.95));
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+}
+
+.desktop-widgets__ipod-times {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 12px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.78);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.desktop-widgets__ipod-idle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 108px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.desktop-widgets__ipod-wheel-wrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 2px 4px 0;
+}
+
+.desktop-widgets__ipod-wheel {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: linear-gradient(185deg, #ffffff 0%, #ececf0 40%, #d6d6de 100%);
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.95),
+    inset 0 -3px 10px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.desktop-widgets__ipod-wheel-label {
+  position: absolute;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: rgba(100, 100, 110, 0.95);
+  cursor: pointer;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.desktop-widgets__ipod-wheel-label--menu {
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.desktop-widgets__ipod-wheel-btn {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(90, 90, 100, 0.95);
+  cursor: pointer;
+  transition: color 0.15s ease, transform 0.12s ease;
+}
+
+.desktop-widgets__ipod-wheel-btn:hover {
+  color: rgba(40, 40, 48, 1);
+  transform: scale(1.06);
+}
+
+.desktop-widgets__ipod-wheel-btn--prev {
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.desktop-widgets__ipod-wheel-btn--next {
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.desktop-widgets__ipod-wheel-btn--play {
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.desktop-widgets__ipod-wheel-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: linear-gradient(180deg, #f4f4f7 0%, #dadade 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  transition: transform 0.12s ease;
+}
+
+.desktop-widgets__ipod-wheel-center:hover {
+  transform: translate(-50%, -50%) scale(1.04);
+}
+
+.desktop-widgets__ipod-wheel-btn--prev:hover {
+  transform: translateY(-50%) scale(1.06);
+}
+
+.desktop-widgets__ipod-wheel-btn--next:hover {
+  transform: translateY(-50%) scale(1.06);
+}
+
+.desktop-widgets__ipod-wheel-btn--play:hover {
+  transform: translateX(-50%) scale(1.06);
+}
+
+[data-theme='light'] .desktop-widgets__ipod-chassis {
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(210, 214, 224, 0.65) 100%
+  );
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='light'] .desktop-widgets__ipod-wheel {
+  background: linear-gradient(185deg, #fff 0%, #e4e4ea 100%);
 }
 
 .desktop-widgets__cal-header {
@@ -653,67 +921,3 @@
   font-variant-numeric: tabular-nums;
 }
 
-.desktop-widgets__music-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.desktop-widgets__music-art {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  object-fit: cover;
-  flex-shrink: 0;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.desktop-widgets__music-meta {
-  min-width: 0;
-  flex: 1;
-}
-
-.desktop-widgets__music-title {
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.desktop-widgets__music-artist {
-  font-size: 11px;
-  opacity: 0.62;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.desktop-widgets__music-play {
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: inherit;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.desktop-widgets__music-play:hover {
-  background: rgba(255, 255, 255, 0.22);
-}
-
-[data-theme='light'] .desktop-widgets__music-play {
-  background: rgba(0, 0, 0, 0.06);
-  border-color: rgba(0, 0, 0, 0.1);
-}
-
-[data-theme='light'] .desktop-widgets__music-play:hover {
-  background: rgba(0, 0, 0, 0.1);
-}

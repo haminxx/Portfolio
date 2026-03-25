@@ -170,7 +170,11 @@ export default function Desktop({
       <Suspense fallback={null}>
         <DesktopShaderBackground />
       </Suspense>
-      <DesktopWidgets desktopItems={desktopItems} onLayoutChange={handleWidgetLayout} />
+      <DesktopWidgets
+        desktopItems={desktopItems}
+        onLayoutChange={handleWidgetLayout}
+        onOpenApp={onOpenApp}
+      />
       <div ref={iconsRef} className="desktop__icons-wrap">
         <DesktopCustomIcons
           desktopItems={desktopItems}

@@ -1,16 +1,18 @@
+import { useEffect } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { ShaderPlane } from './background-paper-shaders'
 
 function Scene() {
-  const { width, height } = useThree((s) => s.viewport)
+  const { width, height, scene, gl } = useThree()
   const pad = 1.12
+
+  useEffect(() => {
+    scene.background = null
+    gl.setClearColor(0x000000, 0)
+  }, [scene, gl])
+
   return (
-    <ShaderPlane
-      position={[0, 0, 0]}
-      scale={[width * pad, height * pad, 1]}
-      color1="#8fa3c2"
-      color2="#f2f6fc"
-    />
+    <ShaderPlane position={[0, 0, 0]} scale={[width * pad, height * pad, 1]} />
   )
 }
 
@@ -24,11 +26,16 @@ export default function DesktopShaderBackground() {
         zIndex: 0,
         pointerEvents: 'none',
         overflow: 'hidden',
-        background: '#e8edf5',
+        background: '#141210',
       }}
     >
       <Canvas
-        gl={{ alpha: false, antialias: true, powerPreference: 'high-performance' }}
+        gl={{
+          alpha: true,
+          antialias: true,
+          powerPreference: 'high-performance',
+          premultipliedAlpha: false,
+        }}
         camera={{ position: [0, 0, 5], near: 0.1, far: 20 }}
         dpr={[1, 2]}
         style={{ width: '100%', height: '100%', display: 'block' }}
