@@ -57,3 +57,70 @@ body {
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
 }
+
+/* Desktop: shader-like motion without WebGL (avoids bundler + Three constructor issues) */
+.desktop-shader-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.desktop-shader-bg__base {
+  position: absolute;
+  inset: 0;
+  background: #0c0b10;
+}
+
+.desktop-shader-bg__orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(72px);
+  opacity: 0.42;
+  animation: desktop-shader-float 22s ease-in-out infinite;
+}
+
+.desktop-shader-bg__orb--a {
+  width: min(58vw, 720px);
+  height: min(58vw, 720px);
+  top: -18%;
+  left: -12%;
+  background: radial-gradient(circle, #5c4580 0%, transparent 68%);
+}
+
+.desktop-shader-bg__orb--b {
+  width: min(48vw, 600px);
+  height: min(48vw, 600px);
+  bottom: -22%;
+  right: -14%;
+  background: radial-gradient(circle, #352848 0%, transparent 70%);
+  animation-delay: -11s;
+}
+
+.desktop-shader-bg__orb--c {
+  width: min(40vw, 480px);
+  height: min(40vw, 480px);
+  top: 38%;
+  left: 35%;
+  background: radial-gradient(circle, #3d2d55 0%, transparent 65%);
+  opacity: 0.28;
+  animation-duration: 28s;
+  animation-delay: -5s;
+}
+
+@keyframes desktop-shader-float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.38;
+  }
+  35% {
+    transform: translate(4%, 5%) scale(1.06);
+    opacity: 0.52;
+  }
+  70% {
+    transform: translate(-4%, 2%) scale(0.94);
+    opacity: 0.32;
+  }
+}

@@ -6,10 +6,10 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
-    dedupe: ['three'],
+    dedupe: ['leaflet'],
   },
   optimizeDeps: {
-    include: ['three', '@react-three/fiber'],
+    include: ['leaflet', 'react-leaflet'],
   },
   server: {
     proxy: {
