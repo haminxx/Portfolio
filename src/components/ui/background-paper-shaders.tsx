@@ -1,5 +1,5 @@
 import { useRef, useMemo } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
 /** Visible accent pairs — slow drift; keeps shader readable (avoids “all black”). */
@@ -56,11 +56,15 @@ const fragmentShader = `
 export function ShaderPlane({
   position,
   scale,
+  viewportPad,
 }: {
   position: [number, number, number]
   scale?: [number, number, number]
+  /** When set, scale follows R3F viewport each frame (covers lazy mount / first-frame 0 size). */
+  viewportPad?: number
 }) {
   const mesh = useRef<THREE.Mesh>(null)
+  const viewport = useThree((s) => s.viewport)
   const tmp1a = useRef(new THREE.Color())
   const tmp1b = useRef(new THREE.Color())
   const tmp2a = useRef(new THREE.Color())
@@ -78,6 +82,13 @@ export function ShaderPlane({
 
   useFrame((state) => {
     if (!mesh.current) return
+    if (viewportPad != null) {
+      const w = viewport.width
+      const h = viewport.height
+      if (w > 0 && h > 0) {
+        mesh.current.scale.set(w * viewportPad, h * viewportPad, 1)
+      }
+    }
     const elapsed = state.clock.elapsedTime
     /* Slower than raw elapsedTime (reference uses 1:1; we scale down). */
     uniforms.time.value = elapsed * 0.28
@@ -101,7 +112,12 @@ export function ShaderPlane({
   })
 
   return (
-    <mesh ref={mesh} position={position} scale={scale ?? [1, 1, 1]}>
+    <mesh
+      ref={mesh}
+      position={position}
+      scale={viewportPad != null ? [1, 1, 1] : (scale ?? [1, 1, 1])}
+      frustumCulled={false}
+    >
       <planeGeometry args={[2, 2, 32, 32]} />
       <shaderMaterial
         uniforms={uniforms}

@@ -5,19 +5,14 @@ import { ShaderPlane } from './background-paper-shaders'
 const FALLBACK_BG = '#2a2420'
 
 function Scene() {
-  const { viewport, scene, gl } = useThree()
-  const pad = 1.12
-  const vw = viewport.width
-  const vh = viewport.height
+  const { scene, gl } = useThree()
 
   useEffect(() => {
     scene.background = null
     gl.setClearColor(0x000000, 0)
   }, [scene, gl])
 
-  return (
-    <ShaderPlane position={[0, 0, 0]} scale={[vw * pad, vh * pad, 1]} />
-  )
+  return <ShaderPlane position={[0, 0, 0]} viewportPad={1.12} />
 }
 
 export default function DesktopShaderBackground() {
