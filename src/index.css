@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+@theme {
+  --color-background: #0a0a0a;
+  --color-foreground: #f4f4f5;
+  --color-primary: #e4e4e7;
+  --color-primary-foreground: #18181b;
+  --color-accent: rgba(255, 255, 255, 0.12);
+  --color-muted-foreground: rgba(255, 255, 255, 0.55);
+  --color-ring: rgba(255, 255, 255, 0.35);
+  --color-popover: #141414;
+  --color-input: rgba(255, 255, 255, 0.14);
+  --color-destructive-foreground: #fafafa;
+}
+
 *,
 *::before,
 *::after {

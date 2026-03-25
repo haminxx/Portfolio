@@ -10,7 +10,7 @@ import {
 
 const LAYOUT_KEY = 'desktop-widget-layout'
 const CELL = 40
-const GRID_MIN = 8
+const GRID_MIN = 2
 const GRID_MAX = 16
 
 const PHOTO_IDS = ['photoA', 'photoB', 'photoC']
@@ -30,7 +30,7 @@ const STATIC_SIZES = {
   clock: { w: 200, h: 120 },
   weather: { w: 200, h: 130 },
   music: { w: 312, h: 136 },
-  bgControls: { w: 232, h: 176 },
+  bgControls: { w: 160, h: 188 },
   notesChecklist: { w: 200, h: 200 },
 }
 

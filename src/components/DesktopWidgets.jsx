@@ -5,8 +5,6 @@ import {
   GripVertical,
   SkipBack,
   SkipForward,
-  ChevronLeft,
-  ChevronRight,
   Sun,
   Cloud,
   CloudSun,
@@ -19,8 +17,10 @@ import {
   LayoutGrid,
   RefreshCw,
   ListTodo,
-  Palette,
 } from 'lucide-react'
+import { Calendar } from './ui/calendar'
+import ColorPicker from './ui/color-picker'
+import BackgroundMotionSlider from './ui/BackgroundMotionSlider'
 import { useMusicPlayer } from '../context/MusicPlayerContext'
 import { useDesktopBackground } from '../context/DesktopBackgroundContext'
 import { getImagePath } from '../lib/gallery'
@@ -40,10 +40,8 @@ const SD_LAT = 32.72
 const SD_LON = -117.16
 const LAYOUT_KEY = 'desktop-widget-layout'
 const CELL = 40
-const GRID_MIN = 8
+const GRID_MIN = 2
 const GRID_MAX = 16
-
-const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
 const PHOTO_IDS = ['photoA', 'photoB', 'photoC']
 
@@ -61,7 +59,7 @@ const STATIC_SIZES = {
   clock: { w: 200, h: 120 },
   weather: { w: 200, h: 130 },
   music: { w: 312, h: 136 },
-  bgControls: { w: 232, h: 176 },
+  bgControls: { w: 160, h: 188 },
   notesChecklist: { w: 200, h: 200 },
 }
 
@@ -152,17 +150,6 @@ function saveLayout(layout) {
   }
 }
 
-function buildMonthGrid(year, monthIndex) {
-  const first = new Date(year, monthIndex, 1)
-  const startPad = first.getDay()
-  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
-  const cells = []
-  for (let i = 0; i < startPad; i += 1) cells.push(null)
-  for (let d = 1; d <= daysInMonth; d += 1) cells.push(d)
-  while (cells.length % 7 !== 0) cells.push(null)
-  return cells
-}
-
 function weatherCodeToIcon(code) {
   if (code == null || Number.isNaN(code)) return Cloud
   const c = code
@@ -195,7 +182,11 @@ export default function DesktopWidgets({
   const [now, setNow] = useState(() => new Date())
   const [weather, setWeather] = useState({ status: 'idle', days: [], error: null })
   const [layout, setLayout] = useState(loadLayout)
-  const [calCursor, setCalCursor] = useState(null)
+  const [calMonth, setCalMonth] = useState(() => {
+    const d = new Date()
+    return new Date(d.getFullYear(), d.getMonth(), 1)
+  })
+  const [selectedDate, setSelectedDate] = useState(() => new Date())
   const [sizeMenuFor, setSizeMenuFor] = useState(null)
   const [photoImportFor, setPhotoImportFor] = useState(null)
   const [photoData, setPhotoData] = useState(readInitialPhotoMap)
@@ -223,7 +214,18 @@ export default function DesktopWidgets({
     setSpeed: setBgSpeed,
   } = useDesktopBackground()
 
-  const calYM = calCursor ?? { y: now.getFullYear(), m: now.getMonth() }
+  const onMeshColorsFromWheel = useCallback(
+    (colors) => {
+      if (!colors?.length) return
+      if (colors.length >= 2) {
+        setBgColor1(colors[0])
+        setBgColor2(colors[1])
+      } else if (colors[0]) {
+        setBgColor2(colors[0])
+      }
+    },
+    [setBgColor1, setBgColor2],
+  )
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000)
@@ -428,33 +430,6 @@ export default function DesktopWidgets({
     setPinnedChecklistItemDone(notesStore, itemId, done)
   }, [notesStore])
 
-  const cal = useMemo(() => {
-    const y = calYM.y
-    const m = calYM.m
-    return {
-      label: new Date(y, m, 1).toLocaleString(undefined, { month: 'long', year: 'numeric' }),
-      grid: buildMonthGrid(y, m),
-      today: now.getDate(),
-      isCurrentMonth: y === now.getFullYear() && m === now.getMonth(),
-    }
-  }, [calYM, now])
-
-  const shiftCal = (delta) => {
-    setCalCursor((prev) => {
-      const base = prev ?? { y: now.getFullYear(), m: now.getMonth() }
-      let { y, m } = base
-      m += delta
-      if (m < 0) {
-        m = 11
-        y -= 1
-      } else if (m > 11) {
-        m = 0
-        y += 1
-      }
-      return { y, m }
-    })
-  }
-
   const timeStr = now.toLocaleTimeString(undefined, {
     hour: 'numeric',
     minute: '2-digit',
@@ -504,31 +479,20 @@ export default function DesktopWidgets({
         >
           <GripVertical size={14} strokeWidth={2} />
         </button>
-        <div className="desktop-widgets__cal-header">
-          <button type="button" className="desktop-widgets__cal-nav" aria-label="Previous month" onClick={() => shiftCal(-1)}>
-            <ChevronLeft size={16} strokeWidth={2} />
-          </button>
-          <div className="desktop-widgets__card-title desktop-widgets__card-title--cal">{cal.label}</div>
-          <button type="button" className="desktop-widgets__cal-nav" aria-label="Next month" onClick={() => shiftCal(1)}>
-            <ChevronRight size={16} strokeWidth={2} />
-          </button>
-        </div>
-        <div className="desktop-widgets__week-row">
-          {WEEKDAYS.map((d, i) => (
-            <span key={i} className="desktop-widgets__weekday">
-              {d}
-            </span>
-          ))}
-        </div>
-        <div className="desktop-widgets__cal-grid">
-          {cal.grid.map((d, i) => (
-            <span
-              key={i}
-              className={`desktop-widgets__cal-cell ${cal.isCurrentMonth && d === cal.today ? 'desktop-widgets__cal-cell--today' : ''} ${d == null ? 'desktop-widgets__cal-cell--empty' : ''}`}
-            >
-              {d ?? ''}
-            </span>
-          ))}
+        <div className="desktop-widgets__adaptive desktop-widgets__cal-rdp">
+          <Calendar
+            mode="single"
+            month={calMonth}
+            onMonthChange={(d) => setCalMonth(new Date(d.getFullYear(), d.getMonth(), 1))}
+            selected={selectedDate}
+            onSelect={(d) => {
+              if (d) {
+                setSelectedDate(d)
+                setCalMonth(new Date(d.getFullYear(), d.getMonth(), 1))
+              }
+            }}
+            className="w-full rounded-xl [--cell-size:1.65rem] sm:[--cell-size:1.65rem]"
+          />
         </div>
       </div>
 
@@ -543,7 +507,7 @@ export default function DesktopWidgets({
         </button>
         <div className="desktop-widgets__clock-split">
           <div className="desktop-widgets__clock-accent" aria-hidden />
-          <div className="desktop-widgets__clock-main">
+          <div className="desktop-widgets__adaptive desktop-widgets__clock-main">
             <div className="desktop-widgets__clock-date-upper">{dateUpper}</div>
             <div className="desktop-widgets__clock-time">{timeStr}</div>
             <div className="desktop-widgets__clock-loc">San Diego</div>
@@ -560,10 +524,11 @@ export default function DesktopWidgets({
         >
           <GripVertical size={14} strokeWidth={2} />
         </button>
-        <div className="desktop-widgets__card-title desktop-widgets__weather-city">San Diego</div>
-        {weather.status === 'loading' && <p className="desktop-widgets__muted">Loading…</p>}
-        {weather.status === 'error' && <p className="desktop-widgets__muted">{weather.error}</p>}
-        {weather.status === 'ready' && (
+        <div className="desktop-widgets__adaptive desktop-widgets__weather-body">
+          <div className="desktop-widgets__card-title desktop-widgets__weather-city">San Diego</div>
+          {weather.status === 'loading' && <p className="desktop-widgets__muted">Loading…</p>}
+          {weather.status === 'error' && <p className="desktop-widgets__muted">{weather.error}</p>}
+          {weather.status === 'ready' && (
           <div className="desktop-widgets__weather-strip">
             {weather.days.map((d, i) => {
               const label = new Date(d.date + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short' })
@@ -583,7 +548,8 @@ export default function DesktopWidgets({
               )
             })}
           </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="desktop-widgets__card desktop-widgets__card--bg-controls" style={cardStyle('bgControls')}>
@@ -595,41 +561,26 @@ export default function DesktopWidgets({
         >
           <GripVertical size={14} strokeWidth={2} />
         </button>
-        <div className="desktop-widgets__bg-controls-head">
-          <Palette size={14} strokeWidth={2} aria-hidden />
-          <span className="desktop-widgets__card-title desktop-widgets__card-title--inline">Background</span>
-        </div>
-        <div className="desktop-widgets__bg-controls-body">
-          <label className="desktop-widgets__bg-field">
-            <span className="desktop-widgets__bg-label">Color A</span>
-            <input
-              type="color"
-              value={bgColor1}
-              onChange={(e) => setBgColor1(e.target.value)}
-              className="desktop-widgets__bg-color-input"
-            />
-          </label>
-          <label className="desktop-widgets__bg-field">
-            <span className="desktop-widgets__bg-label">Color B</span>
-            <input
-              type="color"
-              value={bgColor2}
-              onChange={(e) => setBgColor2(e.target.value)}
-              className="desktop-widgets__bg-color-input"
-            />
-          </label>
-          <label className="desktop-widgets__bg-field desktop-widgets__bg-field--range">
-            <span className="desktop-widgets__bg-label">Motion speed</span>
-            <input
-              type="range"
+        <div className="desktop-widgets__bg-controls-body desktop-widgets__bg-controls-body--compact">
+          <ColorPicker
+            size={112}
+            padding={10}
+            bulletRadius={13}
+            numPoints={2}
+            showColorWheel
+            initialPrimaryHex={bgColor2}
+            onColorChange={onMeshColorsFromWheel}
+          />
+          <div className="desktop-widgets__bg-speed-wrap">
+            <span className="desktop-widgets__bg-label">Motion</span>
+            <BackgroundMotionSlider
               min={0.15}
               max={1.5}
               step={0.03}
               value={bgSpeed}
-              onChange={(e) => setBgSpeed(Number(e.target.value))}
-              className="desktop-widgets__bg-range"
+              onChange={setBgSpeed}
             />
-          </label>
+          </div>
         </div>
       </div>
 
@@ -765,16 +716,20 @@ export default function DesktopWidgets({
         >
           <GripVertical size={14} strokeWidth={2} />
         </button>
-        <div className="desktop-widgets__notes-head">
+        <div className="desktop-widgets__adaptive desktop-widgets__notes-head">
           <ListTodo size={14} strokeWidth={2} aria-hidden />
           <span className="desktop-widgets__card-title desktop-widgets__card-title--inline">Pinned note</span>
         </div>
         {!notesStore.pinnedNoteId ? (
-          <p className="desktop-widgets__muted desktop-widgets__muted--small">Open Notes and pin a note for this list.</p>
+          <p className="desktop-widgets__adaptive desktop-widgets__muted desktop-widgets__muted--small">
+            Open Notes and pin a note for this list.
+          </p>
         ) : pinnedItems.length === 0 ? (
-          <p className="desktop-widgets__muted desktop-widgets__muted--small">No checklist items yet.</p>
+          <p className="desktop-widgets__adaptive desktop-widgets__muted desktop-widgets__muted--small">
+            No checklist items yet.
+          </p>
         ) : (
-          <ul className="desktop-widgets__notes-list">
+          <ul className="desktop-widgets__adaptive desktop-widgets__notes-list">
             {pinnedItems.map((it) => (
               <li key={it.id} className="desktop-widgets__notes-item">
                 <label className="desktop-widgets__notes-check-label">
