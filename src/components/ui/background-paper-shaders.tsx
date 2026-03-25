@@ -2,14 +2,12 @@ import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
-/** Muted luxury pairs (khaki, navy, wine, forest, plum, bronze) — slow cross-fade in useFrame. */
-const LUXURY_PAIRS = [
-  { c1: '#2e2924', c2: '#524739' },
-  { c1: '#1a2432', c2: '#3a4d68' },
-  { c1: '#2a1e26', c2: '#4a3342' },
-  { c1: '#1e2c27', c2: '#3a5248' },
-  { c1: '#25222e', c2: '#3f3a4f' },
-  { c1: '#2b2618', c2: '#4a4230' },
+/** Visible accent pairs — slow drift; keeps shader readable (avoids “all black”). */
+const COLOR_DRIFT = [
+  { c1: '#ff5722', c2: '#ffffff' },
+  { c1: '#e85d4c', c2: '#f5f0eb' },
+  { c1: '#5c7cfa', c2: '#eef2ff' },
+  { c1: '#2f9e6f', c2: '#e8f5ef' },
 ]
 
 const vertexShader = `
@@ -23,9 +21,8 @@ const vertexShader = `
     vPosition = position;
     
     vec3 pos = position;
-    /* Primary slow wave; secondary motion kept subtle for one dominant swell */
     pos.y += sin(pos.x * 10.0 + time) * 0.1 * intensity;
-    pos.x += cos(pos.y * 8.0 + time * 1.5) * 0.028 * intensity;
+    pos.x += cos(pos.y * 8.0 + time * 1.5) * 0.05 * intensity;
     
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   }
@@ -51,7 +48,8 @@ const fragmentShader = `
     float glow = 1.0 - length(uv - 0.5) * 2.0;
     glow = pow(max(glow, 0.001), 2.0);
     
-    gl_FragColor = vec4(color * glow, glow * 0.88);
+    vec3 rgb = color * glow;
+    gl_FragColor = vec4(rgb, 1.0);
   }
 `
 
@@ -72,8 +70,8 @@ export function ShaderPlane({
     () => ({
       time: { value: 0 },
       intensity: { value: 1.0 },
-      color1: { value: new THREE.Color(LUXURY_PAIRS[0].c1) },
-      color2: { value: new THREE.Color(LUXURY_PAIRS[0].c2) },
+      color1: { value: new THREE.Color(COLOR_DRIFT[0].c1) },
+      color2: { value: new THREE.Color(COLOR_DRIFT[0].c2) },
     }),
     [],
   )
@@ -81,19 +79,19 @@ export function ShaderPlane({
   useFrame((state) => {
     if (!mesh.current) return
     const elapsed = state.clock.elapsedTime
-    /* Slow animation overall */
-    uniforms.time.value = elapsed * 0.19
-    uniforms.intensity.value = 1.0 + Math.sin(elapsed * 0.45) * 0.28
+    /* Slower than raw elapsedTime (reference uses 1:1; we scale down). */
+    uniforms.time.value = elapsed * 0.28
+    uniforms.intensity.value = 1.0 + Math.sin(elapsed * 2.0) * 0.3
 
-    const n = LUXURY_PAIRS.length
-    const span = 22
+    const n = COLOR_DRIFT.length
+    const span = 28
     const phase = ((elapsed / span) * n) % n
     const i0 = Math.floor(phase) % n
     const f = phase - Math.floor(phase)
     const t = f * f * (3.0 - 2.0 * f)
 
-    const pA = LUXURY_PAIRS[i0]
-    const pB = LUXURY_PAIRS[(i0 + 1) % n]
+    const pA = COLOR_DRIFT[i0]
+    const pB = COLOR_DRIFT[(i0 + 1) % n]
     tmp1a.current.set(pA.c1)
     tmp1b.current.set(pB.c1)
     tmp2a.current.set(pA.c2)
@@ -104,13 +102,12 @@ export function ShaderPlane({
 
   return (
     <mesh ref={mesh} position={position} scale={scale ?? [1, 1, 1]}>
-      <planeGeometry args={[2, 2, 48, 48]} />
+      <planeGeometry args={[2, 2, 32, 32]} />
       <shaderMaterial
         uniforms={uniforms}
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}
-        transparent
-        depthWrite={false}
+        transparent={false}
         side={THREE.DoubleSide}
       />
     </mesh>

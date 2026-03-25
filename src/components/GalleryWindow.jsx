@@ -1,23 +1,13 @@
-import { useState, useCallback } from 'react'
-import { Search, Grid3X3, LayoutGrid, Heart } from 'lucide-react'
+import { useState, useCallback, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Search, Grid3X3, LayoutGrid, Heart, ChevronLeft, Images } from 'lucide-react'
+import {
+  GALLERY_SIZE,
+  getImagePath,
+  getGalleryPhoto,
+  getGalleryAlbums,
+} from '../lib/gallery'
 import './GalleryWindow.css'
-
-const GALLERY_SIZE = 24
-const getImagePath = (i) => `/gallery/photo-${i + 1}.png`
-
-const PHOTO_METADATA = Object.fromEntries(
-  Array.from({ length: GALLERY_SIZE }, (_, i) => [
-    i,
-    { name: `Photo ${i + 1}`, dateTaken: `2024-0${(i % 9) + 1}-${String((i % 28) + 1).padStart(2, '0')}` },
-  ])
-)
-
-const ALBUMS = ['Vacation', 'Screenshots', 'Portraits']
-const ALBUM_ASSIGNMENTS = {
-  Vacation: [0, 1, 2, 3, 4, 5, 6, 7],
-  Screenshots: [8, 9, 10, 11, 12, 13, 14],
-  Portraits: [15, 16, 17, 18, 19, 20, 21, 22, 23],
-}
 
 const FAVORITES_KEY = 'gallery-favorites'
 
@@ -35,7 +25,9 @@ function loadFavorites() {
 function saveFavorites(set) {
   try {
     localStorage.setItem(FAVORITES_KEY, JSON.stringify([...set]))
-  } catch {}
+  } catch {
+    // ignore
+  }
 }
 
 function GalleryImage({ index, src, isFavorite, onToggleFavorite, onClick }) {
@@ -46,7 +38,13 @@ function GalleryImage({ index, src, isFavorite, onToggleFavorite, onClick }) {
   }
 
   return (
-    <div className="gallery-window__cell-wrap" onClick={() => onClick?.(index)} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onClick?.(index)}>
+    <div
+      className="gallery-window__cell-wrap"
+      onClick={() => onClick?.(index)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && onClick?.(index)}
+    >
       <img
         src={src}
         alt=""
@@ -56,7 +54,10 @@ function GalleryImage({ index, src, isFavorite, onToggleFavorite, onClick }) {
       <button
         type="button"
         className={`gallery-window__heart ${isFavorite ? 'gallery-window__heart--active' : ''}`}
-        onClick={(e) => { e.stopPropagation(); onToggleFavorite(index) }}
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggleFavorite(index)
+        }}
         aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
       >
         <Heart size={18} fill={isFavorite ? 'currentColor' : 'none'} strokeWidth={2} />
@@ -66,8 +67,11 @@ function GalleryImage({ index, src, isFavorite, onToggleFavorite, onClick }) {
 }
 
 export default function GalleryWindow() {
-  const [activeSection, setActiveSection] = useState('recents')
-  const [activeAlbum, setActiveAlbum] = useState(null)
+  const albums = useMemo(() => getGalleryAlbums(), [])
+  const [activeSection, setActiveSection] = useState('all')
+  /** 'root' = album tiles; 'detail' = photos inside one album */
+  const [albumBrowse, setAlbumBrowse] = useState('root')
+  const [activeAlbumId, setActiveAlbumId] = useState(null)
   const [viewMode, setViewMode] = useState('grid')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('date')
@@ -82,95 +86,179 @@ export default function GalleryWindow() {
     })
   }, [])
 
-  const toggleFavorite = useCallback((index) => {
-    setFavorites((prev) => {
-      const next = new Set(prev)
-      if (next.has(index)) next.delete(index)
-      else next.add(index)
-      return next
-    })
-  }, [setFavorites])
+  const toggleFavorite = useCallback(
+    (index) => {
+      setFavorites((prev) => {
+        const next = new Set(prev)
+        if (next.has(index)) next.delete(index)
+        else next.add(index)
+        return next
+      })
+    },
+    [setFavorites],
+  )
 
-  const handleAlbumClick = (album) => {
+  const goAlbumRoot = useCallback(() => {
+    setAlbumBrowse('root')
+    setActiveAlbumId(null)
+  }, [])
+
+  const openAlbumFromSidebar = useCallback((albumId) => {
     setActiveSection('albums')
-    setActiveAlbum(album)
-  }
+    setAlbumBrowse('detail')
+    setActiveAlbumId(albumId)
+  }, [])
 
-  const indices = (() => {
+  const openAlbumFromGrid = useCallback((albumId) => {
+    setAlbumBrowse('detail')
+    setActiveAlbumId(albumId)
+  }, [])
+
+  const indices = useMemo(() => {
     if (activeSection === 'favorites') {
       return [...favorites].sort((a, b) => a - b)
     }
-    if (activeSection === 'albums' && activeAlbum && ALBUM_ASSIGNMENTS[activeAlbum]) {
-      return ALBUM_ASSIGNMENTS[activeAlbum]
+    if (activeSection === 'albums' && albumBrowse === 'detail' && activeAlbumId) {
+      const al = albums.find((a) => a.id === activeAlbumId)
+      return al?.photoIndexes?.length ? [...al.photoIndexes] : []
+    }
+    if (activeSection === 'recents') {
+      return Array.from({ length: GALLERY_SIZE }, (_, i) => i).slice(0, 18)
     }
     return Array.from({ length: GALLERY_SIZE }, (_, i) => i)
-  })()
+  }, [
+    activeSection,
+    albumBrowse,
+    activeAlbumId,
+    favorites,
+    albums,
+  ])
 
   let filteredIndices = searchQuery.trim()
     ? indices.filter((i) => {
-        const meta = PHOTO_METADATA[i]
-        const name = meta?.name ?? `photo-${i + 1}`
-        return name.toLowerCase().includes(searchQuery.toLowerCase()) || `photo-${i + 1}`.includes(searchQuery)
+        const meta = getGalleryPhoto(i)
+        const name = meta?.title ?? `photo-${i + 1}`
+        return (
+          name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          `photo-${i + 1}`.includes(searchQuery.toLowerCase())
+        )
       })
     : [...indices]
 
   filteredIndices = [...filteredIndices].sort((a, b) => {
-    const metaA = PHOTO_METADATA[a]
-    const metaB = PHOTO_METADATA[b]
+    const metaA = getGalleryPhoto(a)
+    const metaB = getGalleryPhoto(b)
     if (sortBy === 'name') {
-      return (metaA?.name ?? '').localeCompare(metaB?.name ?? '')
+      return (metaA?.title ?? '').localeCompare(metaB?.title ?? '')
     }
-    return (metaB?.dateTaken ?? '').localeCompare(metaA?.dateTaken ?? '')
+    return (metaB?.date ?? '').localeCompare(metaA?.date ?? '')
   })
+
+  const showAlbumPicker =
+    activeSection === 'albums' && albumBrowse === 'root' && !searchQuery.trim()
+
+  const toolbarTitle = (() => {
+    if (activeSection === 'all') return 'Library'
+    if (activeSection === 'recents') return 'Recents'
+    if (activeSection === 'favorites') return 'Favorites'
+    if (activeSection === 'albums' && albumBrowse === 'root') return 'Albums'
+    if (activeSection === 'albums' && activeAlbumId) {
+      return albums.find((a) => a.id === activeAlbumId)?.title ?? 'Album'
+    }
+    return 'Photos'
+  })()
 
   return (
     <div className="gallery-window">
       <aside className="gallery-window__sidebar">
+        <div className="gallery-window__sidebar-brand">
+          <Images size={20} strokeWidth={1.75} aria-hidden />
+          <span>Photos</span>
+        </div>
+        <p className="gallery-window__sidebar-heading">Library</p>
         <nav className="gallery-window__nav">
           <button
             type="button"
+            className={`gallery-window__nav-item ${activeSection === 'all' ? 'gallery-window__nav-item--active' : ''}`}
+            onClick={() => {
+              setActiveSection('all')
+              goAlbumRoot()
+            }}
+          >
+            All Photos
+          </button>
+          <button
+            type="button"
             className={`gallery-window__nav-item ${activeSection === 'recents' ? 'gallery-window__nav-item--active' : ''}`}
-            onClick={() => { setActiveSection('recents'); setActiveAlbum(null) }}
+            onClick={() => {
+              setActiveSection('recents')
+              goAlbumRoot()
+            }}
           >
             Recents
           </button>
           <button
             type="button"
             className={`gallery-window__nav-item ${activeSection === 'favorites' ? 'gallery-window__nav-item--active' : ''}`}
-            onClick={() => { setActiveSection('favorites'); setActiveAlbum(null) }}
+            onClick={() => {
+              setActiveSection('favorites')
+              goAlbumRoot()
+            }}
           >
             Favorites
           </button>
-          <button
-            type="button"
-            className={`gallery-window__nav-item ${activeSection === 'albums' ? 'gallery-window__nav-item--active' : ''}`}
-            onClick={() => { setActiveSection('albums'); setActiveAlbum(null) }}
-          >
-            Albums
-          </button>
         </nav>
-        <div className="gallery-window__albums">
-          <h3 className="gallery-window__sidebar-title">My Albums</h3>
-          <ul className="gallery-window__album-list">
-            {ALBUMS.map((album) => (
-              <li
-                key={album}
-                className={`gallery-window__album-item ${activeAlbum === album ? 'gallery-window__album-item--active' : ''}`}
-                onClick={() => handleAlbumClick(album)}
+        <p className="gallery-window__sidebar-heading gallery-window__sidebar-heading--albums">
+          My Albums
+        </p>
+        <button
+          type="button"
+          className={`gallery-window__nav-item gallery-window__nav-item--albums-top ${activeSection === 'albums' && albumBrowse === 'root' ? 'gallery-window__nav-item--active' : ''}`}
+          onClick={() => {
+            setActiveSection('albums')
+            goAlbumRoot()
+          }}
+        >
+          Albums
+        </button>
+        <ul className="gallery-window__album-list">
+          {albums.map((album) => (
+            <li key={album.id}>
+              <button
+                type="button"
+                className={`gallery-window__album-item ${activeSection === 'albums' && activeAlbumId === album.id ? 'gallery-window__album-item--active' : ''}`}
+                onClick={() => openAlbumFromSidebar(album.id)}
               >
-                {album}
-              </li>
-            ))}
-          </ul>
-        </div>
+                <span className="gallery-window__album-item-title">{album.title}</span>
+                <span className="gallery-window__album-item-count">
+                  {album.photoIndexes?.length ?? 0}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
       </aside>
       <main className="gallery-window__main">
         <header className="gallery-window__toolbar">
+          <div className="gallery-window__toolbar-left">
+            {activeSection === 'albums' && albumBrowse === 'detail' && (
+              <button
+                type="button"
+                className="gallery-window__back"
+                onClick={goAlbumRoot}
+                aria-label="Back to albums"
+              >
+                <ChevronLeft size={20} strokeWidth={2} />
+                <span>Albums</span>
+              </button>
+            )}
+            <h1 className="gallery-window__toolbar-title">{toolbarTitle}</h1>
+          </div>
           <div className="gallery-window__search-wrap">
             <Search size={16} className="gallery-window__search-icon" />
             <input
               type="search"
-              placeholder="Search photos..."
+              placeholder="Search your library…"
               className="gallery-window__search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -204,32 +292,109 @@ export default function GalleryWindow() {
             </button>
           </div>
         </header>
-        <div className={`gallery-window__grid ${viewMode === 'list' ? 'gallery-window__grid--list' : ''}`}>
-          {activeSection === 'recents' && !searchQuery && (
-            <p className="gallery-window__section-hint">Showing recent photos</p>
-          )}
-          {activeSection === 'favorites' && !searchQuery && (
-            <p className="gallery-window__section-hint">Favorites — tap heart on photos to add</p>
-          )}
-          {activeSection === 'albums' && activeAlbum && !searchQuery && (
-            <p className="gallery-window__section-hint">Album: {activeAlbum}</p>
-          )}
-          {searchQuery && (
-            <p className="gallery-window__section-hint">
-              {filteredIndices.length} result{filteredIndices.length !== 1 ? 's' : ''}
-            </p>
-          )}
-          {filteredIndices.map((i) => (
-            <div key={i} className="gallery-window__cell">
-              <GalleryImage
-                index={i}
-                src={getImagePath(i)}
-                isFavorite={favorites.has(i)}
-                onToggleFavorite={toggleFavorite}
-                onClick={setSelectedPhotoIndex}
-              />
-            </div>
-          ))}
+
+        <div className="gallery-window__stage">
+          <AnimatePresence mode="wait">
+            {showAlbumPicker ? (
+              <motion.div
+                key="albums-root"
+                className="gallery-window__album-picker"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <p className="gallery-window__picker-hint">
+                  Organize images in{' '}
+                  <code className="gallery-window__code">src/config/galleryManifest.js</code>{' '}
+                  — album <code className="gallery-window__code">photoIndexes</code> map to each
+                  photo’s order in <code className="gallery-window__code">GALLERY_PHOTOS</code>{' '}
+                  (same index the desktop photo widget uses).
+                </p>
+                <div className="gallery-window__album-picker-grid">
+                  {albums.map((album) => {
+                    const first = album.photoIndexes?.[0]
+                    const cover = first != null ? getImagePath(first) : null
+                    return (
+                      <motion.button
+                        key={album.id}
+                        type="button"
+                        className="gallery-window__album-tile"
+                        onClick={() => openAlbumFromGrid(album.id)}
+                        layout
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.22 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <div className="gallery-window__album-tile-cover">
+                          {cover ? (
+                            <img src={cover} alt="" className="gallery-window__album-tile-img" />
+                          ) : (
+                            <div className="gallery-window__album-tile-empty" />
+                          )}
+                        </div>
+                        <span className="gallery-window__album-tile-title">{album.title}</span>
+                        <span className="gallery-window__album-tile-sub">
+                          {album.photoIndexes?.length ?? 0} items
+                        </span>
+                      </motion.button>
+                    )
+                  })}
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key={`grid-${activeSection}-${activeAlbumId ?? 'x'}`}
+                className={`gallery-window__grid ${viewMode === 'list' ? 'gallery-window__grid--list' : ''}`}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+              >
+                {activeSection === 'all' && !searchQuery && (
+                  <p className="gallery-window__section-hint">All photos in your library</p>
+                )}
+                {activeSection === 'recents' && !searchQuery && (
+                  <p className="gallery-window__section-hint">Recently added</p>
+                )}
+                {activeSection === 'favorites' && !searchQuery && (
+                  <p className="gallery-window__section-hint">
+                    Tap the heart on any photo to add it here
+                  </p>
+                )}
+                {activeSection === 'albums' && albumBrowse === 'detail' && activeAlbumId && !searchQuery && (
+                  <p className="gallery-window__section-hint">
+                    {albums.find((a) => a.id === activeAlbumId)?.title}
+                  </p>
+                )}
+                {searchQuery && (
+                  <p className="gallery-window__section-hint">
+                    {filteredIndices.length} result{filteredIndices.length !== 1 ? 's' : ''}
+                  </p>
+                )}
+                {filteredIndices.map((i) => (
+                  <motion.div
+                    key={i}
+                    className="gallery-window__cell"
+                    layout
+                    initial={{ opacity: 0, scale: 0.94 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <GalleryImage
+                      index={i}
+                      src={getImagePath(i)}
+                      isFavorite={favorites.has(i)}
+                      onToggleFavorite={toggleFavorite}
+                      onClick={setSelectedPhotoIndex}
+                    />
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </main>
       {selectedPhotoIndex != null && (
@@ -241,7 +406,13 @@ export default function GalleryWindow() {
           tabIndex={0}
           aria-label="Close"
         >
-          <div className="gallery-window__lightbox-inner" onClick={(e) => e.stopPropagation()}>
+          <motion.div
+            className="gallery-window__lightbox-inner"
+            onClick={(e) => e.stopPropagation()}
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          >
             <button
               type="button"
               className="gallery-window__lightbox-close"
@@ -252,10 +423,10 @@ export default function GalleryWindow() {
             </button>
             <img
               src={getImagePath(selectedPhotoIndex)}
-              alt={PHOTO_METADATA[selectedPhotoIndex]?.name ?? `Photo ${selectedPhotoIndex + 1}`}
+              alt={getGalleryPhoto(selectedPhotoIndex)?.title ?? `Photo ${selectedPhotoIndex + 1}`}
               className="gallery-window__lightbox-img"
             />
-          </div>
+          </motion.div>
         </div>
       )}
     </div>

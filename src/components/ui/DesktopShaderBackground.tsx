@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { ShaderPlane } from './background-paper-shaders'
 
+const FALLBACK_BG = '#2a2420'
+
 function Scene() {
   const { width, height, scene, gl } = useThree()
   const pad = 1.12
@@ -26,7 +28,7 @@ export default function DesktopShaderBackground() {
         zIndex: 0,
         pointerEvents: 'none',
         overflow: 'hidden',
-        background: '#141210',
+        background: FALLBACK_BG,
       }}
     >
       <Canvas
