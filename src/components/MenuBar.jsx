@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import SystemTray from './SystemTray'
 import { useLanguage } from '../context/LanguageContext'
+import LiquidGlass from 'liquid-glass-react'
 import './MenuBar.css'
 
 const MENUS = [
@@ -52,10 +53,7 @@ export default function MenuBar({
   onTurnOff,
   onRestart,
   onSleep,
-  nightMode,
-  onNightModeToggle,
-  isCapturing,
-  onScreenshot,
+  mouseContainerRef,
   onNewTab,
   onCloseTab,
   onReload,
@@ -145,7 +143,17 @@ export default function MenuBar({
   return (
     <>
       <header className="menu-bar" ref={barRef}>
-        <div className="menu-bar__glass" aria-hidden />
+        <LiquidGlass
+          mouseContainer={mouseContainerRef ?? null}
+          mode="standard"
+          cornerRadius={0}
+          padding="0"
+          blurAmount={0.055}
+          elasticity={0.18}
+          saturation={130}
+          className="menu-bar__liquid-fill"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+        >
         <div className="menu-bar__content">
         <div className="menu-bar__left">
           <div
@@ -220,15 +228,12 @@ export default function MenuBar({
         </div>
         <div className="menu-bar__right menu-bar__invert">
           <SystemTray
-            nightMode={nightMode ?? true}
-            onNightModeToggle={onNightModeToggle ?? (() => {})}
-            isCapturing={isCapturing ?? false}
-            onScreenshot={onScreenshot ?? (() => {})}
             onFullScreenToggle={onFullScreenToggle}
             isFullscreen={isFullscreen ?? false}
           />
         </div>
         </div>
+        </LiquidGlass>
       </header>
       {showHelp && (
         <div

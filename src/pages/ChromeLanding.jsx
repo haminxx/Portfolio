@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { useScreenshot } from '../hooks/useScreenshot'
 import ChromeFrame from '../components/ChromeFrame'
 import ChromeWindow from '../components/ChromeWindow'
 import ChromeHome from '../components/ChromeHome'
@@ -31,7 +30,6 @@ import AppWindow from '../components/AppWindow'
 import { APPS, getDomainForApp } from '../config/apps'
 import { SHORTCUTS } from '../config/shortcuts'
 import { useLanguage } from '../context/LanguageContext'
-import { useTheme } from '../context/ThemeContext'
 import { MusicPlayerProvider } from '../context/MusicPlayerContext'
 import { DesktopBackgroundProvider } from '../context/DesktopBackgroundContext'
 import { Globe, Image, Film, Images, Video, ShoppingBag, Settings, Map, Folder, StickyNote, LayoutGrid } from 'lucide-react'
@@ -152,8 +150,7 @@ export default function ChromeLanding({ onReboot }) {
   const [shutdownAction, setShutdownAction] = useState(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [dockOrder, setDockOrder] = useState(loadDockOrder)
-  const { nightMode, setNightMode } = useTheme()
-  const { isCapturing, takeScreenshot } = useScreenshot()
+  const desktopRootRef = useRef(null)
   const { t } = useLanguage()
 
   const setDesktopItems = useCallback((fnOrValue) => {
@@ -390,6 +387,7 @@ export default function ChromeLanding({ onReboot }) {
     <DesktopBackgroundProvider>
     <div className="chrome-landing">
       <Desktop
+        ref={desktopRootRef}
         onOpenApp={openAppTab}
         sortBy={sortBy}
         onSortByChange={setSortBy}
@@ -406,10 +404,7 @@ export default function ChromeLanding({ onReboot }) {
         onTurnOff={handleTurnOff}
         onRestart={handleRestart}
         onSleep={() => setShowShutdown(true)}
-        nightMode={nightMode}
-        onNightModeToggle={() => setNightMode((m) => !m)}
-        isCapturing={isCapturing}
-        onScreenshot={takeScreenshot}
+        mouseContainerRef={desktopRootRef}
         onNewTab={openNewHomeTab}
         onCloseTab={() => closeTab(activeTabId)}
         onReload={handleRefresh}
@@ -420,6 +415,7 @@ export default function ChromeLanding({ onReboot }) {
         isFullscreen={isFullscreen}
       />
       <Dock
+        mouseContainerRef={desktopRootRef}
         onOpenApp={openAppTab}
         dockOrder={dockOrder}
         onDockReorder={(order) => {

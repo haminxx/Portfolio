@@ -32,12 +32,10 @@
   isolation: isolate;
 }
 
-/* Liquid glass: gradient rim + specular edge; content stays above pseudos */
+/* Base shell. Photo = CSS glass; liquid-* = library; flat = transparent (music, bg controls). */
 .desktop-widgets__card {
   position: absolute;
   pointer-events: auto;
-  padding: 12px 14px 14px;
-  padding-top: 14px;
   border-radius: 22px;
   isolation: isolate;
   transition:
@@ -45,22 +43,51 @@
     height 0.22s ease,
     box-shadow 0.2s ease,
     border-color 0.2s ease;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  color: var(--portfolio-chrome-fg, #f5f5f7);
+}
+
+.desktop-widgets__card--flat {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: transparent;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.desktop-widgets__card--liquid {
+  border: none;
+  overflow: hidden;
+}
+
+.desktop-widgets__notes-liquid-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.desktop-widgets__card--resizing {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.desktop-widgets__card--photo {
   background: rgba(22, 22, 26, 0.38);
   backdrop-filter: blur(28px) saturate(1.45);
   -webkit-backdrop-filter: blur(28px) saturate(1.45);
-  border: 1px solid transparent;
   background-clip: padding-box;
   box-shadow:
     0 12px 44px rgba(0, 0, 0, 0.32),
     0 0 0 1px rgba(255, 255, 255, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
     inset 0 -1px 0 rgba(0, 0, 0, 0.12);
-  color: var(--portfolio-chrome-fg, #f5f5f7);
-  box-sizing: border-box;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.desktop-widgets__card::before {
+.desktop-widgets__card--photo::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -85,7 +112,7 @@
   z-index: 0;
 }
 
-.desktop-widgets__card::after {
+.desktop-widgets__card--photo::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -97,12 +124,12 @@
   z-index: 0;
 }
 
-.desktop-widgets__card > * {
+.desktop-widgets__card--photo > * {
   position: relative;
   z-index: 1;
 }
 
-[data-theme='light'] .desktop-widgets__card {
+[data-theme='light'] .desktop-widgets__card--photo {
   background: rgba(255, 255, 255, 0.48);
   box-shadow:
     0 14px 48px rgba(0, 0, 0, 0.08),
@@ -111,7 +138,7 @@
     inset 0 -1px 0 rgba(0, 0, 0, 0.04);
 }
 
-[data-theme='light'] .desktop-widgets__card::before {
+[data-theme='light'] .desktop-widgets__card--photo::before {
   background: linear-gradient(
     145deg,
     rgba(255, 255, 255, 0.95) 0%,
@@ -120,11 +147,7 @@
   );
 }
 
-.desktop-widgets__card--resizing {
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.desktop-widgets__card:hover {
+.desktop-widgets__card--photo:hover {
   box-shadow:
     0 16px 52px rgba(0, 0, 0, 0.28),
     0 0 0 1px rgba(255, 255, 255, 0.14),
@@ -132,7 +155,7 @@
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
-[data-theme='light'] .desktop-widgets__card:hover {
+[data-theme='light'] .desktop-widgets__card--photo:hover {
   box-shadow:
     0 16px 48px rgba(0, 0, 0, 0.1),
     0 0 0 1px rgba(0, 0, 0, 0.08),
@@ -608,7 +631,7 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
-[data-theme='light'] .desktop-widgets__card {
+[data-theme='light'] .desktop-widgets__card--flat {
   background: transparent;
   border-color: transparent;
   color: rgba(20, 18, 24, 0.94);
@@ -619,7 +642,7 @@
     0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-[data-theme='light'] .desktop-widgets__card:hover {
+[data-theme='light'] .desktop-widgets__card--flat:hover {
   border-color: rgba(0, 0, 0, 0.12);
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
 }
