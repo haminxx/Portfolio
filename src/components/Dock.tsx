@@ -4,7 +4,6 @@ import { APPS } from '../config/apps'
 import { useLanguage } from '../context/LanguageContext'
 import MacOSDock from './ui/mac-os-dock'
 import type { DockApp } from './ui/mac-os-dock'
-import LiquidGlass from 'liquid-glass-react'
 import './Dock.css'
 
 const SLOT_PX = 48
@@ -47,7 +46,6 @@ interface DockProps {
   isChromeMaximized?: boolean
   anyMaximized?: boolean
   openAppWindows?: OpenWin[]
-  mouseContainerRef?: React.RefObject<HTMLElement | null> | null
 }
 
 type DragSession = {
@@ -66,7 +64,6 @@ export default function Dock({
   isChromeMaximized,
   anyMaximized,
   openAppWindows = [],
-  mouseContainerRef = null,
 }: DockProps) {
   const { t } = useLanguage()
   const [draggedKey, setDraggedKey] = useState<string | null>(null)
@@ -244,17 +241,7 @@ export default function Dock({
     <div
       className={`dock-wrapper ${isHidden ? 'dock-wrapper--fullscreen-hidden' : ''}`}
     >
-      <LiquidGlass
-        mouseContainer={mouseContainerRef ?? null}
-        mode="standard"
-        cornerRadius={26}
-        padding="6px 18px 10px"
-        blurAmount={0.06}
-        elasticity={0.24}
-        saturation={132}
-        className="dock-liquid-shell"
-      >
-      <footer className="dock dock--macos dock--in-liquid">
+      <footer className="dock dock--macos">
         <MacOSDock
           apps={apps}
           onAppClick={onOpenApp}
@@ -276,7 +263,6 @@ export default function Dock({
           }
         />
       </footer>
-      </LiquidGlass>
     </div>
   )
 }

@@ -49,7 +49,6 @@ import PhotoWidgetImportModal from './PhotoWidgetImportModal'
 import AnalogClockFace from './AnalogClockFace'
 import { DESKTOP_SAFE_TOP } from '../desktopConstants'
 import { getDesktopIconRects } from '../lib/widgetOverlapGeometry'
-import LiquidGlass from 'liquid-glass-react'
 import './DesktopWidgets.css'
 
 const SD_LAT = 32.72
@@ -238,7 +237,6 @@ export default function DesktopWidgets({
   desktopItems = [],
   onLayoutChange,
   onOpenApp,
-  mouseContainerRef,
 }) {
   const [now, setNow] = useState(() => new Date())
   const [weather, setWeather] = useState({ status: 'idle', current: null, error: null })
@@ -681,18 +679,6 @@ export default function DesktopWidgets({
     }
   }
 
-  const positionedStyle = (id) => ({ position: 'absolute', ...cardStyle(id) })
-
-  const liquidGlassBase = {
-    mouseContainer: mouseContainerRef ?? null,
-    mode: 'standard',
-    blurAmount: 0.07,
-    elasticity: 0.22,
-    saturation: 135,
-    aberrationIntensity: 1.6,
-  }
-
-
   return (
     <div ref={containerRef} className="desktop-widgets" aria-hidden>
       {photoImportFor && (
@@ -703,13 +689,7 @@ export default function DesktopWidgets({
         />
       )}
 
-      <LiquidGlass
-        {...liquidGlassBase}
-        className={cardClass('calendar', 'desktop-widgets__card--liquid desktop-widgets__card--calendar')}
-        style={positionedStyle('calendar')}
-        cornerRadius={22}
-        padding="14px 14px 14px"
-      >
+      <div className={cardClass('calendar', 'desktop-widgets__card--calendar')} style={cardStyle('calendar')}>
         <div className="desktop-widgets__blend">
           <button
             type="button"
@@ -743,15 +723,9 @@ export default function DesktopWidgets({
             onPointerDown={(e) => handleWidgetResizePointerDown(e, 'calendar')}
           />
         </div>
-      </LiquidGlass>
+      </div>
 
-      <LiquidGlass
-        {...liquidGlassBase}
-        className={cardClass('clock', 'desktop-widgets__card--liquid desktop-widgets__card--clock')}
-        style={positionedStyle('clock')}
-        cornerRadius={22}
-        padding="14px 14px 14px"
-      >
+      <div className={cardClass('clock', 'desktop-widgets__card--clock')} style={cardStyle('clock')}>
         <div className="desktop-widgets__blend">
           <button
             type="button"
@@ -804,15 +778,9 @@ export default function DesktopWidgets({
             onPointerDown={(e) => handleWidgetResizePointerDown(e, 'clock')}
           />
         </div>
-      </LiquidGlass>
+      </div>
 
-      <LiquidGlass
-        {...liquidGlassBase}
-        className={cardClass('weather', 'desktop-widgets__card--liquid desktop-widgets__card--weather')}
-        style={positionedStyle('weather')}
-        cornerRadius={22}
-        padding="14px 14px 14px"
-      >
+      <div className={cardClass('weather', 'desktop-widgets__card--weather')} style={cardStyle('weather')}>
         <div className="desktop-widgets__blend">
           <button
             type="button"
@@ -852,9 +820,9 @@ export default function DesktopWidgets({
             onPointerDown={(e) => handleWidgetResizePointerDown(e, 'weather')}
           />
         </div>
-      </LiquidGlass>
+      </div>
 
-      <div className={cardClass('bgControls', 'desktop-widgets__card--flat desktop-widgets__card--bg-controls')} style={positionedStyle('bgControls')}>
+      <div className={cardClass('bgControls', 'desktop-widgets__card--bg-controls')} style={cardStyle('bgControls')}>
         <div className="desktop-widgets__blend">
           <button
             type="button"
@@ -901,7 +869,7 @@ export default function DesktopWidgets({
         </div>
       </div>
 
-      <div className={cardClass('music', 'desktop-widgets__card--flat desktop-widgets__card--music')} style={positionedStyle('music')}>
+      <div className={cardClass('music', 'desktop-widgets__card--music')} style={cardStyle('music')}>
         <div className="desktop-widgets__blend">
           <button
             type="button"
@@ -1040,14 +1008,8 @@ export default function DesktopWidgets({
         </div>
       </div>
 
-      <LiquidGlass
-        {...liquidGlassBase}
-        className={cardClass('notesChecklist', 'desktop-widgets__card--liquid desktop-widgets__card--notes')}
-        style={positionedStyle('notesChecklist')}
-        cornerRadius={22}
-        padding="14px 14px 14px"
-      >
-        <div className="desktop-widgets__blend desktop-widgets__notes-liquid-inner">
+      <div className={cardClass('notesChecklist', 'desktop-widgets__card--notes')} style={cardStyle('notesChecklist')}>
+        <div className="desktop-widgets__blend">
           <button
             type="button"
             className="desktop-widgets__grip"
@@ -1093,12 +1055,12 @@ export default function DesktopWidgets({
             onPointerDown={(e) => handleWidgetResizePointerDown(e, 'notesChecklist')}
           />
         </div>
-      </LiquidGlass>
+      </div>
 
       {photoIds.map((pid) => {
         const pdata = photoData[pid]
         return (
-          <div key={pid} className={cardClass(pid, 'desktop-widgets__card--photo')} style={positionedStyle(pid)}>
+          <div key={pid} className={cardClass(pid, 'desktop-widgets__card--photo')} style={cardStyle(pid)}>
             <div className="desktop-widgets__photo-body">
               {pdata ? (
                 <img

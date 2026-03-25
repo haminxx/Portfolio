@@ -17,26 +17,3 @@
   pointer-events: none;
   z-index: 100;
 }
-
-/* Moving B/W layer for mix-blend-mode: difference text (see desktop widgets + menu bar). */
-.desktop__bw-motion {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.3;
-  background:
-    radial-gradient(ellipse 95% 75% at 12% 28%, #ffffff 0%, transparent 52%),
-    radial-gradient(ellipse 80% 60% at 88% 72%, #c8c8c8 0%, transparent 48%),
-    radial-gradient(ellipse 55% 50% at 48% 55%, #1a1a1a 0%, transparent 58%);
-  animation: desktop-bw-drift 26s ease-in-out infinite alternate;
-}
-
-@keyframes desktop-bw-drift {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  100% {
-    transform: translate(-7%, 6%) scale(1.08);
-  }
-}

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, lazy, Suspense, forwardRef } from 'react'
+import { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react'
 import DesktopCustomIcons from './DesktopCustomIcons'
 import DesktopContextMenu from './DesktopContextMenu'
 import DesktopWidgets from './DesktopWidgets'
@@ -13,12 +13,32 @@ function DesktopShaderBackgroundGate() {
   return <DesktopShaderBackground color1={color1} color2={color2} speed={speed} />
 }
 
+const DESKTOP_ITEMS_KEY = 'desktop-items'
+
+function loadDesktopItems() {
+  try {
+    const raw = localStorage.getItem(DESKTOP_ITEMS_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function saveDesktopItems(items) {
+  try {
+    localStorage.setItem(DESKTOP_ITEMS_KEY, JSON.stringify(items))
+  } catch {
+    // ignore
+  }
+}
+
 function rectsIntersect(r1, r2) {
   return !(r1.right < r2.left || r1.left > r2.right || r1.bottom < r2.top || r1.top > r2.bottom)
 }
 
 function DesktopContent({
-  outerRef,
   onOpenApp,
   sortBy,
   onSortByChange,
@@ -35,16 +55,6 @@ function DesktopContent({
   const [selectedIds, setSelectedIds] = useState([])
   const [selectionBox, setSelectionBox] = useState(null)
   const desktopRef = useRef(null)
-  const setDesktopRef = useCallback(
-    (node) => {
-      desktopRef.current = node
-      if (!outerRef) return
-      if (typeof outerRef === 'function') outerRef(node)
-      // eslint-disable-next-line react-hooks/immutability -- merge ref for parent mouseContainer
-      else outerRef.current = node
-    },
-    [outerRef],
-  )
   const iconsRef = useRef(null)
   const selectionStartRef = useRef(null)
 
@@ -160,7 +170,7 @@ function DesktopContent({
 
   return (
     <div
-      ref={setDesktopRef}
+      ref={desktopRef}
       className="daedalos-desktop"
       onMouseDown={handleMouseDown}
       onContextMenu={handleContextMenu}
@@ -168,12 +178,10 @@ function DesktopContent({
       <Suspense fallback={null}>
         <DesktopShaderBackgroundGate />
       </Suspense>
-      <div className="desktop__bw-motion" aria-hidden />
       <DesktopWidgets
         desktopItems={desktopItems}
         onLayoutChange={handleWidgetLayout}
         onOpenApp={onOpenApp}
-        mouseContainerRef={outerRef}
       />
       <div ref={iconsRef} className="desktop__icons-wrap">
         <DesktopCustomIcons
@@ -220,6 +228,6 @@ function DesktopContent({
   )
 }
 
-export default forwardRef(function Desktop(props, ref) {
-  return <DesktopContent {...props} outerRef={ref} />
-})
+export default function Desktop(props) {
+  return <DesktopContent {...props} />
+}
