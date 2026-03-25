@@ -1,8 +1,10 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react'
 import DesktopCustomIcons from './DesktopCustomIcons'
 import DesktopContextMenu from './DesktopContextMenu'
 import DesktopWidgets from './DesktopWidgets'
 import './Desktop.css'
+
+const DesktopShaderBackground = lazy(() => import('./ui/DesktopShaderBackground'))
 
 const DESKTOP_ITEMS_KEY = 'desktop-items'
 const ICON_WIDTH = 80
@@ -133,6 +135,9 @@ export default function Desktop({
       onMouseDown={handleMouseDown}
       onContextMenu={handleContextMenu}
     >
+      <Suspense fallback={null}>
+        <DesktopShaderBackground />
+      </Suspense>
       <DesktopWidgets />
       <div ref={iconsRef} className="desktop__icons-wrap">
         <DesktopCustomIcons

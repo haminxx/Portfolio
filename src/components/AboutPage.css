@@ -21,36 +21,7 @@
 .about-page__lang-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 16px;
   justify-content: center;
-  margin-top: 8px;
-}
-
-.about-page__lang-btn {
-  padding: 10px 22px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #1d1d1f;
-  background: #fff;
-  border: 1px solid #d1d1d6;
-  border-radius: 10px;
-  cursor: pointer;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.about-page__lang-btn:hover {
-  background: #f5f5f7;
-  border-color: #aeaeb2;
-}
-
-.about-page__lang-btn:focus-visible {
-  outline: 2px solid #007aff;
-  outline-offset: 2px;
-}
-
-.about-page__lang-btn:active {
-  transform: scale(0.98);
+  margin-top: 16px;
 }

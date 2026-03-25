@@ -21,6 +21,7 @@ import {
   Train,
 } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext'
+import { fetchOsrmRoutePublic } from '../lib/osrmRoute'
 import 'leaflet/dist/leaflet.css'
 import './MapWindow.css'
 
@@ -295,8 +296,33 @@ export default function MapWindow() {
             return
           }
         } catch {
-          // fall through
+          // fall through to public OSRM
         }
+      }
+
+      if (cancelled) return
+      try {
+        const data = await fetchOsrmRoutePublic(
+          ulat,
+          ulng,
+          dlat,
+          dlng,
+          routeProfile,
+        )
+        if (cancelled) return
+        if (data.geometry) {
+          setRouteGeometry(data.geometry)
+          setRouteMeta({
+            duration: data.duration,
+            distance: data.distance,
+            steps: data.steps || [],
+          })
+          setRouteHint(null)
+          setRouteLoading(false)
+          return
+        }
+      } catch {
+        // fall through to straight line
       }
 
       if (cancelled) return
@@ -316,7 +342,7 @@ export default function MapWindow() {
         distance: meters,
         steps: [],
       })
-      setRouteHint(API_URL ? t('map.straightLineHint') : t('map.straightLineHint'))
+      setRouteHint(t('map.straightLineHint'))
       setRouteLoading(false)
     }
 

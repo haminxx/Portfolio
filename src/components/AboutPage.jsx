@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { HandWrittenAboutHero } from './ui/hand-writing-text'
+import { FlowButton } from './ui/flow-button'
 import './AboutPage.css'
 
 const NAMES = {
@@ -28,20 +29,8 @@ export default function AboutPage() {
         <HandWrittenAboutHero revealName={displayName} title="My name is" />
 
         <div className="about-page__lang-row">
-          <button
-            type="button"
-            className="about-page__lang-btn"
-            {...bindLang('en')}
-          >
-            English
-          </button>
-          <button
-            type="button"
-            className="about-page__lang-btn"
-            {...bindLang('ko')}
-          >
-            한국어
-          </button>
+          <FlowButton text="English" {...bindLang('en')} />
+          <FlowButton text="한국어" {...bindLang('ko')} />
         </div>
       </div>
     </div>

@@ -15,12 +15,16 @@ const drawEllipse = {
 }
 
 const drawLine = {
-  hidden: { pathLength: 0, opacity: 0.35 },
+  hidden: { pathLength: 0, opacity: 0.5 },
   visible: {
     pathLength: 1,
-    opacity: 0.45,
+    opacity: 0.85,
     transition: {
-      pathLength: { duration: 1.4, ease: [0.43, 0.13, 0.23, 0.96] as const, delay: 0.35 },
+      pathLength: {
+        duration: 1.4,
+        ease: [0.43, 0.13, 0.23, 0.96] as const,
+        delay: 0.35,
+      },
       opacity: { duration: 0.4, delay: 0.35 },
     },
   },
@@ -28,7 +32,6 @@ const drawLine = {
 
 export interface HandWrittenAboutHeroProps {
   title?: string
-  /** Name shown when hovering language buttons */
   revealName: string
 }
 
@@ -64,6 +67,7 @@ export function HandWrittenAboutHero({
             strokeWidth="6"
             stroke="currentColor"
             strokeLinecap="round"
+            strokeDasharray="4 10"
             variants={drawLine}
             className="text-neutral-900"
           />
@@ -72,7 +76,7 @@ export function HandWrittenAboutHero({
 
       <div className="relative z-10 flex min-h-[280px] flex-col items-center justify-center text-center text-neutral-900">
         <motion.h1
-          className="px-4 text-3xl font-semibold tracking-tight text-neutral-900 md:text-5xl"
+          className="px-4 text-4xl font-extrabold tracking-tight text-neutral-900 md:text-6xl lg:text-7xl"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35, duration: 0.75 }}
@@ -80,13 +84,7 @@ export function HandWrittenAboutHero({
           {title}
         </motion.h1>
 
-        <div className="relative mt-10 flex min-h-[3.5rem] w-full max-w-lg flex-col items-center justify-center px-8">
-          <span
-            className="font-mono text-lg tracking-[0.35em] text-neutral-900/35 md:text-xl"
-            aria-hidden
-          >
-            ________
-          </span>
+        <div className="relative mt-10 flex min-h-[3.5rem] w-full max-w-lg items-center justify-center px-8">
           <motion.div
             className="absolute inset-0 flex items-center justify-center text-xl font-semibold text-neutral-900 md:text-2xl"
             initial={false}
