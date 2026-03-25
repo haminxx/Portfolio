@@ -41,9 +41,9 @@ const DEFAULT_LAYOUT = {
   music: { x: 240, y: 300 },
   bgControls: { x: 1000, y: 420 },
   notesChecklist: { x: 480, y: 300 },
-  photoA: { x: 24, y: 300, gridW: 12, gridH: 12 },
-  photoB: { x: 400, y: 56, gridW: 7, gridH: 11 },
-  photoC: { x: 860, y: 56, gridW: 9, gridH: 9 },
+  photoA: { x: 24, y: 260, gridW: 8, gridH: 12 },
+  photoB: { x: 400, y: 56, gridW: 6, gridH: 8 },
+  photoC: { x: 860, y: 56, gridW: 8, gridH: 7 },
 }
 
 function clampGrid(n) {

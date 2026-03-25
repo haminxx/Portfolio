@@ -70,9 +70,9 @@ const DEFAULT_LAYOUT = {
   music: { x: 240, y: 300 },
   bgControls: { x: 1000, y: 420 },
   notesChecklist: { x: 480, y: 300 },
-  photoA: { x: 24, y: 300, gridW: 12, gridH: 12 },
-  photoB: { x: 400, y: 56, gridW: 7, gridH: 11 },
-  photoC: { x: 860, y: 56, gridW: 9, gridH: 9 },
+  photoA: { x: 24, y: 260, gridW: 8, gridH: 12 },
+  photoB: { x: 400, y: 56, gridW: 6, gridH: 8 },
+  photoC: { x: 860, y: 56, gridW: 8, gridH: 7 },
 }
 
 function clampGrid(n) {
@@ -603,13 +603,13 @@ export default function DesktopWidgets({
             />
           </div>
           <div className="desktop-widgets__bg-speed-wrap">
-            <span className="desktop-widgets__bg-label">Motion</span>
             <BackgroundMotionSlider
               min={0.15}
               max={1.5}
               step={0.03}
               value={bgSpeed}
               onChange={setBgSpeed}
+              aria-label="Background motion speed"
             />
           </div>
         </div>

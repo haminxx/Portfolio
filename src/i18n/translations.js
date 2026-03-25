@@ -39,6 +39,7 @@ export const translations = {
       sleep: 'Sleep',
       restart: 'Restart…',
       turnOff: 'Turn Off…',
+      windowControls: 'Window controls',
     },
     chrome: {
       searchPlaceholder: 'Search Google or type a URL',

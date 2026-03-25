@@ -69,7 +69,9 @@ export default function MenuBar({
   const [openMenu, setOpenMenu] = useState(null)
   const [openCnl, setOpenCnl] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
+  const [windowControlsOpen, setWindowControlsOpen] = useState(false)
   const barRef = useRef(null)
+  const windowControlsRef = useRef(null)
   const leaveTimeoutRef = useRef(null)
 
   const handleMenuEnter = (menuId) => {
@@ -141,6 +143,16 @@ export default function MenuBar({
   useEffect(() => () => {
     if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current)
   }, [])
+
+  useEffect(() => {
+    if (!windowControlsOpen) return
+    const onDoc = (e) => {
+      if (windowControlsRef.current?.contains(e.target)) return
+      setWindowControlsOpen(false)
+    }
+    document.addEventListener('pointerdown', onDoc, true)
+    return () => document.removeEventListener('pointerdown', onDoc, true)
+  }, [windowControlsOpen])
 
   return (
     <>
@@ -217,6 +229,67 @@ export default function MenuBar({
           ))}
         </div>
         <div className="menu-bar__right">
+          <div className="menu-bar__window-controls" ref={windowControlsRef}>
+            <button
+              type="button"
+              className="menu-bar__traffic-glass"
+              aria-label={t('menuBar.windowControls')}
+              aria-expanded={windowControlsOpen}
+              onClick={() => setWindowControlsOpen((o) => !o)}
+            >
+              <span className="menu-bar__traffic-dot menu-bar__traffic-dot--close" aria-hidden />
+              <span className="menu-bar__traffic-dot menu-bar__traffic-dot--minimize" aria-hidden />
+              <span className="menu-bar__traffic-dot menu-bar__traffic-dot--zoom" aria-hidden />
+            </button>
+            {windowControlsOpen && (
+              <div className="menu-bar__controls-flyout" role="menu">
+                <button
+                  type="button"
+                  className="menu-bar__controls-flyout-item menu-bar__controls-flyout-item--danger"
+                  role="menuitem"
+                  onClick={() => {
+                    setWindowControlsOpen(false)
+                    onCloseTab?.()
+                  }}
+                >
+                  {t('menuBar.closeTab')}
+                </button>
+                <button
+                  type="button"
+                  className="menu-bar__controls-flyout-item"
+                  role="menuitem"
+                  onClick={() => {
+                    setWindowControlsOpen(false)
+                    onMinimize?.()
+                  }}
+                >
+                  {t('menuBar.minimize')}
+                </button>
+                <button
+                  type="button"
+                  className="menu-bar__controls-flyout-item"
+                  role="menuitem"
+                  onClick={() => {
+                    setWindowControlsOpen(false)
+                    onZoom?.()
+                  }}
+                >
+                  {t('menuBar.zoom')}
+                </button>
+                <button
+                  type="button"
+                  className="menu-bar__controls-flyout-item"
+                  role="menuitem"
+                  onClick={() => {
+                    setWindowControlsOpen(false)
+                    onFullScreenToggle?.()
+                  }}
+                >
+                  {isFullscreen ? t('menuBar.exitFullScreen') : t('menuBar.fullScreen')}
+                </button>
+              </div>
+            )}
+          </div>
           <SystemTray
             nightMode={nightMode ?? true}
             onNightModeToggle={onNightModeToggle ?? (() => {})}
