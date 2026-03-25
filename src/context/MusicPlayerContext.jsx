@@ -68,10 +68,12 @@ export function MusicPlayerProvider({ children }) {
   const progressTimerRef = useRef(null)
   const pendingVideoIdRef = useRef(null)
   const queueRef = useRef([])
+  const currentIndexRef = useRef(0)
   const starterInitRef = useRef(false)
 
   const currentTrack = queue[currentIndex] ?? null
   queueRef.current = queue
+  currentIndexRef.current = currentIndex
 
   const clearProgressTimer = useCallback(() => {
     if (progressTimerRef.current) {
@@ -93,6 +95,21 @@ export function MusicPlayerProvider({ children }) {
     }, 400)
   }, [clearProgressTimer])
 
+  const kickPlayback = useCallback((p) => {
+    if (!p?.playVideo) return
+    const tryPlay = () => {
+      try {
+        p.playVideo()
+      } catch {
+        // ignore
+      }
+    }
+    tryPlay()
+    requestAnimationFrame(tryPlay)
+    setTimeout(tryPlay, 80)
+    setTimeout(tryPlay, 320)
+  }, [])
+
   const loadVideo = useCallback(
     (videoId) => {
       if (!videoId) return
@@ -102,6 +119,7 @@ export function MusicPlayerProvider({ children }) {
           p.loadVideoById(videoId)
           setIsPlaying(true)
           startProgressTimer()
+          kickPlayback(p)
         } catch {
           pendingVideoIdRef.current = videoId
         }
@@ -109,7 +127,7 @@ export function MusicPlayerProvider({ children }) {
         pendingVideoIdRef.current = videoId
       }
     },
-    [startProgressTimer]
+    [startProgressTimer, kickPlayback]
   )
 
   useEffect(() => {
@@ -127,6 +145,7 @@ export function MusicPlayerProvider({ children }) {
         height: 1,
         playerVars: {
           autoplay: 1,
+          mute: 0,
           controls: 0,
           modestbranding: 1,
           rel: 0,
@@ -142,19 +161,59 @@ export function MusicPlayerProvider({ children }) {
                 ytPlayer.loadVideoById(pending)
                 setIsPlaying(true)
                 startProgressTimer()
+                try {
+                  ytPlayer.playVideo()
+                } catch {
+                  // ignore
+                }
+                setTimeout(() => {
+                  try {
+                    ytPlayer.playVideo()
+                  } catch {
+                    // ignore
+                  }
+                }, 100)
+                setTimeout(() => {
+                  try {
+                    ytPlayer.playVideo()
+                  } catch {
+                    // ignore
+                  }
+                }, 500)
+                kickPlayback(ytPlayer)
               } catch {
                 // ignore
+              }
+            } else if (queueRef.current.length) {
+              const idx = currentIndexRef.current
+              const vid = queueRef.current[idx]?.videoId
+              if (vid) {
+                try {
+                  ytPlayer.loadVideoById(vid)
+                  setIsPlaying(true)
+                  startProgressTimer()
+                  kickPlayback(ytPlayer)
+                } catch {
+                  // ignore
+                }
               }
             }
           },
           onStateChange: (e) => {
             const YT = window.YT
+            const p = playerRef.current
             if (e.data === YT.PlayerState.PLAYING) {
               setIsPlaying(true)
               startProgressTimer()
             } else if (e.data === YT.PlayerState.PAUSED) {
               setIsPlaying(false)
               clearProgressTimer()
+            } else if (e.data === YT.PlayerState.CUED) {
+              try {
+                p?.playVideo?.()
+              } catch {
+                // ignore
+              }
             } else if (e.data === YT.PlayerState.ENDED) {
               setIsPlaying(false)
               clearProgressTimer()
@@ -181,7 +240,7 @@ export function MusicPlayerProvider({ children }) {
       }
       playerRef.current = null
     }
-  }, [clearProgressTimer, startProgressTimer])
+  }, [clearProgressTimer, startProgressTimer, kickPlayback])
 
   useEffect(() => {
     if (currentTrack?.videoId) loadVideo(currentTrack.videoId)

@@ -36,7 +36,7 @@
 .desktop-custom-icons__item--pointer-dragging {
   cursor: grabbing;
   transition: none;
-  z-index: 50;
+  z-index: 10050;
   user-select: none;
   -webkit-user-select: none;
 }

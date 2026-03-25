@@ -6,12 +6,7 @@ import {
   DESKTOP_ICON_HEIGHT as ICON_HEIGHT,
   DESKTOP_SAFE_TOP,
 } from '../desktopConstants'
-import {
-  getWidgetRectsFromLayout,
-  loadWidgetLayoutFromStorage,
-  groupOverlapsWidgetRects,
-  groupOverlapsOtherIcons,
-} from '../lib/widgetOverlapGeometry'
+import { loadWidgetLayoutFromStorage, nudgeIconGroupAfterDrop } from '../lib/widgetOverlapGeometry'
 const DRAG_THRESHOLD_PX = 6
 
 export default function DesktopCustomIcons({
@@ -160,16 +155,12 @@ export default function DesktopCustomIcons({
         onSelectIcons?.([item.id])
       }
 
-      const lastGoodPositions = {}
-      for (const id of groupIds) {
-        const s = itemStartPositions[id]
-        if (s) lastGoodPositions[id] = { x: s.x, y: s.y }
-      }
+      const latestPositions = { ...itemStartPositions }
 
       const dragState = {
         groupIds,
         itemStartPositions,
-        lastGoodPositions,
+        latestPositions,
         wrapEl,
         startClientX: e.clientX,
         startClientY: e.clientY,
@@ -200,29 +191,12 @@ export default function DesktopCustomIcons({
           next[id] = { x, y }
         }
 
-        const layoutSnapshot =
-          widgetLayoutRef?.current && typeof widgetLayoutRef.current === 'object'
-            ? widgetLayoutRef.current
-            : loadWidgetLayoutFromStorage()
-        const widgetRects = getWidgetRectsFromLayout(layoutSnapshot)
-        const items = desktopItemsRef.current
-        const badWidgets = groupOverlapsWidgetRects(next, dragState.groupIds, widgetRects)
-        const badIcons = groupOverlapsOtherIcons(next, dragState.groupIds, items)
-        let usePos = next
-        if (badWidgets || badIcons) {
-          usePos = {}
-          for (const id of dragState.groupIds) {
-            const g = dragState.lastGoodPositions[id]
-            if (g) usePos[id] = { x: g.x, y: g.y }
-          }
-        } else {
-          for (const id of dragState.groupIds) {
-            const p = next[id]
-            if (p) dragState.lastGoodPositions[id] = { x: p.x, y: p.y }
-          }
+        for (const id of dragState.groupIds) {
+          const p = next[id]
+          if (p) dragState.latestPositions[id] = { x: p.x, y: p.y }
         }
 
-        pendingPosRef.current = usePos
+        pendingPosRef.current = next
         if (rafRef.current == null) {
           rafRef.current = requestAnimationFrame(() => {
             rafRef.current = null
@@ -251,6 +225,29 @@ export default function DesktopCustomIcons({
           cancelAnimationFrame(rafRef.current)
           rafRef.current = null
         }
+
+        const folderIdEarly = findFolderUnderPoint(ev.clientX, ev.clientY, dragState.groupIds)
+
+        if (dragState.active) {
+          if (folderIdEarly) {
+            pendingPosRef.current = { ...dragState.latestPositions }
+          } else {
+            const layoutSnapshot =
+              widgetLayoutRef?.current && typeof widgetLayoutRef.current === 'object'
+                ? widgetLayoutRef.current
+                : loadWidgetLayoutFromStorage()
+            const wrap = dragState.wrapEl.getBoundingClientRect()
+            pendingPosRef.current = nudgeIconGroupAfterDrop(
+              dragState.latestPositions,
+              dragState.groupIds,
+              desktopItemsRef.current,
+              layoutSnapshot,
+              wrap.width,
+              wrap.height,
+            )
+          }
+        }
+
         flushPendingPosition()
         pendingPosRef.current = null
         setDropTargetId(null)

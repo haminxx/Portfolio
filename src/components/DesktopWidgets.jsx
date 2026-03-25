@@ -61,7 +61,7 @@ const STATIC_SIZES = {
   clock: { w: 200, h: 120 },
   weather: { w: 200, h: 130 },
   music: { w: 312, h: 136 },
-  bgControls: { w: 232, h: 210 },
+  bgControls: { w: 232, h: 132 },
   notesChecklist: { w: 200, h: 200 },
 }
 
@@ -217,12 +217,8 @@ export default function DesktopWidgets({
   const {
     color1: bgColor1,
     color2: bgColor2,
-    speed: bgSpeed,
-    waveAmp: bgWaveAmp,
     setColor1: setBgColor1,
     setColor2: setBgColor2,
-    setSpeed: setBgSpeed,
-    setWaveAmp: setBgWaveAmp,
   } = useDesktopBackground()
 
   const calYM = calCursor ?? { y: now.getFullYear(), m: now.getMonth() }
@@ -603,7 +599,7 @@ export default function DesktopWidgets({
         </div>
         <div className="desktop-widgets__bg-controls-body">
           <label className="desktop-widgets__bg-field">
-            <span className="desktop-widgets__bg-label">Shade A</span>
+            <span className="desktop-widgets__bg-label">Color A</span>
             <input
               type="color"
               value={bgColor1}
@@ -612,36 +608,12 @@ export default function DesktopWidgets({
             />
           </label>
           <label className="desktop-widgets__bg-field">
-            <span className="desktop-widgets__bg-label">Highlight</span>
+            <span className="desktop-widgets__bg-label">Color B</span>
             <input
               type="color"
               value={bgColor2}
               onChange={(e) => setBgColor2(e.target.value)}
               className="desktop-widgets__bg-color-input"
-            />
-          </label>
-          <label className="desktop-widgets__bg-field desktop-widgets__bg-field--range">
-            <span className="desktop-widgets__bg-label">Motion · {bgSpeed.toFixed(2)}</span>
-            <input
-              type="range"
-              min={0.08}
-              max={1.2}
-              step={0.01}
-              value={bgSpeed}
-              onChange={(e) => setBgSpeed(Number(e.target.value))}
-              className="desktop-widgets__bg-range"
-            />
-          </label>
-          <label className="desktop-widgets__bg-field desktop-widgets__bg-field--range">
-            <span className="desktop-widgets__bg-label">Wave depth · {bgWaveAmp.toFixed(2)}</span>
-            <input
-              type="range"
-              min={0.2}
-              max={2}
-              step={0.05}
-              value={bgWaveAmp}
-              onChange={(e) => setBgWaveAmp(Number(e.target.value))}
-              className="desktop-widgets__bg-range"
             />
           </label>
         </div>

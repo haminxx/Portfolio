@@ -3,10 +3,8 @@ import { createContext, useCallback, useContext, useMemo, useState, useEffect } 
 const STORAGE_KEY = 'desktop-bg-shader-v1'
 
 const DEFAULTS = {
-  color1: '#121018',
-  color2: '#d4cfc4',
-  speed: 0.35,
-  waveAmp: 1.0,
+  color1: '#1a1a1a',
+  color2: '#e8e4df',
 }
 
 function loadPrefs() {
@@ -17,8 +15,6 @@ function loadPrefs() {
     return {
       color1: typeof p.color1 === 'string' ? p.color1 : DEFAULTS.color1,
       color2: typeof p.color2 === 'string' ? p.color2 : DEFAULTS.color2,
-      speed: typeof p.speed === 'number' && Number.isFinite(p.speed) ? p.speed : DEFAULTS.speed,
-      waveAmp: typeof p.waveAmp === 'number' && Number.isFinite(p.waveAmp) ? p.waveAmp : DEFAULTS.waveAmp,
     }
   } catch {
     return { ...DEFAULTS }
@@ -48,22 +44,14 @@ export function DesktopBackgroundProvider({ children }) {
   const setColor2 = useCallback((color2) => {
     setPrefs((p) => ({ ...p, color2 }))
   }, [])
-  const setSpeed = useCallback((speed) => {
-    setPrefs((p) => ({ ...p, speed }))
-  }, [])
-  const setWaveAmp = useCallback((waveAmp) => {
-    setPrefs((p) => ({ ...p, waveAmp }))
-  }, [])
 
   const value = useMemo(
     () => ({
       ...prefs,
       setColor1,
       setColor2,
-      setSpeed,
-      setWaveAmp,
     }),
-    [prefs, setColor1, setColor2, setSpeed, setWaveAmp],
+    [prefs, setColor1, setColor2],
   )
 
   return <DesktopBackgroundContext.Provider value={value}>{children}</DesktopBackgroundContext.Provider>
@@ -76,8 +64,6 @@ export function useDesktopBackground() {
       ...DEFAULTS,
       setColor1: () => {},
       setColor2: () => {},
-      setSpeed: () => {},
-      setWaveAmp: () => {},
     }
   }
   return ctx

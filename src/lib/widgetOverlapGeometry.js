@@ -2,7 +2,11 @@
  * Shared geometry for desktop widgets vs icons (overlap checks).
  * Must stay in sync with DesktopWidgets.jsx layout model.
  */
-import { DESKTOP_ICON_WIDTH, DESKTOP_ICON_HEIGHT } from '../desktopConstants'
+import {
+  DESKTOP_ICON_WIDTH,
+  DESKTOP_ICON_HEIGHT,
+  DESKTOP_SAFE_TOP,
+} from '../desktopConstants'
 
 const LAYOUT_KEY = 'desktop-widget-layout'
 const CELL = 40
@@ -26,7 +30,7 @@ const STATIC_SIZES = {
   clock: { w: 200, h: 120 },
   weather: { w: 200, h: 130 },
   music: { w: 312, h: 136 },
-  bgControls: { w: 232, h: 210 },
+  bgControls: { w: 232, h: 132 },
   notesChecklist: { w: 200, h: 200 },
 }
 
@@ -139,6 +143,81 @@ export function groupOverlapsWidgetRects(positions, groupIds, widgetRects) {
     }
   }
   return false
+}
+
+/**
+ * After dragging desktop icons over widgets/other icons, snap each moved icon to a free spot
+ * (same grid search idea as widget nudge).
+ */
+export function nudgeIconGroupAfterDrop(candidates, groupIds, desktopItems, layoutMap, wrapWidth, wrapHeight) {
+  if (!candidates || !groupIds?.length) return candidates
+  const widgetRects = getWidgetRectsFromLayout(layoutMap)
+  const maxX = Math.max(0, wrapWidth - DESKTOP_ICON_WIDTH)
+  const maxY = Math.max(DESKTOP_SAFE_TOP, wrapHeight - DESKTOP_ICON_HEIGHT)
+  const out = { ...candidates }
+
+  function overlapsAt(x, y, ignoreId) {
+    const ir = {
+      left: x,
+      top: y,
+      right: x + DESKTOP_ICON_WIDTH,
+      bottom: y + DESKTOP_ICON_HEIGHT,
+    }
+    for (const wr of widgetRects) {
+      if (rectsOverlap(ir, wr)) return true
+    }
+    for (const item of desktopItems) {
+      if (item.parentId) continue
+      if (item.id === ignoreId) continue
+      const op = out[item.id] ?? { x: item.x ?? 24, y: item.y ?? 24 }
+      const or = {
+        left: op.x,
+        top: op.y,
+        right: op.x + DESKTOP_ICON_WIDTH,
+        bottom: op.y + DESKTOP_ICON_HEIGHT,
+      }
+      if (rectsOverlap(ir, or)) return true
+    }
+    for (const gid of groupIds) {
+      if (gid === ignoreId) continue
+      const op = out[gid]
+      if (!op) continue
+      const or = {
+        left: op.x,
+        top: op.y,
+        right: op.x + DESKTOP_ICON_WIDTH,
+        bottom: op.y + DESKTOP_ICON_HEIGHT,
+      }
+      if (rectsOverlap(ir, or)) return true
+    }
+    return false
+  }
+
+  const step = 8
+  for (const id of groupIds) {
+    let p = out[id]
+    if (!p) continue
+    let x = Math.max(0, Math.min(maxX, p.x))
+    let y = Math.max(DESKTOP_SAFE_TOP, Math.min(maxY, p.y))
+    if (!overlapsAt(x, y, id)) {
+      out[id] = { x, y }
+      continue
+    }
+    let found = false
+    for (let gy = DESKTOP_SAFE_TOP; gy <= maxY && !found; gy += step) {
+      for (let gx = 0; gx <= maxX && !found; gx += step) {
+        const cx = Math.max(0, Math.min(maxX, gx))
+        const cy = Math.max(DESKTOP_SAFE_TOP, Math.min(maxY, gy))
+        if (!overlapsAt(cx, cy, id)) {
+          x = cx
+          y = cy
+          found = true
+        }
+      }
+    }
+    out[id] = { x, y }
+  }
+  return out
 }
 
 export function groupOverlapsOtherIcons(positions, groupIds, desktopItems) {

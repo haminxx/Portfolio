@@ -13,10 +13,7 @@
   padding: 12px 14px 14px;
   padding-top: 14px;
   border-radius: 22px;
-  transition:
-    padding-top 0.22s ease,
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
   background: transparent;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -30,7 +27,6 @@
 }
 
 .desktop-widgets__card:hover {
-  padding-top: 28px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.12),
@@ -66,7 +62,7 @@
 
 .desktop-widgets__card--bg-controls {
   width: 232px;
-  min-height: 200px;
+  min-height: 120px;
   padding: 10px 12px 12px;
   padding-top: 12px;
 }
