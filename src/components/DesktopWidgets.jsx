@@ -19,8 +19,10 @@ import {
   LayoutGrid,
   RefreshCw,
   ListTodo,
+  Palette,
 } from 'lucide-react'
 import { useMusicPlayer } from '../context/MusicPlayerContext'
+import { useDesktopBackground } from '../context/DesktopBackgroundContext'
 import { getImagePath } from '../lib/gallery'
 import { loadPhotoWidgetState, savePhotoWidgetState } from '../lib/photoWidgetStorage'
 import {
@@ -45,7 +47,7 @@ const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
 const PHOTO_IDS = ['photoA', 'photoB', 'photoC']
 
-const WIDGET_IDS = ['calendar', 'clock', 'weather', 'music', 'notesChecklist', ...PHOTO_IDS]
+const WIDGET_IDS = ['calendar', 'clock', 'weather', 'music', 'bgControls', 'notesChecklist', ...PHOTO_IDS]
 
 function formatTrackTime(sec) {
   if (sec == null || !Number.isFinite(sec) || sec < 0) return '0:00'
@@ -59,6 +61,7 @@ const STATIC_SIZES = {
   clock: { w: 200, h: 120 },
   weather: { w: 200, h: 130 },
   music: { w: 312, h: 136 },
+  bgControls: { w: 232, h: 210 },
   notesChecklist: { w: 200, h: 200 },
 }
 
@@ -67,6 +70,7 @@ const DEFAULT_LAYOUT = {
   clock: { x: 240, y: 56 },
   weather: { x: 20, y: 300 },
   music: { x: 240, y: 300 },
+  bgControls: { x: 20, y: 448 },
   notesChecklist: { x: 480, y: 300 },
   photoA: { x: 480, y: 56, gridW: 8, gridH: 8 },
   photoB: { x: 720, y: 56, gridW: 8, gridH: 8 },
@@ -197,6 +201,7 @@ export default function DesktopWidgets({
   const [photoData, setPhotoData] = useState(readInitialPhotoMap)
   const [notesStore, setNotesStore] = useState(() => loadNotesStore())
   const dragRef = useRef(null)
+  const [draggingId, setDraggingId] = useState(null)
   const containerRef = useRef(null)
   const sizePopoverRef = useRef(null)
   const {
@@ -209,6 +214,16 @@ export default function DesktopWidgets({
     durationSec,
     seekTo,
   } = useMusicPlayer()
+  const {
+    color1: bgColor1,
+    color2: bgColor2,
+    speed: bgSpeed,
+    waveAmp: bgWaveAmp,
+    setColor1: setBgColor1,
+    setColor2: setBgColor2,
+    setSpeed: setBgSpeed,
+    setWaveAmp: setBgWaveAmp,
+  } = useDesktopBackground()
 
   const calYM = calCursor ?? { y: now.getFullYear(), m: now.getMonth() }
 
@@ -323,6 +338,7 @@ export default function DesktopWidgets({
       const pos = layout[id]
       const gripEl = e.currentTarget
       const pointerId = e.pointerId
+      setDraggingId(id)
       dragRef.current = {
         id,
         startX: e.clientX,
@@ -331,7 +347,6 @@ export default function DesktopWidgets({
         origY: pos.y,
         gripEl,
         pointerId,
-        lastGood: { x: pos.x, y: pos.y },
       }
       try {
         gripEl.setPointerCapture(pointerId)
@@ -346,12 +361,7 @@ export default function DesktopWidgets({
         const dy = ev.clientY - d.startY
         setLayout((prev) => {
           const candidate = clampPos(d.id, d.origX + dx, d.origY + dy, prev)
-          const testLayout = { ...prev, [d.id]: { ...prev[d.id], ...candidate } }
-          if (!hasOverlapWithAny(d.id, candidate, testLayout, desktopItems)) {
-            d.lastGood = { ...candidate }
-            return testLayout
-          }
-          return { ...prev, [d.id]: { ...prev[d.id], ...d.lastGood } }
+          return { ...prev, [d.id]: { ...prev[d.id], ...candidate } }
         })
       }
 
@@ -366,6 +376,7 @@ export default function DesktopWidgets({
           // ignore
         }
         dragRef.current = null
+        setDraggingId(null)
         setLayout((prev) => {
           let next = prev
           for (const wid of WIDGET_IDS) {
@@ -462,7 +473,13 @@ export default function DesktopWidgets({
   const cardStyle = (id) => {
     const p = layout[id] || DEFAULT_LAYOUT[id]
     const { w, h } = getBoxSize(id, p)
-    return { left: p.x, top: p.y, width: w, height: h }
+    return {
+      left: p.x,
+      top: p.y,
+      width: w,
+      height: h,
+      zIndex: draggingId === id ? 10000 : undefined,
+    }
   }
 
   const gridRange = useMemo(
@@ -571,6 +588,65 @@ export default function DesktopWidgets({
         )}
       </div>
 
+      <div className="desktop-widgets__card desktop-widgets__card--bg-controls" style={cardStyle('bgControls')}>
+        <button
+          type="button"
+          className="desktop-widgets__grip"
+          aria-label="Move background controls widget"
+          onPointerDown={(e) => handleGripPointerDown(e, 'bgControls')}
+        >
+          <GripVertical size={14} strokeWidth={2} />
+        </button>
+        <div className="desktop-widgets__bg-controls-head">
+          <Palette size={14} strokeWidth={2} aria-hidden />
+          <span className="desktop-widgets__card-title desktop-widgets__card-title--inline">Background</span>
+        </div>
+        <div className="desktop-widgets__bg-controls-body">
+          <label className="desktop-widgets__bg-field">
+            <span className="desktop-widgets__bg-label">Shade A</span>
+            <input
+              type="color"
+              value={bgColor1}
+              onChange={(e) => setBgColor1(e.target.value)}
+              className="desktop-widgets__bg-color-input"
+            />
+          </label>
+          <label className="desktop-widgets__bg-field">
+            <span className="desktop-widgets__bg-label">Highlight</span>
+            <input
+              type="color"
+              value={bgColor2}
+              onChange={(e) => setBgColor2(e.target.value)}
+              className="desktop-widgets__bg-color-input"
+            />
+          </label>
+          <label className="desktop-widgets__bg-field desktop-widgets__bg-field--range">
+            <span className="desktop-widgets__bg-label">Motion · {bgSpeed.toFixed(2)}</span>
+            <input
+              type="range"
+              min={0.08}
+              max={1.2}
+              step={0.01}
+              value={bgSpeed}
+              onChange={(e) => setBgSpeed(Number(e.target.value))}
+              className="desktop-widgets__bg-range"
+            />
+          </label>
+          <label className="desktop-widgets__bg-field desktop-widgets__bg-field--range">
+            <span className="desktop-widgets__bg-label">Wave depth · {bgWaveAmp.toFixed(2)}</span>
+            <input
+              type="range"
+              min={0.2}
+              max={2}
+              step={0.05}
+              value={bgWaveAmp}
+              onChange={(e) => setBgWaveAmp(Number(e.target.value))}
+              className="desktop-widgets__bg-range"
+            />
+          </label>
+        </div>
+      </div>
+
       <div className="desktop-widgets__card desktop-widgets__card--music" style={cardStyle('music')}>
         <button
           type="button"
@@ -670,7 +746,7 @@ export default function DesktopWidgets({
                   onClick={() => playPrev()}
                   aria-label="Previous track"
                 >
-                  <SkipBack size={14} strokeWidth={2.2} />
+                  <SkipBack size={15} strokeWidth={2.35} />
                 </button>
                 <button
                   type="button"
@@ -678,22 +754,16 @@ export default function DesktopWidgets({
                   onClick={() => playNext()}
                   aria-label="Next track"
                 >
-                  <SkipForward size={14} strokeWidth={2.2} />
-                </button>
-                <button
-                  type="button"
-                  className="desktop-widgets__ipod-wheel-btn desktop-widgets__ipod-wheel-btn--play"
-                  onClick={() => togglePlay()}
-                  aria-label={isPlaying ? 'Pause' : 'Play'}
-                >
-                  {isPlaying ? <Pause size={15} strokeWidth={2.2} /> : <Play size={15} strokeWidth={2.2} />}
+                  <SkipForward size={15} strokeWidth={2.35} />
                 </button>
                 <button
                   type="button"
                   className="desktop-widgets__ipod-wheel-center"
                   onClick={() => togglePlay()}
                   aria-label={isPlaying ? 'Pause' : 'Play'}
-                />
+                >
+                  {isPlaying ? <Pause size={16} strokeWidth={2.4} /> : <Play size={16} strokeWidth={2.4} />}
+                </button>
               </div>
             </div>
           </div>

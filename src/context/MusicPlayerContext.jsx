@@ -36,6 +36,28 @@ function loadYouTubeIframeApi() {
 
 const HOST_ID = 'yt-music-hidden-player'
 
+/** Default desktop playlist; first track matches YouTube Music link (Mu4HVN2-IRc). */
+const STARTER_PLAYLIST = [
+  {
+    videoId: 'Mu4HVN2-IRc',
+    title: 'I Gotta Feeling',
+    artist: 'Black Eyed Peas',
+    thumbnail: 'https://img.youtube.com/vi/Mu4HVN2-IRc/mqdefault.jpg',
+  },
+  {
+    videoId: 'vU05Eksc_iM',
+    title: 'Wonderwall',
+    artist: 'Oasis',
+    thumbnail: 'https://img.youtube.com/vi/vU05Eksc_iM/mqdefault.jpg',
+  },
+  {
+    videoId: 'r8OipmKFDeM',
+    title: "Don't Look Back in Anger",
+    artist: 'Oasis',
+    thumbnail: 'https://img.youtube.com/vi/r8OipmKFDeM/mqdefault.jpg',
+  },
+]
+
 export function MusicPlayerProvider({ children }) {
   const [queue, setQueue] = useState([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -45,8 +67,11 @@ export function MusicPlayerProvider({ children }) {
   const playerRef = useRef(null)
   const progressTimerRef = useRef(null)
   const pendingVideoIdRef = useRef(null)
+  const queueRef = useRef([])
+  const starterInitRef = useRef(false)
 
   const currentTrack = queue[currentIndex] ?? null
+  queueRef.current = queue
 
   const clearProgressTimer = useCallback(() => {
     if (progressTimerRef.current) {
@@ -133,6 +158,12 @@ export function MusicPlayerProvider({ children }) {
             } else if (e.data === YT.PlayerState.ENDED) {
               setIsPlaying(false)
               clearProgressTimer()
+              setCurrentIndex((i) => {
+                const q = queueRef.current
+                if (!q.length || q.length <= 1) return i
+                return (i + 1) % q.length
+              })
+              setProgressSec(0)
             }
           },
         },
@@ -223,6 +254,12 @@ export function MusicPlayerProvider({ children }) {
     },
     [appendListenHistory]
   )
+
+  useEffect(() => {
+    if (starterInitRef.current) return
+    starterInitRef.current = true
+    playQueue(STARTER_PLAYLIST, 0)
+  }, [playQueue])
 
   const pause = useCallback(() => {
     try {

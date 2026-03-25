@@ -4,8 +4,21 @@ import DesktopContextMenu from './DesktopContextMenu'
 import DesktopWidgets from './DesktopWidgets'
 import './Desktop.css'
 import { DESKTOP_ICON_WIDTH, DESKTOP_ICON_HEIGHT, DESKTOP_SAFE_TOP } from '../desktopConstants'
+import { DesktopBackgroundProvider, useDesktopBackground } from '../context/DesktopBackgroundContext'
 
 const DesktopShaderBackground = lazy(() => import('./ui/DesktopShaderBackground'))
+
+function DesktopShaderBackgroundGate() {
+  const { color1, color2, speed, waveAmp } = useDesktopBackground()
+  return (
+    <DesktopShaderBackground
+      color1={color1}
+      color2={color2}
+      speed={speed}
+      waveAmp={waveAmp}
+    />
+  )
+}
 
 const DESKTOP_ITEMS_KEY = 'desktop-items'
 
@@ -32,7 +45,7 @@ function rectsIntersect(r1, r2) {
   return !(r1.right < r2.left || r1.left > r2.right || r1.bottom < r2.top || r1.top > r2.bottom)
 }
 
-export default function Desktop({
+function DesktopContent({
   onOpenApp,
   sortBy,
   onSortByChange,
@@ -168,7 +181,7 @@ export default function Desktop({
       onContextMenu={handleContextMenu}
     >
       <Suspense fallback={null}>
-        <DesktopShaderBackground />
+        <DesktopShaderBackgroundGate />
       </Suspense>
       <DesktopWidgets
         desktopItems={desktopItems}
@@ -217,5 +230,13 @@ export default function Desktop({
         />
       )}
     </div>
+  )
+}
+
+export default function Desktop(props) {
+  return (
+    <DesktopBackgroundProvider>
+      <DesktopContent {...props} />
+    </DesktopBackgroundProvider>
   )
 }

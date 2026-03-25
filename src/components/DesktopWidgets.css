@@ -64,6 +64,70 @@
   padding-top: 12px;
 }
 
+.desktop-widgets__card--bg-controls {
+  width: 232px;
+  min-height: 200px;
+  padding: 10px 12px 12px;
+  padding-top: 12px;
+}
+
+.desktop-widgets__bg-controls-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.desktop-widgets__bg-controls-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.desktop-widgets__bg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+}
+
+.desktop-widgets__bg-field--range {
+  margin-top: 2px;
+}
+
+.desktop-widgets__bg-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.78;
+}
+
+.desktop-widgets__bg-color-input {
+  width: 100%;
+  height: 32px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.desktop-widgets__bg-range {
+  width: 100%;
+  height: 6px;
+  accent-color: rgba(220, 218, 210, 0.95);
+  cursor: pointer;
+}
+
+[data-theme='light'] .desktop-widgets__bg-label {
+  color: rgba(20, 18, 24, 0.75);
+}
+
+[data-theme='light'] .desktop-widgets__bg-color-input {
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
 .desktop-widgets__card--photo {
   display: flex;
   flex-direction: column;
@@ -399,17 +463,18 @@
   padding: 10px 12px;
   border-radius: 20px;
   background: linear-gradient(
-    165deg,
-    rgba(255, 255, 255, 0.52) 0%,
-    rgba(180, 186, 198, 0.38) 22%,
-    rgba(140, 145, 158, 0.45) 48%,
-    rgba(200, 204, 214, 0.4) 100%
+    155deg,
+    rgba(232, 234, 238, 0.92) 0%,
+    rgba(188, 192, 200, 0.72) 24%,
+    rgba(142, 148, 158, 0.55) 52%,
+    rgba(210, 214, 222, 0.78) 100%
   );
   box-shadow:
-    0 4px 18px rgba(0, 0, 0, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.65),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+    0 6px 22px rgba(0, 0, 0, 0.32),
+    0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(90, 95, 108, 0.28);
 }
 
 .desktop-widgets__ipod-screen {
@@ -538,15 +603,20 @@
 
 .desktop-widgets__ipod-wheel {
   position: relative;
-  width: 90px;
-  height: 90px;
+  width: 92px;
+  height: 92px;
   border-radius: 50%;
-  background: linear-gradient(185deg, #ffffff 0%, #ececf0 40%, #d6d6de 100%);
+  background: linear-gradient(
+    195deg,
+    #f2f3f6 0%,
+    #d4d7de 38%,
+    #b8bcc6 100%
+  );
   box-shadow:
-    inset 0 2px 4px rgba(255, 255, 255, 0.95),
-    inset 0 -3px 10px rgba(0, 0, 0, 0.1),
-    0 2px 8px rgba(0, 0, 0, 0.15);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+    inset 0 2px 5px rgba(255, 255, 255, 0.9),
+    inset 0 -4px 12px rgba(0, 0, 0, 0.14),
+    0 3px 10px rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(70, 76, 88, 0.35);
 }
 
 .desktop-widgets__ipod-wheel-label {
@@ -573,58 +643,64 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border: none;
   border-radius: 50%;
-  background: transparent;
-  color: rgba(90, 90, 100, 0.95);
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(38, 40, 48, 0.98);
   cursor: pointer;
-  transition: color 0.15s ease, transform 0.12s ease;
+  transition:
+    color 0.15s ease,
+    transform 0.12s ease,
+    background 0.15s ease;
+  z-index: 2;
 }
 
 .desktop-widgets__ipod-wheel-btn:hover {
-  color: rgba(40, 40, 48, 1);
+  color: rgba(18, 20, 26, 1);
+  background: rgba(255, 255, 255, 0.35);
   transform: scale(1.06);
 }
 
 .desktop-widgets__ipod-wheel-btn--prev {
-  left: 6px;
+  left: 4px;
   top: 50%;
   transform: translateY(-50%);
 }
 
 .desktop-widgets__ipod-wheel-btn--next {
-  right: 6px;
+  right: 4px;
   top: 50%;
   transform: translateY(-50%);
-}
-
-.desktop-widgets__ipod-wheel-btn--play {
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
 }
 
 .desktop-widgets__ipod-wheel-center {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 38px;
-  height: 38px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
   border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: linear-gradient(180deg, #f4f4f7 0%, #dadade 100%);
+  border: 1px solid rgba(55, 60, 72, 0.35);
+  background: linear-gradient(175deg, #fafbfc 0%, #c9cdd6 55%, #aeb4bf 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.12),
+    0 2px 6px rgba(0, 0, 0, 0.18);
   cursor: pointer;
+  color: rgba(28, 30, 36, 0.97);
   transform: translate(-50%, -50%);
   transition: transform 0.12s ease;
 }
 
 .desktop-widgets__ipod-wheel-center:hover {
-  transform: translate(-50%, -50%) scale(1.04);
+  transform: translate(-50%, -50%) scale(1.05);
 }
 
 .desktop-widgets__ipod-wheel-btn--prev:hover {
@@ -635,17 +711,13 @@
   transform: translateY(-50%) scale(1.06);
 }
 
-.desktop-widgets__ipod-wheel-btn--play:hover {
-  transform: translateX(-50%) scale(1.06);
-}
-
 [data-theme='light'] .desktop-widgets__ipod-chassis {
   background: linear-gradient(
     165deg,
-    rgba(255, 255, 255, 0.85) 0%,
-    rgba(210, 214, 224, 0.65) 100%
+    rgba(248, 249, 252, 0.95) 0%,
+    rgba(200, 205, 216, 0.75) 100%
   );
-  border-color: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.1);
 }
 
 [data-theme='light'] .desktop-widgets__ipod-wheel {

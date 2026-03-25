@@ -16,6 +16,7 @@ export const WIDGET_OVERLAP_IDS = [
   'clock',
   'weather',
   'music',
+  'bgControls',
   'notesChecklist',
   ...PHOTO_IDS,
 ]
@@ -24,7 +25,8 @@ const STATIC_SIZES = {
   calendar: { w: 200, h: 220 },
   clock: { w: 200, h: 120 },
   weather: { w: 200, h: 130 },
-  music: { w: 200, h: 120 },
+  music: { w: 312, h: 136 },
+  bgControls: { w: 232, h: 210 },
   notesChecklist: { w: 200, h: 200 },
 }
 
@@ -33,6 +35,7 @@ const DEFAULT_LAYOUT = {
   clock: { x: 240, y: 56 },
   weather: { x: 20, y: 300 },
   music: { x: 240, y: 300 },
+  bgControls: { x: 20, y: 448 },
   notesChecklist: { x: 480, y: 300 },
   photoA: { x: 480, y: 56, gridW: 8, gridH: 8 },
   photoB: { x: 720, y: 56, gridW: 8, gridH: 8 },
