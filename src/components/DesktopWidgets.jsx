@@ -30,6 +30,21 @@ import {
   setPinnedChecklistItemDone,
   NOTES_CHANGED_EVENT,
 } from '../lib/notesStorage'
+import {
+  STATIC_WIDGET_IDS,
+  CELL,
+  clampGrid,
+  defaultStaticGrid,
+  defaultGridForWidget,
+  getBoxSizeForWidget,
+  getWidgetRectFromEntry,
+} from '../lib/widgetLayoutShared'
+import {
+  loadPhotoWidgetIdList,
+  savePhotoWidgetIdList,
+  generatePhotoWidgetId,
+  ADD_PHOTO_WIDGET_EVENT,
+} from '../lib/photoWidgetRegistry'
 import PhotoWidgetImportModal from './PhotoWidgetImportModal'
 import { DESKTOP_SAFE_TOP } from '../desktopConstants'
 import { getDesktopIconRects } from '../lib/widgetOverlapGeometry'
@@ -38,13 +53,47 @@ import './DesktopWidgets.css'
 const SD_LAT = 32.72
 const SD_LON = -117.16
 const LAYOUT_KEY = 'desktop-widget-layout'
-const CELL = 40
-const GRID_MIN = 2
-const GRID_MAX = 16
 
-const PHOTO_IDS = ['photoA', 'photoB', 'photoC']
+const WORLD_ZONES = [
+  { key: 'la', label: 'Los Angeles', tz: 'America/Los_Angeles' },
+  { key: 'seoul', label: 'Seoul', tz: 'Asia/Seoul' },
+  { key: 'london', label: 'London', tz: 'Europe/London' },
+]
 
-const WIDGET_IDS = ['calendar', 'clock', 'weather', 'music', 'bgControls', 'notesChecklist', ...PHOTO_IDS]
+function parseLongOffsetToMinutes(str) {
+  if (!str) return null
+  const m = String(str).match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/i)
+  if (!m) return null
+  const sign = m[1] === '-' ? -1 : 1
+  const h = parseInt(m[2], 10)
+  const min = m[3] ? parseInt(m[3], 10) : 0
+  return sign * (h * 60 + min)
+}
+
+function offsetHoursCityVsUser(userTz, cityTz, at) {
+  try {
+    const fu = new Intl.DateTimeFormat('en', { timeZone: userTz, timeZoneName: 'longOffset' }).formatToParts(at)
+    const fc = new Intl.DateTimeFormat('en', { timeZone: cityTz, timeZoneName: 'longOffset' }).formatToParts(at)
+    const u = fu.find((p) => p.type === 'timeZoneName')?.value
+    const c = fc.find((p) => p.type === 'timeZoneName')?.value
+    const mu = parseLongOffsetToMinutes(u)
+    const mc = parseLongOffsetToMinutes(c)
+    if (mu == null || mc == null) return null
+    return (mc - mu) / 60
+  } catch {
+    return null
+  }
+}
+
+function formatOffsetVersusUser(h) {
+  if (h == null || Number.isNaN(h)) return '—'
+  if (Math.abs(h) < 0.05) return 'Same as you'
+  const rounded = Math.round(h * 2) / 2
+  const a = Math.abs(rounded)
+  const unit = a === 1 ? 'hour' : 'hours'
+  if (rounded > 0) return `${a} ${unit} ahead`
+  return `${a} ${unit} behind`
+}
 
 function formatTrackTime(sec) {
   if (sec == null || !Number.isFinite(sec) || sec < 0) return '0:00'
@@ -53,61 +102,30 @@ function formatTrackTime(sec) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-const STATIC_SIZES = {
-  calendar: { w: 200, h: 220 },
-  clock: { w: 268, h: 118 },
-  weather: { w: 200, h: 108 },
-  music: { w: 312, h: 136 },
-  bgControls: { w: 160, h: 160 },
-  notesChecklist: { w: 200, h: 200 },
-}
-
 const DEFAULT_LAYOUT = {
-  calendar: { x: 20, y: 56 },
-  clock: { x: 240, y: 56 },
-  weather: { x: 20, y: 300 },
-  music: { x: 240, y: 300 },
-  bgControls: { x: 1000, y: 420 },
-  notesChecklist: { x: 480, y: 300 },
+  calendar: { x: 20, y: 56, ...defaultStaticGrid('calendar') },
+  clock: { x: 240, y: 56, ...defaultStaticGrid('clock') },
+  weather: { x: 20, y: 300, ...defaultStaticGrid('weather') },
+  music: { x: 240, y: 300, ...defaultStaticGrid('music') },
+  bgControls: { x: 1000, y: 420, ...defaultStaticGrid('bgControls') },
+  notesChecklist: { x: 480, y: 300, ...defaultStaticGrid('notesChecklist') },
   photoA: { x: 24, y: 260, gridW: 8, gridH: 12 },
   photoB: { x: 400, y: 56, gridW: 6, gridH: 8 },
   photoC: { x: 860, y: 56, gridW: 8, gridH: 7 },
-}
-
-function clampGrid(n) {
-  const v = Math.round(Number(n))
-  if (Number.isNaN(v)) return GRID_MIN
-  return Math.max(GRID_MIN, Math.min(GRID_MAX, v))
-}
-
-function getBoxSize(id, entry) {
-  if (PHOTO_IDS.includes(id)) {
-    const gw = clampGrid(entry?.gridW ?? GRID_MIN)
-    const gh = clampGrid(entry?.gridH ?? GRID_MIN)
-    return { w: gw * CELL, h: gh * CELL }
-  }
-  return STATIC_SIZES[id] || { w: 200, h: 150 }
-}
-
-function getWidgetRect(id, entry) {
-  const { w, h } = getBoxSize(id, entry)
-  const x = entry.x ?? 0
-  const y = entry.y ?? 0
-  return { left: x, top: y, right: x + w, bottom: y + h }
 }
 
 function rectsOverlap(a, b) {
   return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom)
 }
 
-function hasOverlapWithAny(movingId, pos, layoutMap, desktopItems = []) {
+function hasOverlapWithAny(movingId, pos, layoutMap, desktopItems, widgetIds) {
   const entry = { ...layoutMap[movingId], ...pos }
-  const r = getWidgetRect(movingId, entry)
-  for (const id of WIDGET_IDS) {
+  const r = getWidgetRectFromEntry(movingId, entry)
+  for (const id of widgetIds) {
     if (id === movingId) continue
     const other = layoutMap[id]
     if (!other) continue
-    const r2 = getWidgetRect(id, other)
+    const r2 = getWidgetRectFromEntry(id, other)
     if (rectsOverlap(r, r2)) return true
   }
   for (const ir of getDesktopIconRects(desktopItems)) {
@@ -116,29 +134,63 @@ function hasOverlapWithAny(movingId, pos, layoutMap, desktopItems = []) {
   return false
 }
 
-function loadLayout() {
+function loadLayout(photoIdList) {
+  const ids = [...STATIC_WIDGET_IDS, ...photoIdList]
+  const out = {}
+  for (const id of STATIC_WIDGET_IDS) {
+    out[id] = { ...DEFAULT_LAYOUT[id] }
+  }
+  for (const id of photoIdList) {
+    const def = defaultGridForWidget(id)
+    out[id] = {
+      ...(DEFAULT_LAYOUT[id] || {
+        x: 32 + (photoIdList.indexOf(id) % 5) * 56,
+        y: 240 + Math.floor(photoIdList.indexOf(id) / 5) * 40,
+        ...def,
+      }),
+    }
+  }
   try {
     const raw = localStorage.getItem(LAYOUT_KEY)
-    if (!raw) return { ...DEFAULT_LAYOUT }
-    const parsed = JSON.parse(raw)
-    const out = { ...DEFAULT_LAYOUT }
-    for (const id of WIDGET_IDS) {
-      if (parsed[id]?.x != null && parsed[id]?.y != null) {
-        out[id] = {
-          ...out[id],
-          x: parsed[id].x,
-          y: parsed[id].y,
-        }
-        if (PHOTO_IDS.includes(id)) {
-          if (parsed[id].gridW != null) out[id].gridW = clampGrid(parsed[id].gridW)
-          if (parsed[id].gridH != null) out[id].gridH = clampGrid(parsed[id].gridH)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      for (const id of ids) {
+        if (parsed[id]?.x != null && parsed[id]?.y != null) {
+          const defG = defaultGridForWidget(id)
+          const prev = out[id] || { x: 100, y: 300, ...defG }
+          out[id] = {
+            ...prev,
+            x: parsed[id].x,
+            y: parsed[id].y,
+            gridW: parsed[id].gridW != null ? clampGrid(parsed[id].gridW) : clampGrid(prev.gridW ?? defG.gridW),
+            gridH: parsed[id].gridH != null ? clampGrid(parsed[id].gridH) : clampGrid(prev.gridH ?? defG.gridH),
+          }
         }
       }
     }
-    return out
   } catch {
-    return { ...DEFAULT_LAYOUT }
+    // keep out
   }
+
+  for (const id of STATIC_WIDGET_IDS) {
+    const def = defaultStaticGrid(id)
+    const base = { ...DEFAULT_LAYOUT[id], ...out[id] }
+    out[id] = {
+      ...base,
+      gridW: clampGrid(base.gridW ?? def.gridW),
+      gridH: clampGrid(base.gridH ?? def.gridH),
+    }
+  }
+  for (const id of photoIdList) {
+    const def = defaultGridForWidget(id)
+    const base = out[id] || { x: 80, y: 300, ...def }
+    out[id] = {
+      ...base,
+      gridW: clampGrid(base.gridW ?? def.gridW),
+      gridH: clampGrid(base.gridH ?? def.gridH),
+    }
+  }
+  return out
 }
 
 function saveLayout(layout) {
@@ -172,10 +224,10 @@ const DEFAULT_PHOTO_WIDGET = {
   photoC: { galleryIndex: 27, cropPadding: 0 },
 }
 
-function readInitialPhotoMap() {
+function readInitialPhotoMap(photoIdList) {
   const o = {}
-  for (const id of PHOTO_IDS) {
-    o[id] = loadPhotoWidgetState(id) ?? DEFAULT_PHOTO_WIDGET[id]
+  for (const id of photoIdList) {
+    o[id] = loadPhotoWidgetState(id) ?? DEFAULT_PHOTO_WIDGET[id] ?? { galleryIndex: 0, cropPadding: 0 }
   }
   return o
 }
@@ -193,19 +245,21 @@ export default function DesktopWidgets({
     lon: null,
     label: '',
   })
-  const [layout, setLayout] = useState(loadLayout)
+  const [photoIds, setPhotoIds] = useState(() => loadPhotoWidgetIdList())
+  const [layout, setLayout] = useState(() => loadLayout(loadPhotoWidgetIdList()))
   const [calMonth, setCalMonth] = useState(() => {
     const d = new Date()
     return new Date(d.getFullYear(), d.getMonth(), 1)
   })
   const [selectedDate, setSelectedDate] = useState(() => new Date())
   const [photoImportFor, setPhotoImportFor] = useState(null)
-  const [photoData, setPhotoData] = useState(readInitialPhotoMap)
+  const [photoData, setPhotoData] = useState(() => readInitialPhotoMap(loadPhotoWidgetIdList()))
   const [notesStore, setNotesStore] = useState(() => loadNotesStore())
   const dragRef = useRef(null)
   const [draggingId, setDraggingId] = useState(null)
+  const [resizingWidgetId, setResizingWidgetId] = useState(null)
   const containerRef = useRef(null)
-  const photoResizeRef = useRef(null)
+  const widgetResizeRef = useRef(null)
   const {
     currentTrack,
     isPlaying,
@@ -259,6 +313,83 @@ export default function DesktopWidgets({
   useEffect(() => {
     onLayoutChange?.(layout)
   }, [layout, onLayoutChange])
+
+  const widgetIds = useMemo(() => [...STATIC_WIDGET_IDS, ...photoIds], [photoIds])
+
+  const userTz = useMemo(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+    } catch {
+      return 'UTC'
+    }
+  }, [])
+
+  useEffect(() => {
+    setPhotoData((prev) => {
+      const next = { ...prev }
+      let changed = false
+      for (const id of photoIds) {
+        if (next[id] == null) {
+          next[id] = loadPhotoWidgetState(id) ?? DEFAULT_PHOTO_WIDGET[id] ?? { galleryIndex: 0, cropPadding: 0 }
+          changed = true
+        }
+      }
+      return changed ? next : prev
+    })
+  }, [photoIds])
+
+  useEffect(() => {
+    setLayout((prev) => {
+      let changed = false
+      const next = { ...prev }
+      for (const id of photoIds) {
+        if (!next[id]) {
+          const def = defaultGridForWidget(id)
+          const n = photoIds.indexOf(id)
+          next[id] = {
+            x: 32 + (n % 5) * 56,
+            y: 220 + Math.floor(n / 5) * 44,
+            ...def,
+          }
+          changed = true
+        }
+      }
+      if (changed) saveLayout(next)
+      return changed ? next : prev
+    })
+  }, [photoIds])
+
+  useEffect(() => {
+    const handler = (e) => {
+      const gi = e.detail?.galleryIndex
+      if (typeof gi !== 'number' || !Number.isFinite(gi)) return
+      const nid = generatePhotoWidgetId()
+      setPhotoIds((prev) => {
+        const next = [...prev, nid]
+        savePhotoWidgetIdList(next)
+        return next
+      })
+      setLayout((prev) => {
+        const nPhoto = Object.keys(prev).filter((k) => k.startsWith('photo')).length
+        const def = defaultGridForWidget(nid)
+        const nextLay = {
+          ...prev,
+          [nid]: {
+            x: 40 + (nPhoto % 6) * 48,
+            y: 200 + Math.floor(nPhoto / 6) * 48,
+            ...def,
+          },
+        }
+        saveLayout(nextLay)
+        return nextLay
+      })
+      const state = { galleryIndex: gi, cropPadding: 0 }
+      savePhotoWidgetState(nid, state)
+      setPhotoData((p) => ({ ...p, [nid]: state }))
+    }
+    window.addEventListener(ADD_PHOTO_WIDGET_EVENT, handler)
+    return () => window.removeEventListener(ADD_PHOTO_WIDGET_EVENT, handler)
+  }, [])
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -323,7 +454,7 @@ export default function DesktopWidgets({
     if (!el) return { x, y }
     const rect = el.getBoundingClientRect()
     const entry = layoutMap[id] || DEFAULT_LAYOUT[id]
-    const { w, h } = getBoxSize(id, entry)
+    const { w, h } = getBoxSizeForWidget(id, entry)
     const maxX = Math.max(0, rect.width - w)
     const minY = DESKTOP_SAFE_TOP
     const maxY = Math.max(minY, rect.height - h)
@@ -340,7 +471,7 @@ export default function DesktopWidgets({
       if (!el) return layoutMap
       const base = { ...layoutMap[movingId] }
       const rect = el.getBoundingClientRect()
-      const { w, h } = getBoxSize(movingId, base)
+      const { w, h } = getBoxSizeForWidget(movingId, base)
       const maxX = Math.max(0, rect.width - w)
       const maxY = Math.max(0, rect.height - h)
       const cx = base.x
@@ -352,7 +483,7 @@ export default function DesktopWidgets({
         for (let gx = 0; gx <= maxX; gx += step) {
           const cand = clampPos(movingId, gx, gy, layoutMap)
           const merged = { ...layoutMap, [movingId]: { ...base, ...cand } }
-          if (!hasOverlapWithAny(movingId, cand, merged, desktopItems)) {
+          if (!hasOverlapWithAny(movingId, cand, merged, desktopItems, widgetIds)) {
             const d = (cand.x - cx) ** 2 + (cand.y - cy) ** 2
             if (d < bestDist) {
               bestDist = d
@@ -364,7 +495,7 @@ export default function DesktopWidgets({
       if (bestCand) return { ...layoutMap, [movingId]: { ...base, ...bestCand } }
       return layoutMap
     },
-    [clampPos, desktopItems],
+    [clampPos, desktopItems, widgetIds],
   )
 
   const handleGripPointerDown = useCallback(
@@ -418,10 +549,10 @@ export default function DesktopWidgets({
         setDraggingId(null)
         setLayout((prev) => {
           let next = prev
-          for (const wid of WIDGET_IDS) {
+          for (const wid of widgetIds) {
             const p = next[wid]
             if (!p) continue
-            if (hasOverlapWithAny(wid, { x: p.x, y: p.y }, next, desktopItems)) {
+            if (hasOverlapWithAny(wid, { x: p.x, y: p.y }, next, desktopItems, widgetIds)) {
               next = nudgeToFreeSpot(wid, next)
             }
           }
@@ -434,19 +565,20 @@ export default function DesktopWidgets({
       window.addEventListener('pointerup', onUp)
       window.addEventListener('pointercancel', onUp)
     },
-    [layout, clampPos, nudgeToFreeSpot, desktopItems],
+    [layout, clampPos, nudgeToFreeSpot, desktopItems, widgetIds],
   )
 
-  const handlePhotoResizePointerDown = useCallback(
-    (e, pid) => {
+  const handleWidgetResizePointerDown = useCallback(
+    (e, wid) => {
       if (e.button !== 0) return
       e.stopPropagation()
       e.preventDefault()
-      const entry = layout[pid] || DEFAULT_LAYOUT[pid]
+      const entry = layout[wid] || DEFAULT_LAYOUT[wid]
       const origW = clampGrid(entry.gridW)
       const origH = clampGrid(entry.gridH)
-      photoResizeRef.current = {
-        pid,
+      setResizingWidgetId(wid)
+      widgetResizeRef.current = {
+        wid,
         startX: e.clientX,
         startY: e.clientY,
         origW,
@@ -461,14 +593,14 @@ export default function DesktopWidgets({
       }
 
       const onMove = (ev) => {
-        const d = photoResizeRef.current
+        const d = widgetResizeRef.current
         if (!d) return
         const nextW = clampGrid(d.origW + Math.round((ev.clientX - d.startX) / CELL))
         const nextH = clampGrid(d.origH + Math.round((ev.clientY - d.startY) / CELL))
         setLayout((prev) => {
-          const base = { ...(prev[d.pid] || DEFAULT_LAYOUT[d.pid]), gridW: nextW, gridH: nextH }
-          const pos = clampPos(d.pid, base.x, base.y, { ...prev, [d.pid]: base })
-          return { ...prev, [d.pid]: { ...base, ...pos } }
+          const base = { ...(prev[d.wid] || DEFAULT_LAYOUT[d.wid]), gridW: nextW, gridH: nextH }
+          const pos = clampPos(d.wid, base.x, base.y, { ...prev, [d.wid]: base })
+          return { ...prev, [d.wid]: { ...base, ...pos } }
         })
       }
 
@@ -481,14 +613,15 @@ export default function DesktopWidgets({
         } catch {
           // ignore
         }
-        photoResizeRef.current = null
+        widgetResizeRef.current = null
+        setResizingWidgetId(null)
         setLayout((prev) => {
           let next = prev
-          for (const wid of WIDGET_IDS) {
-            const p = next[wid]
+          for (const id of widgetIds) {
+            const p = next[id]
             if (!p) continue
-            if (hasOverlapWithAny(wid, { x: p.x, y: p.y }, next, desktopItems)) {
-              next = nudgeToFreeSpot(wid, next)
+            if (hasOverlapWithAny(id, { x: p.x, y: p.y }, next, desktopItems, widgetIds)) {
+              next = nudgeToFreeSpot(id, next)
             }
           }
           saveLayout(next)
@@ -500,7 +633,7 @@ export default function DesktopWidgets({
       window.addEventListener('pointerup', onUp)
       window.addEventListener('pointercancel', onUp)
     },
-    [layout, clampPos, nudgeToFreeSpot, desktopItems],
+    [layout, clampPos, nudgeToFreeSpot, desktopItems, widgetIds],
   )
 
   const handlePhotoApply = useCallback((pid, state) => {
@@ -523,16 +656,19 @@ export default function DesktopWidgets({
     setPinnedChecklistItemDone(notesStore, itemId, done)
   }, [notesStore])
 
-  const h24 = now.getHours()
-  const flipAmpm = h24 >= 12 ? 'PM' : 'AM'
-  let flipHour12 = h24 % 12
-  if (flipHour12 === 0) flipHour12 = 12
-  const flipMinutes = String(now.getMinutes()).padStart(2, '0')
-  const flipSeconds = String(now.getSeconds()).padStart(2, '0')
+  const homeTimeLabel = now.toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  })
+
+  const cardClass = (id, extra) =>
+    `desktop-widgets__card ${extra}${resizingWidgetId === id ? ' desktop-widgets__card--resizing' : ''}`.trim()
 
   const cardStyle = (id) => {
     const p = layout[id] || DEFAULT_LAYOUT[id]
-    const { w, h } = getBoxSize(id, p)
+    const { w, h } = getBoxSizeForWidget(id, p)
     return {
       left: p.x,
       top: p.y,
@@ -552,7 +688,7 @@ export default function DesktopWidgets({
         />
       )}
 
-      <div className="desktop-widgets__card desktop-widgets__card--calendar" style={cardStyle('calendar')}>
+      <div className={cardClass('calendar', 'desktop-widgets__card--calendar')} style={cardStyle('calendar')}>
         <button
           type="button"
           className="desktop-widgets__grip"
@@ -578,9 +714,15 @@ export default function DesktopWidgets({
             className="w-full rounded-xl [--cell-size:1.65rem] sm:[--cell-size:1.65rem]"
           />
         </div>
+        <button
+          type="button"
+          className="desktop-widgets__widget-resize-handle"
+          aria-label="Resize calendar widget"
+          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'calendar')}
+        />
       </div>
 
-      <div className="desktop-widgets__card desktop-widgets__card--clock" style={cardStyle('clock')}>
+      <div className={cardClass('clock', 'desktop-widgets__card--clock')} style={cardStyle('clock')}>
         <button
           type="button"
           className="desktop-widgets__grip"
@@ -590,32 +732,45 @@ export default function DesktopWidgets({
           <GripVertical size={14} strokeWidth={2} />
         </button>
         <div
-          className="desktop-widgets__adaptive desktop-widgets__flip-clock"
+          className="desktop-widgets__adaptive desktop-widgets__world-clock"
           role="timer"
           aria-live="polite"
-          aria-label={`${flipHour12} ${flipMinutes} ${flipSeconds} ${flipAmpm}`}
+          aria-label={`World clock, home ${homeTimeLabel}`}
         >
-          <div className="desktop-widgets__flip-clock__panel">
-            <div className="desktop-widgets__flip-clock__hinge" aria-hidden />
-            <div className="desktop-widgets__flip-clock__panel-body">
-              <span className="desktop-widgets__flip-clock__digit">{flipHour12}</span>
-              <span className="desktop-widgets__flip-clock__ampm">{flipAmpm}</span>
-            </div>
-          </div>
-          <div className="desktop-widgets__flip-clock__panel">
-            <div className="desktop-widgets__flip-clock__hinge" aria-hidden />
-            <div className="desktop-widgets__flip-clock__panel-body">
-              <span className="desktop-widgets__flip-clock__digit">{flipMinutes}</span>
-              <span className="desktop-widgets__flip-clock__sec">{flipSeconds}</span>
-            </div>
-          </div>
-          <div className="desktop-widgets__flip-clock__loc">
-            {userLoc.status === 'pending' ? 'Locating…' : userLoc.label || 'Local time'}
+          {WORLD_ZONES.map((z) => {
+            const off = offsetHoursCityVsUser(userTz, z.tz, now)
+            const timeStr = now.toLocaleTimeString(undefined, {
+              timeZone: z.tz,
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: true,
+            })
+            return (
+              <div key={z.key} className="desktop-widgets__world-clock__col">
+                <span className="desktop-widgets__world-clock__city">{z.label}</span>
+                <span className="desktop-widgets__world-clock__time">{timeStr}</span>
+                <span className="desktop-widgets__world-clock__delta">{formatOffsetVersusUser(off)}</span>
+              </div>
+            )
+          })}
+          <div className="desktop-widgets__world-clock__col desktop-widgets__world-clock__col--home">
+            <span className="desktop-widgets__world-clock__city">
+              {userLoc.status === 'pending' ? 'Locating…' : userLoc.label || 'Your time'}
+            </span>
+            <span className="desktop-widgets__world-clock__time">{homeTimeLabel}</span>
+            <span className="desktop-widgets__world-clock__delta">Base</span>
           </div>
         </div>
+        <button
+          type="button"
+          className="desktop-widgets__widget-resize-handle"
+          aria-label="Resize clock widget"
+          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'clock')}
+        />
       </div>
 
-      <div className="desktop-widgets__card desktop-widgets__card--weather" style={cardStyle('weather')}>
+      <div className={cardClass('weather', 'desktop-widgets__card--weather')} style={cardStyle('weather')}>
         <button
           type="button"
           className="desktop-widgets__grip"
@@ -647,9 +802,15 @@ export default function DesktopWidgets({
             </div>
           ) : null}
         </div>
+        <button
+          type="button"
+          className="desktop-widgets__widget-resize-handle"
+          aria-label="Resize weather widget"
+          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'weather')}
+        />
       </div>
 
-      <div className="desktop-widgets__card desktop-widgets__card--bg-controls" style={cardStyle('bgControls')}>
+      <div className={cardClass('bgControls', 'desktop-widgets__card--bg-controls')} style={cardStyle('bgControls')}>
         <button
           type="button"
           className="desktop-widgets__grip"
@@ -684,9 +845,15 @@ export default function DesktopWidgets({
             />
           </div>
         </div>
+        <button
+          type="button"
+          className="desktop-widgets__widget-resize-handle"
+          aria-label="Resize background controls widget"
+          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'bgControls')}
+        />
       </div>
 
-      <div className="desktop-widgets__card desktop-widgets__card--music" style={cardStyle('music')}>
+      <div className={cardClass('music', 'desktop-widgets__card--music')} style={cardStyle('music')}>
         <button
           type="button"
           className="desktop-widgets__grip"
@@ -807,9 +974,15 @@ export default function DesktopWidgets({
             </div>
           </div>
         </div>
+        <button
+          type="button"
+          className="desktop-widgets__widget-resize-handle"
+          aria-label="Resize music widget"
+          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'music')}
+        />
       </div>
 
-      <div className="desktop-widgets__card desktop-widgets__card--notes" style={cardStyle('notesChecklist')}>
+      <div className={cardClass('notesChecklist', 'desktop-widgets__card--notes')} style={cardStyle('notesChecklist')}>
         <button
           type="button"
           className="desktop-widgets__grip"
@@ -848,12 +1021,18 @@ export default function DesktopWidgets({
             ))}
           </ul>
         )}
+        <button
+          type="button"
+          className="desktop-widgets__widget-resize-handle"
+          aria-label="Resize notes widget"
+          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'notesChecklist')}
+        />
       </div>
 
-      {PHOTO_IDS.map((pid) => {
+      {photoIds.map((pid) => {
         const pdata = photoData[pid]
         return (
-          <div key={pid} className="desktop-widgets__card desktop-widgets__card--photo" style={cardStyle(pid)}>
+          <div key={pid} className={cardClass(pid, 'desktop-widgets__card--photo')} style={cardStyle(pid)}>
             <div className="desktop-widgets__photo-body">
               {pdata ? (
                 <img
@@ -892,9 +1071,9 @@ export default function DesktopWidgets({
               </div>
               <button
                 type="button"
-                className="desktop-widgets__photo-resize-handle"
+                className="desktop-widgets__widget-resize-handle"
                 aria-label="Resize photo widget"
-                onPointerDown={(e) => handlePhotoResizePointerDown(e, pid)}
+                onPointerDown={(e) => handleWidgetResizePointerDown(e, pid)}
               />
             </div>
           </div>

@@ -7,6 +7,7 @@ import {
   getGalleryPhoto,
   getGalleryAlbums,
 } from '../lib/gallery'
+import { ADD_PHOTO_WIDGET_EVENT } from '../lib/photoWidgetRegistry'
 import './GalleryWindow.css'
 
 const FAVORITES_KEY = 'gallery-favorites'
@@ -413,14 +414,32 @@ export default function GalleryWindow() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           >
-            <button
-              type="button"
-              className="gallery-window__lightbox-close"
-              onClick={() => setSelectedPhotoIndex(null)}
-              aria-label="Close"
-            >
-              ×
-            </button>
+            <div className="gallery-window__lightbox-toolbar">
+              <button
+                type="button"
+                className="gallery-window__lightbox-add-desktop"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  window.dispatchEvent(
+                    new CustomEvent(ADD_PHOTO_WIDGET_EVENT, {
+                      detail: { galleryIndex: selectedPhotoIndex },
+                    }),
+                  )
+                }}
+                aria-label="Add photo to desktop"
+                title="Add to desktop"
+              >
+                <LayoutGrid size={20} strokeWidth={2} aria-hidden />
+              </button>
+              <button
+                type="button"
+                className="gallery-window__lightbox-close"
+                onClick={() => setSelectedPhotoIndex(null)}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
             <img
               src={getImagePath(selectedPhotoIndex)}
               alt={getGalleryPhoto(selectedPhotoIndex)?.title ?? `Photo ${selectedPhotoIndex + 1}`}

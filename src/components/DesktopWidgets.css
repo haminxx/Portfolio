@@ -13,22 +13,44 @@
   padding: 12px 14px 14px;
   padding-top: 14px;
   border-radius: 22px;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  border: 1px solid transparent;
-  box-shadow: none;
+  transition:
+    width 0.22s ease,
+    height 0.22s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+  background: rgba(22, 22, 26, 0.42);
+  backdrop-filter: blur(22px) saturate(1.25);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 10px 36px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
   color: var(--portfolio-chrome-fg, #f5f5f7);
   box-sizing: border-box;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.desktop-widgets__card:hover {
-  border: 1px solid rgba(255, 255, 255, 0.22);
+[data-theme='light'] .desktop-widgets__card {
+  background: rgba(255, 255, 255, 0.52);
+  border-color: rgba(0, 0, 0, 0.08);
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    0 12px 40px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.desktop-widgets__card--resizing {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.desktop-widgets__card:hover {
+  border-color: rgba(255, 255, 255, 0.26);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+[data-theme='light'] .desktop-widgets__card:hover {
+  border-color: rgba(0, 0, 0, 0.12);
 }
 
 .desktop-widgets__card--calendar {
@@ -37,8 +59,8 @@
 }
 
 .desktop-widgets__card--clock {
-  width: 268px;
-  min-height: 112px;
+  min-width: 0;
+  min-height: 100px;
 }
 
 .desktop-widgets__card--calendar .desktop-widgets__cal-nav,
@@ -394,13 +416,13 @@
   pointer-events: auto;
 }
 
-.desktop-widgets__photo-resize-handle {
+.desktop-widgets__widget-resize-handle {
   position: absolute;
-  right: 0;
-  bottom: 0;
+  right: 2px;
+  bottom: 2px;
   width: 22px;
   height: 22px;
-  z-index: 3;
+  z-index: 4;
   padding: 0;
   border: none;
   border-radius: 10px 0 14px 0;
@@ -418,12 +440,17 @@
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
-.desktop-widgets__card--photo:hover .desktop-widgets__photo-resize-handle {
+.desktop-widgets__card--photo .desktop-widgets__widget-resize-handle {
+  right: 0;
+  bottom: 0;
+}
+
+.desktop-widgets__card:hover .desktop-widgets__widget-resize-handle {
   opacity: 1;
   visibility: visible;
 }
 
-.desktop-widgets__photo-resize-handle:hover {
+.desktop-widgets__widget-resize-handle:hover {
   background: linear-gradient(
     135deg,
     transparent 0%,
@@ -985,6 +1012,57 @@
   background: #1c1c1e;
   color: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* World clock: LA → Seoul → London → user (base) */
+.desktop-widgets__world-clock {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px 10px;
+  margin-top: 6px;
+  width: 100%;
+  align-items: start;
+}
+
+.desktop-widgets__world-clock__col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.desktop-widgets__world-clock__col--home {
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+  padding-left: 10px;
+  margin-left: 2px;
+}
+
+[data-theme='light'] .desktop-widgets__world-clock__col--home {
+  border-left-color: rgba(0, 0, 0, 0.1);
+}
+
+.desktop-widgets__world-clock__city {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.72;
+  line-height: 1.2;
+}
+
+.desktop-widgets__world-clock__time {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.desktop-widgets__world-clock__delta {
+  font-size: 8px;
+  font-weight: 600;
+  opacity: 0.62;
+  line-height: 1.2;
 }
 
 /* Flip-clock style time (reference: split panels + hinge line) */

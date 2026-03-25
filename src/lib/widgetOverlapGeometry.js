@@ -7,87 +7,59 @@ import {
   DESKTOP_ICON_HEIGHT,
   DESKTOP_SAFE_TOP,
 } from '../desktopConstants'
+import {
+  STATIC_WIDGET_IDS,
+  clampGrid,
+  defaultStaticGrid,
+  defaultGridForWidget,
+  getWidgetRectFromEntry,
+  collectWidgetIdsFromLayout,
+} from './widgetLayoutShared'
 
 const LAYOUT_KEY = 'desktop-widget-layout'
-const CELL = 40
-const GRID_MIN = 2
-const GRID_MAX = 16
-
-const PHOTO_IDS = ['photoA', 'photoB', 'photoC']
-
-export const WIDGET_OVERLAP_IDS = [
-  'calendar',
-  'clock',
-  'weather',
-  'music',
-  'bgControls',
-  'notesChecklist',
-  ...PHOTO_IDS,
-]
-
-const STATIC_SIZES = {
-  calendar: { w: 200, h: 220 },
-  clock: { w: 268, h: 118 },
-  weather: { w: 200, h: 108 },
-  music: { w: 312, h: 136 },
-  bgControls: { w: 160, h: 160 },
-  notesChecklist: { w: 200, h: 200 },
-}
 
 const DEFAULT_LAYOUT = {
-  calendar: { x: 20, y: 56 },
-  clock: { x: 240, y: 56 },
-  weather: { x: 20, y: 300 },
-  music: { x: 240, y: 300 },
-  bgControls: { x: 1000, y: 420 },
-  notesChecklist: { x: 480, y: 300 },
+  calendar: { x: 20, y: 56, ...defaultStaticGrid('calendar') },
+  clock: { x: 240, y: 56, ...defaultStaticGrid('clock') },
+  weather: { x: 20, y: 300, ...defaultStaticGrid('weather') },
+  music: { x: 240, y: 300, ...defaultStaticGrid('music') },
+  bgControls: { x: 1000, y: 420, ...defaultStaticGrid('bgControls') },
+  notesChecklist: { x: 480, y: 300, ...defaultStaticGrid('notesChecklist') },
   photoA: { x: 24, y: 260, gridW: 8, gridH: 12 },
   photoB: { x: 400, y: 56, gridW: 6, gridH: 8 },
   photoC: { x: 860, y: 56, gridW: 8, gridH: 7 },
 }
 
-function clampGrid(n) {
-  const v = Math.round(Number(n))
-  if (Number.isNaN(v)) return GRID_MIN
-  return Math.max(GRID_MIN, Math.min(GRID_MAX, v))
-}
-
-function getBoxSize(id, entry) {
-  if (PHOTO_IDS.includes(id)) {
-    const gw = clampGrid(entry?.gridW ?? GRID_MIN)
-    const gh = clampGrid(entry?.gridH ?? GRID_MIN)
-    return { w: gw * CELL, h: gh * CELL }
-  }
-  return STATIC_SIZES[id] || { w: 200, h: 150 }
-}
-
-function getWidgetRect(id, entry) {
-  const { w, h } = getBoxSize(id, entry)
-  const x = entry.x ?? 0
-  const y = entry.y ?? 0
-  return { left: x, top: y, right: x + w, bottom: y + h }
-}
-
-export function rectsOverlap(a, b) {
-  return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom)
-}
-
 function mergeLayoutFromStorage(parsed) {
   const out = { ...DEFAULT_LAYOUT }
   if (!parsed || typeof parsed !== 'object') return out
-  for (const id of WIDGET_OVERLAP_IDS) {
-    if (parsed[id]?.x != null && parsed[id]?.y != null) {
-      out[id] = {
-        ...out[id],
-        x: parsed[id].x,
-        y: parsed[id].y,
-      }
-      if (PHOTO_IDS.includes(id)) {
-        if (parsed[id].gridW != null) out[id].gridW = clampGrid(parsed[id].gridW)
-        if (parsed[id].gridH != null) out[id].gridH = clampGrid(parsed[id].gridH)
-      }
+
+  const ids = collectWidgetIdsFromLayout(parsed)
+  for (const id of ids) {
+    const p = parsed[id]
+    if (!p || p.x == null || p.y == null) continue
+    const base = out[id] || {
+      x: 80,
+      y: 280,
+      ...defaultGridForWidget(id),
+    }
+    const defG = defaultGridForWidget(id)
+    out[id] = {
+      ...base,
+      x: p.x,
+      y: p.y,
+      gridW: clampGrid(p.gridW != null ? p.gridW : base.gridW ?? defG.gridW),
+      gridH: clampGrid(p.gridH != null ? p.gridH : base.gridH ?? defG.gridH),
     }
   }
+
+  for (const id of STATIC_WIDGET_IDS) {
+    const def = defaultStaticGrid(id)
+    if (!out[id]) out[id] = { ...DEFAULT_LAYOUT[id] }
+    out[id].gridW = clampGrid(out[id].gridW ?? def.gridW)
+    out[id].gridH = clampGrid(out[id].gridH ?? def.gridH)
+  }
+
   return out
 }
 
@@ -105,10 +77,15 @@ export function loadWidgetLayoutFromStorage() {
 /** Axis-aligned rects for all widgets from a layout map (same shape as DesktopWidgets state). */
 export function getWidgetRectsFromLayout(layout) {
   if (!layout) return []
-  return WIDGET_OVERLAP_IDS.map((id) => {
+  const ids = collectWidgetIdsFromLayout(layout)
+  return ids.map((id) => {
     const entry = layout[id] || DEFAULT_LAYOUT[id]
-    return getWidgetRect(id, entry)
+    return getWidgetRectFromEntry(id, entry)
   })
+}
+
+export function rectsOverlap(a, b) {
+  return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom)
 }
 
 export function iconRectFromItem(item) {
@@ -240,4 +217,3 @@ export function groupOverlapsOtherIcons(positions, groupIds, desktopItems) {
   }
   return false
 }
-

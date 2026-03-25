@@ -452,10 +452,37 @@
   to { transform: scale(1); opacity: 1; }
 }
 
-.gallery-window__lightbox-close {
+.gallery-window__lightbox-toolbar {
   position: absolute;
   top: 16px;
   right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 10;
+}
+
+.gallery-window__lightbox-add-desktop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.gallery-window__lightbox-add-desktop:hover {
+  background: rgba(255, 255, 255, 0.32);
+  transform: scale(1.04);
+}
+
+.gallery-window__lightbox-close {
   width: 36px;
   height: 36px;
   border: none;
@@ -465,7 +492,6 @@
   line-height: 1;
   border-radius: 50%;
   cursor: pointer;
-  z-index: 10;
   transition: background 0.2s ease;
 }
 
