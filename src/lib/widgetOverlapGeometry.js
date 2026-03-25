@@ -30,7 +30,7 @@ const STATIC_SIZES = {
   clock: { w: 200, h: 120 },
   weather: { w: 200, h: 130 },
   music: { w: 312, h: 136 },
-  bgControls: { w: 160, h: 188 },
+  bgControls: { w: 160, h: 160 },
   notesChecklist: { w: 200, h: 200 },
 }
 
@@ -39,11 +39,11 @@ const DEFAULT_LAYOUT = {
   clock: { x: 240, y: 56 },
   weather: { x: 20, y: 300 },
   music: { x: 240, y: 300 },
-  bgControls: { x: 20, y: 448 },
+  bgControls: { x: 1000, y: 420 },
   notesChecklist: { x: 480, y: 300 },
-  photoA: { x: 480, y: 56, gridW: 8, gridH: 8 },
-  photoB: { x: 720, y: 56, gridW: 8, gridH: 8 },
-  photoC: { x: 480, y: 360, gridW: 8, gridH: 8 },
+  photoA: { x: 24, y: 300, gridW: 12, gridH: 12 },
+  photoB: { x: 400, y: 56, gridW: 7, gridH: 11 },
+  photoC: { x: 860, y: 56, gridW: 9, gridH: 9 },
 }
 
 function clampGrid(n) {

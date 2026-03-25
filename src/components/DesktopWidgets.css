@@ -62,23 +62,48 @@
 
 .desktop-widgets__card--bg-controls {
   width: 160px;
-  min-height: 176px;
-  padding: 8px 10px 10px;
-  padding-top: 10px;
+  height: 160px;
+  min-height: 160px;
+  max-height: 160px;
+  padding: 6px 8px 8px;
+  padding-top: 8px;
+  box-sizing: border-box;
+}
+
+.desktop-widgets__bg-wheel-square {
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .desktop-widgets__bg-controls-body--compact {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
+  height: 100%;
+  justify-content: flex-start;
 }
 
 .desktop-widgets__bg-speed-wrap {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  flex: 1;
+  min-height: 0;
+  justify-content: flex-end;
+}
+
+.desktop-widgets__bg-controls-body--compact .desktop-widgets__bg-label {
+  font-size: 9px;
+  margin: 0;
 }
 
 .desktop-widgets__adaptive {
@@ -100,6 +125,13 @@
 .desktop-widgets__cal-rdp > * {
   margin-left: auto;
   margin-right: auto;
+}
+
+/* Today: react-day-picker adds `today` class on the day cell */
+.desktop-widgets__cal-rdp .today:not(.selected) button,
+.desktop-widgets__cal-rdp td.today:not([data-selected]) .rdp-day_button {
+  border-radius: 9999px;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
 }
 
 .desktop-widgets__bg-controls-head {

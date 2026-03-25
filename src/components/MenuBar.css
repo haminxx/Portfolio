@@ -279,3 +279,28 @@
   margin: 6px 12px;
   background: rgba(255, 255, 255, 0.1);
 }
+
+/* Invert against live desktop / wallpaper behind the bar */
+.menu-bar__logo.menu-bar__logo--btn,
+.menu-bar__menu-trigger {
+  mix-blend-mode: difference;
+  color: #eaeaea !important;
+  text-shadow: none !important;
+}
+
+.menu-bar__dropdown,
+.menu-bar__dropdown--cnl {
+  mix-blend-mode: normal;
+  isolation: isolate;
+}
+
+.menu-bar .system-tray--mac .system-tray__icon-btn,
+.menu-bar .system-tray--mac .system-tray__clock {
+  mix-blend-mode: difference;
+  color: #eaeaea;
+  text-shadow: none;
+}
+
+.menu-bar .system-tray--mac .system-tray__icon-btn svg {
+  color: inherit;
+}

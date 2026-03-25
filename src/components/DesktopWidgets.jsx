@@ -59,7 +59,7 @@ const STATIC_SIZES = {
   clock: { w: 200, h: 120 },
   weather: { w: 200, h: 130 },
   music: { w: 312, h: 136 },
-  bgControls: { w: 160, h: 188 },
+  bgControls: { w: 160, h: 160 },
   notesChecklist: { w: 200, h: 200 },
 }
 
@@ -68,11 +68,11 @@ const DEFAULT_LAYOUT = {
   clock: { x: 240, y: 56 },
   weather: { x: 20, y: 300 },
   music: { x: 240, y: 300 },
-  bgControls: { x: 20, y: 448 },
+  bgControls: { x: 1000, y: 420 },
   notesChecklist: { x: 480, y: 300 },
-  photoA: { x: 480, y: 56, gridW: 8, gridH: 8 },
-  photoB: { x: 720, y: 56, gridW: 8, gridH: 8 },
-  photoC: { x: 480, y: 360, gridW: 8, gridH: 8 },
+  photoA: { x: 24, y: 300, gridW: 12, gridH: 12 },
+  photoB: { x: 400, y: 56, gridW: 7, gridH: 11 },
+  photoC: { x: 860, y: 56, gridW: 9, gridH: 9 },
 }
 
 function clampGrid(n) {
@@ -166,10 +166,17 @@ function weatherCodeToIcon(code) {
   return Cloud
 }
 
+/** Defaults match desktop hero layout: helmet (large), motion bike (tall), WORK HARD (square). Indices 0-based into gallery manifest. */
+const DEFAULT_PHOTO_WIDGET = {
+  photoA: { galleryIndex: 34, cropPadding: 0 },
+  photoB: { galleryIndex: 32, cropPadding: 0 },
+  photoC: { galleryIndex: 27, cropPadding: 0 },
+}
+
 function readInitialPhotoMap() {
   const o = {}
   for (const id of PHOTO_IDS) {
-    o[id] = loadPhotoWidgetState(id)
+    o[id] = loadPhotoWidgetState(id) ?? DEFAULT_PHOTO_WIDGET[id]
   }
   return o
 }
@@ -306,6 +313,7 @@ export default function DesktopWidgets({
     }
   }, [])
 
+  /** Pick the valid position closest to the drop point (not top-left scan order). */
   const nudgeToFreeSpot = useCallback(
     (movingId, layoutMap) => {
       const el = containerRef.current
@@ -315,14 +323,25 @@ export default function DesktopWidgets({
       const { w, h } = getBoxSize(movingId, base)
       const maxX = Math.max(0, rect.width - w)
       const maxY = Math.max(0, rect.height - h)
-      const step = 8
+      const cx = base.x
+      const cy = base.y
+      const step = 6
+      let bestCand = null
+      let bestDist = Infinity
       for (let gy = 0; gy <= maxY; gy += step) {
         for (let gx = 0; gx <= maxX; gx += step) {
           const cand = clampPos(movingId, gx, gy, layoutMap)
           const merged = { ...layoutMap, [movingId]: { ...base, ...cand } }
-          if (!hasOverlapWithAny(movingId, cand, merged, desktopItems)) return merged
+          if (!hasOverlapWithAny(movingId, cand, merged, desktopItems)) {
+            const d = (cand.x - cx) ** 2 + (cand.y - cy) ** 2
+            if (d < bestDist) {
+              bestDist = d
+              bestCand = cand
+            }
+          }
         }
       }
+      if (bestCand) return { ...layoutMap, [movingId]: { ...base, ...bestCand } }
       return layoutMap
     },
     [clampPos, desktopItems],
@@ -491,6 +510,13 @@ export default function DesktopWidgets({
                 setCalMonth(new Date(d.getFullYear(), d.getMonth(), 1))
               }
             }}
+            modifiersStyles={{
+              today: {
+                borderRadius: 9999,
+                outline: '2px solid rgba(255, 255, 255, 0.92)',
+                outlineOffset: 1,
+              },
+            }}
             className="w-full rounded-xl [--cell-size:1.65rem] sm:[--cell-size:1.65rem]"
           />
         </div>
@@ -562,15 +588,20 @@ export default function DesktopWidgets({
           <GripVertical size={14} strokeWidth={2} />
         </button>
         <div className="desktop-widgets__bg-controls-body desktop-widgets__bg-controls-body--compact">
-          <ColorPicker
-            size={112}
-            padding={10}
-            bulletRadius={13}
-            numPoints={2}
-            showColorWheel
-            initialPrimaryHex={bgColor2}
-            onColorChange={onMeshColorsFromWheel}
-          />
+          <div className="desktop-widgets__bg-wheel-square">
+            <ColorPicker
+              size={100}
+              padding={8}
+              bulletRadius={11}
+              numPoints={2}
+              minLight={6}
+              maxLight={38}
+              maxSaturation={52}
+              showColorWheel
+              initialPrimaryHex={bgColor2}
+              onColorChange={onMeshColorsFromWheel}
+            />
+          </div>
           <div className="desktop-widgets__bg-speed-wrap">
             <span className="desktop-widgets__bg-label">Motion</span>
             <BackgroundMotionSlider
@@ -613,7 +644,7 @@ export default function DesktopWidgets({
                       width={44}
                       height={44}
                     />
-                    <div className="desktop-widgets__ipod-meta">
+                    <div className="desktop-widgets__adaptive desktop-widgets__ipod-meta">
                       <div className="desktop-widgets__ipod-title">{currentTrack.title}</div>
                       <div className="desktop-widgets__ipod-artist">
                         {currentTrack.artist || 'YouTube Music'}
@@ -659,17 +690,17 @@ export default function DesktopWidgets({
                       }}
                     />
                   </div>
-                  <div className="desktop-widgets__ipod-times">
+                  <div className="desktop-widgets__adaptive desktop-widgets__ipod-times">
                     <span>{formatTrackTime(progressSec)}</span>
                     <span>{formatTrackTime(durationSec)}</span>
                   </div>
                 </>
               ) : (
-                <div className="desktop-widgets__ipod-idle">Nothing playing</div>
+                <div className="desktop-widgets__adaptive desktop-widgets__ipod-idle">Nothing playing</div>
               )}
             </div>
             <div className="desktop-widgets__ipod-wheel-wrap">
-              <div className="desktop-widgets__ipod-wheel">
+              <div className="desktop-widgets__adaptive desktop-widgets__ipod-wheel">
                 <button
                   type="button"
                   className="desktop-widgets__ipod-wheel-label desktop-widgets__ipod-wheel-label--menu"

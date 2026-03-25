@@ -61,6 +61,8 @@ export interface ColorPickerProps {
   maxSpread?: number
   minLight?: number
   maxLight?: number
+  /** Caps chroma so picks stay richer / less neon (default ~half of full saturation). */
+  maxSaturation?: number
   showColorWheel?: boolean
   numPoints?: number
   /** Main (draggable) bullet color — from persisted prefs */
@@ -77,11 +79,13 @@ function ColorPickerInner({
   maxSpread = Math.PI / 3,
   minLight = 15,
   maxLight = 90,
+  maxSaturation = 100,
   showColorWheel = true,
   numPoints = 2,
   initialPrimaryHex,
   onColorChange,
 }: ColorPickerProps) {
+  const sat = Math.max(0, Math.min(100, maxSaturation))
   const RADIUS = size / 2 - padding
   const onColorChangeRef = useRef(onColorChange)
   onColorChangeRef.current = onColorChange
@@ -103,7 +107,7 @@ function ColorPickerInner({
 
   const hue = ((((angle * 180) / Math.PI) % 360) + 360) % 360
   const light = maxLight * (radius / RADIUS)
-  const color = hslToHex(hue, 100, light)
+  const color = hslToHex(hue, sat, light)
 
   const normalizedRadius = radius / RADIUS
   const spread = (minSpread + (maxSpread - minSpread) * Math.pow(normalizedRadius, 3)) * spreadFactor
@@ -114,8 +118,8 @@ function ColorPickerInner({
   const hue2 = ((((angle2 * 180) / Math.PI) % 360) + 360) % 360
   const light1 = maxLight * (radius / RADIUS)
   const light2 = maxLight * (radius / RADIUS)
-  const color1 = hslToHex(hue1, 100, light1)
-  const color2pt = hslToHex(hue2, 100, light2)
+  const color1 = hslToHex(hue1, sat, light1)
+  const color2pt = hslToHex(hue2, sat, light2)
 
   const bx1 = size / 2 + Math.cos(angle1) * radius
   const by1 = size / 2 + Math.sin(angle1) * radius
@@ -140,13 +144,13 @@ function ColorPickerInner({
         const y = size / 2 + Math.sin(rad) * r
         const lightness = minLight + (maxLight - minLight) * (r / RADIUS)
         ctx.beginPath()
-        ctx.strokeStyle = hslToHex(a, 100, lightness)
+        ctx.strokeStyle = hslToHex(a, sat, lightness)
         ctx.moveTo(x, y)
         ctx.lineTo(x + 1, y + 1)
         ctx.stroke()
       }
     }
-  }, [size, RADIUS, minLight, maxLight])
+  }, [size, RADIUS, minLight, maxLight, sat])
 
   useEffect(() => {
     if (!hasInteracted) return

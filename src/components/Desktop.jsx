@@ -61,6 +61,7 @@ function DesktopContent({
   const handleMouseDown = useCallback((e) => {
     if (e.button !== 0) return
     if (e.target.closest('.desktop-custom-icons__item')) return
+    if (e.target.closest('.desktop-widgets__card')) return
     setContextMenu(null)
     setSelectedIds([])
     selectionStartRef.current = { x: e.clientX, y: e.clientY }
@@ -153,6 +154,7 @@ function DesktopContent({
   const handleContextMenu = useCallback((e) => {
     e.preventDefault()
     if (e.target.closest('.desktop-custom-icons__item')) return
+    if (e.target.closest('.desktop-widgets__card')) return
     setContextMenu({ x: e.clientX, y: e.clientY })
   }, [])
 

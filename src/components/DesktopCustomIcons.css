@@ -75,8 +75,9 @@
   font-size: 12px;
   text-align: center;
   word-break: break-word;
-  color: white;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  mix-blend-mode: difference;
+  color: #eaeaea;
+  text-shadow: none;
 }
 
 .desktop-custom-icons__rename-input {
