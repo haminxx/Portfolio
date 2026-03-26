@@ -135,24 +135,169 @@
 
 .desktop-widgets__card--clock {
   min-width: 0;
-  min-height: 96px;
+  min-height: 120px;
 }
 
-.desktop-widgets__glass-chrome--flip-clock {
+.desktop-widgets__glass-chrome--fliqlo {
   width: 100%;
   padding: 0;
-  border-radius: 18px;
+  border-radius: 12px;
   overflow: hidden;
 }
 
-.desktop-widgets__flip-clock-panel {
+/* Fliqlo-inspired flip clock: black panel, wide tiles, colon, 24h */
+.desktop-widgets__fliqlo-panel {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   box-sizing: border-box;
-  padding: 14px 12px 16px;
+  padding: 16px 14px 18px;
   background: #000000;
+}
+
+.desktop-widgets__fliqlo-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.desktop-widgets__fliqlo-colon {
+  font-size: clamp(2.5rem, 8vw, 3.25rem);
+  font-weight: 300;
+  line-height: 1;
+  color: #ffffff;
+  padding: 0 2px;
+  opacity: 0.92;
+  animation: desktop-widgets-fliqlo-colon-pulse 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desktop-widgets__fliqlo-colon {
+    animation: none;
+  }
+}
+
+@keyframes desktop-widgets-fliqlo-colon-pulse {
+  0%,
+  100% {
+    opacity: 0.92;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.desktop-widgets__fliqlo-tile {
+  --fliqlo-w: 100px;
+  --fliqlo-h: 72px;
+  --fliqlo-digit: 52px;
+  width: var(--fliqlo-w);
+  height: var(--fliqlo-h);
+  position: relative;
+  flex-shrink: 0;
+  border-radius: 4px;
+  background: #1a1a1a;
+  perspective: 280px;
+  perspective-origin: 50% 50%;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.desktop-widgets__fliqlo-tile__static {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.desktop-widgets__fliqlo-tile__half--top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.desktop-widgets__fliqlo-tile__half--bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.desktop-widgets__fliqlo-tile__digit {
+  font-size: var(--fliqlo-digit);
+  font-weight: 600;
+  line-height: var(--fliqlo-h);
+  height: var(--fliqlo-h);
+  font-variant-numeric: tabular-nums;
+  color: #f5f5f5;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.desktop-widgets__fliqlo-tile__hinge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 4px;
+  margin-top: -2px;
+  background: #000000;
+  pointer-events: none;
+  z-index: 6;
+}
+
+.desktop-widgets__fliqlo-tile__flap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 50%;
+  overflow: hidden;
+  z-index: 3;
+  transform-origin: center bottom;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  border-radius: 4px 4px 0 0;
+  background: #1a1a1a;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.desktop-widgets__fliqlo-tile__flap .desktop-widgets__fliqlo-tile__half--top {
+  position: relative;
+  inset: auto;
+  height: 100%;
+}
+
+@keyframes desktop-widgets-fliqlo-fold {
+  from {
+    transform: rotateX(0deg);
+  }
+  to {
+    transform: rotateX(-90deg);
+  }
+}
+
+.desktop-widgets__fliqlo-tile__flap--animate {
+  animation: desktop-widgets-fliqlo-fold 0.35s ease-in forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desktop-widgets__fliqlo-tile__flap--animate {
+    animation-duration: 0.001ms;
+  }
 }
 
 .desktop-widgets__card--calendar .desktop-widgets__cal-nav,
@@ -162,7 +307,122 @@
 
 .desktop-widgets__card--weather {
   min-width: 0;
-  min-height: 120px;
+  min-height: 200px;
+}
+
+/* Square black weather card (iOS-style reference) */
+.desktop-widgets__weather-square-wrap {
+  width: 100%;
+  padding: 0;
+  border-radius: 22px;
+  overflow: hidden;
+}
+
+.desktop-widgets__weather-square {
+  aspect-ratio: 1;
+  width: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
+  padding: 20px;
+  background: #000000;
+  border-radius: 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 0;
+}
+
+.desktop-widgets__weather-square--loading {
+  align-items: center;
+  justify-content: center;
+}
+
+.desktop-widgets__weather-square__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.desktop-widgets__weather-square__temp-now {
+  font-size: clamp(2.25rem, 5vw, 2.75rem);
+  font-weight: 500;
+  color: #ffffff;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.desktop-widgets__weather-square__blurb {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.92);
+  text-align: right;
+  flex: 1;
+  min-width: 0;
+  max-width: 55%;
+}
+
+.desktop-widgets__weather-square__blurb strong {
+  font-weight: 700;
+}
+
+.desktop-widgets__weather-square__graphic {
+  flex: 1;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.desktop-widgets__weather-square__cloud {
+  width: min(100%, 200px);
+  height: auto;
+  max-height: 96px;
+}
+
+.desktop-widgets__weather-square__hourly {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  padding-top: 10px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.desktop-widgets__weather-square__hour-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 2px;
+}
+
+.desktop-widgets__weather-square__hour-col--divider {
+  border-right: 1px solid #2a2a2a;
+}
+
+.desktop-widgets__weather-square__hour-time {
+  font-size: 10px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: #6b6b6b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+}
+
+.desktop-widgets__weather-square__hour-temp {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+.desktop-widgets__weather-square__status {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+  text-align: center;
 }
 
 .desktop-widgets__card--music {
@@ -233,12 +493,15 @@
   --rdp-today-color: var(--portfolio-on-accent, #fafafa);
   --rdp-day_button-border-radius: 8px;
   color: var(--portfolio-chrome-fg, #f5f5f7);
+  /* Today dot (calendar.tsx) uses bg-primary — map to accent on desktop */
+  --color-primary: var(--portfolio-accent, #e8e4df);
 }
 
 .desktop-widgets__blend .desktop-widgets__cal-rdp {
   --rdp-accent-color: #ffffff;
   --rdp-accent-background-color: rgba(255, 255, 255, 0.22);
   --rdp-today-color: #0a0a0a;
+  --color-primary: #ffffff;
 }
 
 .desktop-widgets__cal-rdp > * {
@@ -264,37 +527,19 @@
   color: var(--portfolio-chrome-fg);
 }
 
-/* Today: rounded square ring around the numeral */
+/* Today: shadcn-style dot under numeral (see calendar.tsx `today` class); keep selected readable */
 .desktop-widgets__cal-rdp .rdp-today .rdp-day_button {
   position: relative;
-  background: transparent !important;
-  color: var(--portfolio-chrome-fg, #f5f5f7) !important;
-  border-radius: 10px !important;
-  border: 1.5px solid color-mix(in srgb, var(--portfolio-chrome-fg, #f5f5f7) 52%, transparent) !important;
-  font-weight: 700;
-  padding-bottom: 0 !important;
-  box-shadow: none !important;
-}
-
-.desktop-widgets__cal-rdp .rdp-today .rdp-day_button::after {
-  display: none;
 }
 
 .desktop-widgets__cal-rdp .rdp-today .rdp-day_button[data-selected] {
   background: var(--rdp-accent-background-color) !important;
   color: var(--rdp-accent-color) !important;
-  border-color: color-mix(in srgb, var(--rdp-accent-color, #fff) 45%, transparent) !important;
-}
-
-.desktop-widgets__blend .desktop-widgets__cal-rdp .rdp-today .rdp-day_button:not([data-selected]) {
-  border-color: rgba(255, 255, 255, 0.5) !important;
-  color: #fff !important;
 }
 
 .desktop-widgets__blend .desktop-widgets__cal-rdp .rdp-today .rdp-day_button[data-selected] {
   background: rgba(255, 255, 255, 0.22) !important;
   color: #fff !important;
-  border-color: rgba(255, 255, 255, 0.65) !important;
 }
 
 .desktop-widgets__bg-controls-head {
@@ -411,8 +656,8 @@
 .desktop-widgets__grip--photo {
   position: absolute;
   top: 8px;
-  left: 8px;
-  transform: none;
+  left: 50%;
+  transform: translateX(-50%);
   opacity: 0;
   visibility: hidden;
 }
@@ -1125,141 +1370,6 @@
   background: #1c1c1e;
   color: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* Local flip clock: black panel + charcoal rounded squares (reference UI) */
-.desktop-widgets__flip-row {
-  display: flex;
-  align-items: stretch;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.desktop-widgets__flip-square {
-  --flip-fs: 44px;
-  width: var(--flip-fs);
-  aspect-ratio: 1;
-  position: relative;
-  flex-shrink: 0;
-  border-radius: 14px;
-  background: #1a1a1a;
-  border: none;
-  box-shadow: none;
-  perspective: 200px;
-  perspective-origin: 50% 50%;
-}
-
-.desktop-widgets__flip-square--hour {
-  /* room for AM/PM label */
-  padding-bottom: 2px;
-}
-
-.desktop-widgets__flip-square__ampm {
-  position: absolute;
-  left: 8px;
-  bottom: 7px;
-  z-index: 8;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #ffffff;
-  line-height: 1;
-  pointer-events: none;
-}
-
-.desktop-widgets__flip-square__static {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  overflow: hidden;
-}
-
-.desktop-widgets__flip-square__half--top {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 50%;
-  overflow: hidden;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.desktop-widgets__flip-square__half--bottom {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 50%;
-  overflow: hidden;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-}
-
-.desktop-widgets__flip-square__digit {
-  font-size: calc(var(--flip-fs) * 0.48);
-  font-weight: 800;
-  line-height: var(--flip-fs);
-  height: var(--flip-fs);
-  font-variant-numeric: tabular-nums;
-  color: #ffffff;
-  text-shadow: none;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-}
-
-.desktop-widgets__flip-square__hinge {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 3px;
-  margin-top: -1.5px;
-  background: #000000;
-  pointer-events: none;
-  z-index: 6;
-}
-
-.desktop-widgets__flip-square__flap {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 50%;
-  overflow: hidden;
-  z-index: 3;
-  transform-origin: center bottom;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-  border-radius: 13px 13px 0 0;
-  background: #1a1a1a;
-  box-shadow: none;
-}
-
-.desktop-widgets__flip-square__flap .desktop-widgets__flip-square__half--top {
-  position: relative;
-  inset: auto;
-  height: 100%;
-}
-
-@keyframes desktop-widgets-flip-fold {
-  from {
-    transform: rotateX(0deg);
-  }
-  to {
-    transform: rotateX(-90deg);
-  }
-}
-
-.desktop-widgets__flip-square__flap--animate {
-  animation: desktop-widgets-flip-fold 0.32s ease-in forwards;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .desktop-widgets__flip-square__flap--animate {
-    animation-duration: 0.001ms;
-  }
 }
 
 .desktop-widgets__flip-time {

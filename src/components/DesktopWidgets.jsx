@@ -1,22 +1,13 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef, useId } from 'react'
 import {
   Play,
   Pause,
   GripVertical,
   SkipBack,
   SkipForward,
-  Sun,
-  Cloud,
-  CloudSun,
-  CloudRain,
-  CloudSnow,
-  CloudFog,
-  CloudLightning,
-  CloudDrizzle,
   ImageIcon,
   RefreshCw,
   ListTodo,
-  ArrowUpRight,
 } from 'lucide-react'
 import { Calendar } from './ui/calendar'
 import ColorPicker from './ui/color-picker'
@@ -56,25 +47,17 @@ const SD_LAT = 32.72
 const SD_LON = -117.16
 const LAYOUT_KEY = 'desktop-widget-layout'
 
-function localTime12hParts(date) {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  }).formatToParts(date)
-  let hour = '12'
-  let minute = '00'
-  let dayPeriod = ''
-  for (const p of parts) {
-    if (p.type === 'hour') hour = p.value.padStart(2, '0')
-    if (p.type === 'minute') minute = p.value.padStart(2, '0')
-    if (p.type === 'dayPeriod') dayPeriod = p.value.toUpperCase()
+function localTime24Hm(date) {
+  const h = date.getHours()
+  const m = date.getMinutes()
+  return {
+    hour: String(h).padStart(2, '0'),
+    minute: String(m).padStart(2, '0'),
   }
-  return { hour, minute, dayPeriod }
 }
 
-/** Square flip cell: top half folds down when `value` (e.g. "09") changes. */
-function FlipSquareUnit({ value, period }) {
+/** Fliqlo-style flip tile: two-digit string, top half folds down on change. */
+function FliqloFlipTile({ value }) {
   const [visible, setVisible] = useState(value)
   const [flipping, setFlipping] = useState(false)
   const targetRef = useRef(value)
@@ -90,30 +73,24 @@ function FlipSquareUnit({ value, period }) {
     setFlipping(false)
   }, [])
 
-  const withPeriod = Boolean(period)
-
   return (
-    <div
-      className={`desktop-widgets__flip-square${withPeriod ? ' desktop-widgets__flip-square--hour' : ''}`}
-      aria-hidden
-    >
-      {withPeriod ? <span className="desktop-widgets__flip-square__ampm">{period}</span> : null}
-      <div className="desktop-widgets__flip-square__hinge" />
-      <div className="desktop-widgets__flip-square__static">
-        <div className="desktop-widgets__flip-square__half desktop-widgets__flip-square__half--top">
-          <span className="desktop-widgets__flip-square__digit">{visible}</span>
+    <div className="desktop-widgets__fliqlo-tile" aria-hidden>
+      <div className="desktop-widgets__fliqlo-tile__hinge" />
+      <div className="desktop-widgets__fliqlo-tile__static">
+        <div className="desktop-widgets__fliqlo-tile__half desktop-widgets__fliqlo-tile__half--top">
+          <span className="desktop-widgets__fliqlo-tile__digit">{visible}</span>
         </div>
-        <div className="desktop-widgets__flip-square__half desktop-widgets__flip-square__half--bottom">
-          <span className="desktop-widgets__flip-square__digit">{visible}</span>
+        <div className="desktop-widgets__fliqlo-tile__half desktop-widgets__fliqlo-tile__half--bottom">
+          <span className="desktop-widgets__fliqlo-tile__digit">{visible}</span>
         </div>
       </div>
       {flipping && (
         <div
-          className="desktop-widgets__flip-square__flap desktop-widgets__flip-square__flap--animate"
+          className="desktop-widgets__fliqlo-tile__flap desktop-widgets__fliqlo-tile__flap--animate"
           onAnimationEnd={handleFlapEnd}
         >
-          <div className="desktop-widgets__flip-square__half desktop-widgets__flip-square__half--top">
-            <span className="desktop-widgets__flip-square__digit">{visible}</span>
+          <div className="desktop-widgets__fliqlo-tile__half desktop-widgets__fliqlo-tile__half--top">
+            <span className="desktop-widgets__fliqlo-tile__digit">{visible}</span>
           </div>
         </div>
       )}
@@ -121,25 +98,79 @@ function FlipSquareUnit({ value, period }) {
   )
 }
 
-function LocalFlipClock({ date }) {
-  const { hour, minute, dayPeriod } = localTime12hParts(date)
+function FliqloClock({ date }) {
+  const { hour, minute } = localTime24Hm(date)
   const label = date.toLocaleTimeString(undefined, {
-    hour: 'numeric',
+    hour: '2-digit',
     minute: '2-digit',
+    hour12: false,
   })
   return (
     <div
-      className="desktop-widgets__flip-clock-panel"
+      className="desktop-widgets__fliqlo-panel"
       role="timer"
       aria-live="polite"
       aria-label={`Current time ${label}`}
     >
-      <div className="desktop-widgets__flip-row">
-        <FlipSquareUnit value={hour} period={dayPeriod} />
-        <FlipSquareUnit value={minute} />
+      <div className="desktop-widgets__fliqlo-row">
+        <FliqloFlipTile value={hour} />
+        <span className="desktop-widgets__fliqlo-colon" aria-hidden>
+          :
+        </span>
+        <FliqloFlipTile value={minute} />
       </div>
     </div>
   )
+}
+
+/** Halftone-style cloud for square weather widget (SVG pattern + vertical fade). */
+function HalftoneCloudGraphic({ className = '' }) {
+  const uid = useId().replace(/:/g, '')
+  const pid = `htp-${uid}`
+  const gid = `htg-${uid}`
+  const mid = `htm-${uid}`
+  const clipId = `htc-${uid}`
+  return (
+    <svg className={className} viewBox="0 0 200 120" aria-hidden>
+      <defs>
+        <pattern id={pid} width="6" height="6" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.05" fill="#ffffff" />
+        </pattern>
+        <linearGradient id={gid} x1="0" y1="120" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+          <stop offset="45%" stopColor="#ffffff" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.06" />
+        </linearGradient>
+        <mask id={mid}>
+          <rect width="200" height="120" fill={`url(#${gid})`} />
+        </mask>
+        <clipPath id={clipId}>
+          <circle cx="72" cy="68" r="30" />
+          <circle cx="108" cy="64" r="34" />
+          <circle cx="140" cy="70" r="26" />
+          <rect x="48" y="66" width="104" height="36" rx="18" />
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#${clipId})`}>
+        <rect width="200" height="120" fill={`url(#${pid})`} mask={`url(#${mid})`} />
+      </g>
+    </svg>
+  )
+}
+
+function buildPrecipHeadline(hourly) {
+  if (!hourly?.length) {
+    return { textBefore: 'Loading forecast…', bold: '', textAfter: '' }
+  }
+  const p0 = typeof hourly[0]?.precipProb === 'number' ? hourly[0].precipProb : 0
+  const p1 = typeof hourly[1]?.precipProb === 'number' ? hourly[1].precipProb : 0
+  if (p0 < 18 && p1 < 18) {
+    return { textBefore: 'No rain is expected in the next ', bold: '2 hours', textAfter: '.' }
+  }
+  if (p0 >= 45 || p1 >= 45) {
+    return { textBefore: 'Rain likely in the next ', bold: '2 hours', textAfter: '.' }
+  }
+  return { textBefore: 'Stay aware — chance of rain in the next ', bold: 'few hours', textAfter: '.' }
 }
 
 function formatTrackTime(sec) {
@@ -247,22 +278,6 @@ function saveLayout(layout) {
   } catch {
     // ignore
   }
-}
-
-function weatherCodeToIcon(code) {
-  if (code == null || Number.isNaN(code)) return Cloud
-  const c = code
-  if (c === 0) return Sun
-  if (c === 1) return CloudSun
-  if (c === 2) return CloudSun
-  if (c === 3) return Cloud
-  if (c === 45 || c === 48) return CloudFog
-  if (c >= 51 && c <= 57) return CloudDrizzle
-  if (c >= 61 && c <= 67) return CloudRain
-  if (c >= 71 && c <= 77) return CloudSnow
-  if (c >= 80 && c <= 82) return CloudRain
-  if (c >= 95) return CloudLightning
-  return Cloud
 }
 
 function weatherCodeToShortLabel(code) {
@@ -491,7 +506,7 @@ export default function DesktopWidgets({
       url.searchParams.set('latitude', String(lat))
       url.searchParams.set('longitude', String(lon))
       url.searchParams.set('current', 'temperature_2m,weather_code')
-      url.searchParams.set('hourly', 'temperature_2m,weather_code')
+      url.searchParams.set('hourly', 'temperature_2m,weather_code,precipitation_probability')
       url.searchParams.set('daily', 'temperature_2m_max,temperature_2m_min')
       url.searchParams.set('forecast_days', '2')
       url.searchParams.set('timezone', 'auto')
@@ -506,6 +521,7 @@ export default function DesktopWidgets({
       const hourlyTimes = data.hourly?.time ?? []
       const hourlyTemp = data.hourly?.temperature_2m ?? []
       const hourlyCode = data.hourly?.weather_code ?? []
+      const hourlyPrecipProb = data.hourly?.precipitation_probability ?? []
       const curTime = cur?.time
       let startIdx = 0
       if (hourlyTimes.length) {
@@ -522,6 +538,7 @@ export default function DesktopWidgets({
           time: hourlyTimes[j],
           temp: hourlyTemp[j],
           code: hourlyCode[j],
+          precipProb: hourlyPrecipProb[j] ?? null,
         })
       }
 
@@ -752,11 +769,6 @@ export default function DesktopWidgets({
     [notesStore],
   )
 
-  const WeatherTodayIcon =
-    weather.status === 'ready' && weather.current
-      ? weatherCodeToIcon(weather.current.code)
-      : null
-
   const togglePinnedItem = useCallback((itemId, done) => {
     setPinnedChecklistItemDone(notesStore, itemId, done)
   }, [notesStore])
@@ -826,8 +838,8 @@ export default function DesktopWidgets({
         )}
         style={cardStyle('clock')}
       >
-        <div className="desktop-widgets__glass-chrome desktop-widgets__glass-chrome--flip-clock">
-          <LocalFlipClock date={now} />
+        <div className="desktop-widgets__glass-chrome desktop-widgets__glass-chrome--fliqlo">
+          <FliqloClock date={now} />
         </div>
         <button
           type="button"
@@ -852,60 +864,60 @@ export default function DesktopWidgets({
         )}
         style={cardStyle('weather')}
       >
-        <div className="desktop-widgets__glass-chrome desktop-widgets__weather-v2">
-          {weather.status === 'loading' && <p className="desktop-widgets__weather-v2__status">Loading…</p>}
-          {weather.status === 'error' && <p className="desktop-widgets__weather-v2__status">{weather.error}</p>}
-          {weather.status === 'ready' && weather.current && WeatherTodayIcon ? (
-            <>
-              <div className="desktop-widgets__weather-v2__top">
-                <div className="desktop-widgets__weather-v2__temp-block">
-                  <span className="desktop-widgets__weather-v2__temp-nav" aria-hidden>
-                    <ArrowUpRight size={14} strokeWidth={2} />
-                  </span>
-                  <span className="desktop-widgets__weather-v2__temp-big">
-                    {weather.current.temp != null && Number.isFinite(weather.current.temp)
-                      ? Math.round(weather.current.temp)
-                      : '—'}
-                    °
-                  </span>
-                </div>
-                <div className="desktop-widgets__weather-v2__summary">
-                  <span className="desktop-widgets__weather-v2__summary-icon" aria-hidden>
-                    <WeatherTodayIcon size={32} strokeWidth={1.75} />
-                  </span>
-                  <div className="desktop-widgets__weather-v2__summary-text">
-                    <span className="desktop-widgets__weather-v2__condition">
-                      {weatherCodeToShortLabel(weather.current.code)}
-                    </span>
-                    <span className="desktop-widgets__weather-v2__minmax">
-                      Max:
-                      {weather.dailyMax != null && Number.isFinite(weather.dailyMax)
-                        ? Math.round(weather.dailyMax)
-                        : '—'}
-                      ° Min:
-                      {weather.dailyMin != null && Number.isFinite(weather.dailyMin)
-                        ? Math.round(weather.dailyMin)
-                        : '—'}
-                      °
-                    </span>
-                  </div>
-                </div>
+        <div className="desktop-widgets__glass-chrome desktop-widgets__weather-square-wrap">
+          {weather.status === 'loading' && (
+            <div className="desktop-widgets__weather-square desktop-widgets__weather-square--loading">
+              <p className="desktop-widgets__weather-square__status">Loading…</p>
+            </div>
+          )}
+          {weather.status === 'error' && (
+            <div className="desktop-widgets__weather-square desktop-widgets__weather-square--loading">
+              <p className="desktop-widgets__weather-square__status">{weather.error}</p>
+            </div>
+          )}
+          {weather.status === 'ready' && weather.current ? (
+            <div className="desktop-widgets__weather-square">
+              <div className="desktop-widgets__weather-square__header">
+                <span className="desktop-widgets__weather-square__temp-now">
+                  {weather.current.temp != null && Number.isFinite(weather.current.temp)
+                    ? Math.round(weather.current.temp)
+                    : '—'}
+                  °
+                </span>
+                <p className="desktop-widgets__weather-square__blurb">
+                  {(() => {
+                    const h = buildPrecipHeadline(weather.hourly)
+                    return (
+                      <>
+                        {h.textBefore}
+                        {h.bold ? <strong>{h.bold}</strong> : null}
+                        {h.textAfter}
+                      </>
+                    )
+                  })()}
+                </p>
+              </div>
+              <div className="desktop-widgets__weather-square__graphic">
+                <HalftoneCloudGraphic className="desktop-widgets__weather-square__cloud" />
               </div>
               {weather.hourly?.length > 0 ? (
-                <div className="desktop-widgets__weather-v2__hourly">
-                  {weather.hourly.map((slot) => {
-                    const HIcon = weatherCodeToIcon(slot.code)
+                <div className="desktop-widgets__weather-square__hourly">
+                  {weather.hourly.slice(0, 4).map((slot, idx) => {
                     const t = slot.time ? new Date(slot.time) : null
-                    const label = t
-                      ? t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+                    const timeLabel = t
+                      ? t.toLocaleTimeString('en-GB', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: false,
+                        })
                       : '—'
                     return (
-                      <div key={slot.time} className="desktop-widgets__weather-v2__hour">
-                        <span className="desktop-widgets__weather-v2__hour-label">{label}</span>
-                        <span className="desktop-widgets__weather-v2__hour-icon" aria-hidden>
-                          <HIcon size={22} strokeWidth={1.75} />
-                        </span>
-                        <span className="desktop-widgets__weather-v2__hour-temp">
+                      <div
+                        key={slot.time ?? idx}
+                        className={`desktop-widgets__weather-square__hour-col${idx < 3 ? ' desktop-widgets__weather-square__hour-col--divider' : ''}`}
+                      >
+                        <span className="desktop-widgets__weather-square__hour-time">{timeLabel}</span>
+                        <span className="desktop-widgets__weather-square__hour-temp">
                           {slot.temp != null && Number.isFinite(slot.temp) ? `${Math.round(slot.temp)}°` : '—'}
                         </span>
                       </div>
@@ -913,7 +925,7 @@ export default function DesktopWidgets({
                   })}
                 </div>
               ) : null}
-            </>
+            </div>
           ) : null}
         </div>
         <button
