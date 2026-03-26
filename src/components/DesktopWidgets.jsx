@@ -47,17 +47,20 @@ const SD_LAT = 32.72
 const SD_LON = -117.16
 const LAYOUT_KEY = 'desktop-widget-layout'
 
-function localTime24Hm(date) {
+/** 12h values for split-flap; only the panel whose unit changes runs the flip animation. */
+function localTime12hSplit(date) {
   const h = date.getHours()
   const m = date.getMinutes()
+  const hour12 = h % 12 || 12
   return {
-    hour: String(h).padStart(2, '0'),
+    hour: String(hour12).padStart(2, '0'),
     minute: String(m).padStart(2, '0'),
+    ampm: h >= 12 ? 'PM' : 'AM',
   }
 }
 
-/** Fliqlo-style flip tile: two-digit string, top half folds down on change. */
-function FliqloFlipTile({ value }) {
+/** Fliqlo-style split-flap: square panel, top half rotates when `value` changes. */
+function SplitFlapPanel({ value }) {
   const [visible, setVisible] = useState(value)
   const [flipping, setFlipping] = useState(false)
   const targetRef = useRef(value)
@@ -84,7 +87,7 @@ function FliqloFlipTile({ value }) {
           <span className="desktop-widgets__fliqlo-tile__digit">{visible}</span>
         </div>
       </div>
-      {flipping && (
+      {flipping ? (
         <div
           className="desktop-widgets__fliqlo-tile__flap desktop-widgets__fliqlo-tile__flap--animate"
           onAnimationEnd={handleFlapEnd}
@@ -93,17 +96,17 @@ function FliqloFlipTile({ value }) {
             <span className="desktop-widgets__fliqlo-tile__digit">{visible}</span>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   )
 }
 
 function FliqloClock({ date }) {
-  const { hour, minute } = localTime24Hm(date)
+  const { hour, minute, ampm } = localTime12hSplit(date)
   const label = date.toLocaleTimeString(undefined, {
-    hour: '2-digit',
+    hour: 'numeric',
     minute: '2-digit',
-    hour12: false,
+    hour12: true,
   })
   return (
     <div
@@ -113,11 +116,11 @@ function FliqloClock({ date }) {
       aria-label={`Current time ${label}`}
     >
       <div className="desktop-widgets__fliqlo-row">
-        <FliqloFlipTile value={hour} />
-        <span className="desktop-widgets__fliqlo-colon" aria-hidden>
-          :
-        </span>
-        <FliqloFlipTile value={minute} />
+        <div className="desktop-widgets__fliqlo-tile-wrap">
+          <SplitFlapPanel value={hour} />
+          <span className="desktop-widgets__fliqlo-ampm">{ampm}</span>
+        </div>
+        <SplitFlapPanel value={minute} />
       </div>
     </div>
   )
@@ -802,7 +805,7 @@ export default function DesktopWidgets({
         className={cardClass('calendar', 'desktop-widgets__card--calendar desktop-widgets__card--has-drag-strip')}
         style={cardStyle('calendar')}
       >
-        <div className="desktop-widgets__blend">
+        <div className="desktop-widgets__calendar-widget-body">
           <div className="desktop-widgets__adaptive desktop-widgets__cal-rdp">
             <Calendar
               mode="single"
@@ -817,7 +820,7 @@ export default function DesktopWidgets({
               }}
               today={now}
               weekStartsOn={0}
-              className="w-full rounded-xl [--cell-size:1.65rem] sm:[--cell-size:1.65rem]"
+              className="w-full max-w-sm mx-auto rounded-2xl [--cell-size:2rem] sm:[--cell-size:2rem] p-1"
             />
           </div>
         </div>

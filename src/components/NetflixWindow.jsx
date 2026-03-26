@@ -28,7 +28,7 @@ export default function NetflixWindow() {
   const { t } = useLanguage()
   const [selectedCard, setSelectedCard] = useState(null)
   const [showDetail, setShowDetail] = useState(false)
-  const [isMuted, setIsMuted] = useState(false)
+  const [isMuted, setIsMuted] = useState(true)
   const [isPlaying, setIsPlaying] = useState(true)
   const [activeNav, setActiveNav] = useState('home')
   const [hoverCard, setHoverCard] = useState(null)
@@ -95,9 +95,24 @@ export default function NetflixWindow() {
     const video = videoRef.current
     if (!video) return
     video.preload = 'auto'
+    video.muted = true
+    const kick = () => {
+      video.play().catch(() => {})
+    }
+    video.addEventListener('loadeddata', kick)
+    video.addEventListener('canplay', kick)
     video.load()
-    video.play().catch(() => {})
+    kick()
+    return () => {
+      video.removeEventListener('loadeddata', kick)
+      video.removeEventListener('canplay', kick)
+    }
   }, [])
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (video) video.muted = isMuted
+  }, [isMuted])
 
   const handlePlayPause = () => {
     const video = videoRef.current
@@ -188,6 +203,7 @@ export default function NetflixWindow() {
           className="netflix-window__video"
           src="/videos/timeline-trailer.mp4"
           autoPlay
+          muted={isMuted}
           loop
           playsInline
           preload="auto"
