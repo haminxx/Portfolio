@@ -56,66 +56,28 @@ const SD_LAT = 32.72
 const SD_LON = -117.16
 const LAYOUT_KEY = 'desktop-widget-layout'
 
-const WORLD_ZONES = [
-  { key: 'la', label: 'Los Angeles', tz: 'America/Los_Angeles' },
-  { key: 'seoul', label: 'Seoul', tz: 'Asia/Seoul' },
-  { key: 'london', label: 'London', tz: 'Europe/London' },
-]
-
-function parseLongOffsetToMinutes(str) {
-  if (!str) return null
-  const m = String(str).match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/i)
-  if (!m) return null
-  const sign = m[1] === '-' ? -1 : 1
-  const h = parseInt(m[2], 10)
-  const min = m[3] ? parseInt(m[3], 10) : 0
-  return sign * (h * 60 + min)
-}
-
-function offsetHoursCityVsUser(userTz, cityTz, at) {
-  try {
-    const fu = new Intl.DateTimeFormat('en', { timeZone: userTz, timeZoneName: 'longOffset' }).formatToParts(at)
-    const fc = new Intl.DateTimeFormat('en', { timeZone: cityTz, timeZoneName: 'longOffset' }).formatToParts(at)
-    const u = fu.find((p) => p.type === 'timeZoneName')?.value
-    const c = fc.find((p) => p.type === 'timeZoneName')?.value
-    const mu = parseLongOffsetToMinutes(u)
-    const mc = parseLongOffsetToMinutes(c)
-    if (mu == null || mc == null) return null
-    return (mc - mu) / 60
-  } catch {
-    return null
-  }
-}
-
-function formatWorldClockSubtitle(h) {
-  if (h == null || Number.isNaN(h)) return '—'
-  if (Math.abs(h) < 0.05) return 'Today'
-  const rounded = Math.round(h)
-  if (rounded === 0) return 'Today'
-  return `Today ${rounded > 0 ? '+' : ''}${rounded}h`
-}
-
-function worldClockHms24(date, timeZone) {
-  const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone,
+function localTime12hParts(date) {
+  const parts = new Intl.DateTimeFormat('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-    hour12: false,
+    hour12: true,
   }).formatToParts(date)
-  let h = '00'
-  let m = '00'
-  let s = '00'
+  let hour = '12'
+  let minute = '00'
+  let second = '00'
+  let dayPeriod = ''
   for (const p of parts) {
-    if (p.type === 'hour') h = p.value.padStart(2, '0')
-    if (p.type === 'minute') m = p.value.padStart(2, '0')
-    if (p.type === 'second') s = p.value.padStart(2, '0')
+    if (p.type === 'hour') hour = p.value.padStart(2, '0')
+    if (p.type === 'minute') minute = p.value.padStart(2, '0')
+    if (p.type === 'second') second = p.value.padStart(2, '0')
+    if (p.type === 'dayPeriod') dayPeriod = p.value.toUpperCase()
   }
-  return { h, m, s }
+  return { hour, minute, second, dayPeriod }
 }
 
 /** Square flip cell: top half folds down when `value` (e.g. "09") changes. */
-function FlipSquareUnit({ value }) {
+function FlipSquareUnit({ value, period }) {
   const [visible, setVisible] = useState(value)
   const [flipping, setFlipping] = useState(false)
   const targetRef = useRef(value)
@@ -131,8 +93,14 @@ function FlipSquareUnit({ value }) {
     setFlipping(false)
   }, [])
 
+  const withPeriod = Boolean(period)
+
   return (
-    <div className="desktop-widgets__flip-square" aria-hidden>
+    <div
+      className={`desktop-widgets__flip-square${withPeriod ? ' desktop-widgets__flip-square--hour' : ''}`}
+      aria-hidden
+    >
+      {withPeriod ? <span className="desktop-widgets__flip-square__ampm">{period}</span> : null}
       <div className="desktop-widgets__flip-square__hinge" />
       <div className="desktop-widgets__flip-square__static">
         <div className="desktop-widgets__flip-square__half desktop-widgets__flip-square__half--top">
@@ -156,13 +124,25 @@ function FlipSquareUnit({ value }) {
   )
 }
 
-function WorldClockFlipRow({ date, timeZone, ariaLabel }) {
-  const { h, m, s } = worldClockHms24(date, timeZone)
+function LocalFlipClock({ date }) {
+  const { hour, minute, second, dayPeriod } = localTime12hParts(date)
+  const label = date.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+  })
   return (
-    <div className="desktop-widgets__flip-row" aria-label={ariaLabel}>
-      <FlipSquareUnit value={h} />
-      <FlipSquareUnit value={m} />
-      <FlipSquareUnit value={s} />
+    <div
+      className="desktop-widgets__flip-clock-panel"
+      role="timer"
+      aria-live="polite"
+      aria-label={`Current time ${label}`}
+    >
+      <div className="desktop-widgets__flip-row">
+        <FlipSquareUnit value={hour} period={dayPeriod} />
+        <FlipSquareUnit value={minute} />
+        <FlipSquareUnit value={second} />
+      </div>
     </div>
   )
 }
@@ -413,14 +393,6 @@ export default function DesktopWidgets({
   }, [layout, onLayoutChange])
 
   const widgetIds = useMemo(() => [...STATIC_WIDGET_IDS, ...photoIds], [photoIds])
-
-  const userTz = useMemo(() => {
-    try {
-      return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
-    } catch {
-      return 'UTC'
-    }
-  }, [])
 
   useEffect(() => {
     setPhotoData((prev) => {
@@ -859,33 +831,8 @@ export default function DesktopWidgets({
         )}
         style={cardStyle('clock')}
       >
-        <div className="desktop-widgets__glass-chrome desktop-widgets__world-clock-v2">
-          <div
-            className="desktop-widgets__world-clock-v2__rows"
-            role="timer"
-            aria-live="polite"
-            aria-label="World clock: Los Angeles, Seoul, London"
-          >
-            {WORLD_ZONES.map((z) => {
-              const off = offsetHoursCityVsUser(userTz, z.tz, now)
-              const timeStr = now.toLocaleTimeString(undefined, {
-                timeZone: z.tz,
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false,
-              })
-              return (
-                <div key={z.key} className="desktop-widgets__world-clock-v2__row">
-                  <div className="desktop-widgets__world-clock-v2__meta">
-                    <span className="desktop-widgets__world-clock-v2__city">{z.label.toUpperCase()}</span>
-                    <span className="desktop-widgets__world-clock-v2__sub">{formatWorldClockSubtitle(off)}</span>
-                  </div>
-                  <WorldClockFlipRow date={now} timeZone={z.tz} ariaLabel={`${z.label} ${timeStr}`} />
-                </div>
-              )
-            })}
-          </div>
+        <div className="desktop-widgets__glass-chrome desktop-widgets__glass-chrome--flip-clock">
+          <LocalFlipClock date={now} />
         </div>
         <button
           type="button"
