@@ -60,20 +60,17 @@ function localTime12hParts(date) {
   const parts = new Intl.DateTimeFormat('en-US', {
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit',
     hour12: true,
   }).formatToParts(date)
   let hour = '12'
   let minute = '00'
-  let second = '00'
   let dayPeriod = ''
   for (const p of parts) {
     if (p.type === 'hour') hour = p.value.padStart(2, '0')
     if (p.type === 'minute') minute = p.value.padStart(2, '0')
-    if (p.type === 'second') second = p.value.padStart(2, '0')
     if (p.type === 'dayPeriod') dayPeriod = p.value.toUpperCase()
   }
-  return { hour, minute, second, dayPeriod }
+  return { hour, minute, dayPeriod }
 }
 
 /** Square flip cell: top half folds down when `value` (e.g. "09") changes. */
@@ -125,11 +122,10 @@ function FlipSquareUnit({ value, period }) {
 }
 
 function LocalFlipClock({ date }) {
-  const { hour, minute, second, dayPeriod } = localTime12hParts(date)
+  const { hour, minute, dayPeriod } = localTime12hParts(date)
   const label = date.toLocaleTimeString(undefined, {
     hour: 'numeric',
     minute: '2-digit',
-    second: '2-digit',
   })
   return (
     <div
@@ -141,7 +137,6 @@ function LocalFlipClock({ date }) {
       <div className="desktop-widgets__flip-row">
         <FlipSquareUnit value={hour} period={dayPeriod} />
         <FlipSquareUnit value={minute} />
-        <FlipSquareUnit value={second} />
       </div>
     </div>
   )
