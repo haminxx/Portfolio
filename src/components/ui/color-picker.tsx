@@ -91,12 +91,16 @@ function ColorPickerInner({
   onColorChangeRef.current = onColorChange
 
   const [angle, setAngle] = useState(() => {
-    const { h } = hexToHsl(initialPrimaryHex || '#888888')
+    const hex = initialPrimaryHex?.trim()
+    if (!hex || !hexToRgb(hex)) return 0
+    const { h } = hexToHsl(hex)
     return (h / 180) * Math.PI
   })
   const [radius, setRadius] = useState(() => {
     const rMax = size / 2 - padding
-    const { l } = hexToHsl(initialPrimaryHex || '#888888')
+    const hex = initialPrimaryHex?.trim()
+    if (!hex || !hexToRgb(hex)) return 0
+    const { l } = hexToHsl(hex)
     const t = (l - minLight) / (maxLight - minLight)
     return Math.max(0, Math.min(rMax, t * rMax))
   })
@@ -133,6 +137,7 @@ function ColorPickerInner({
     if (!ctx) return
     ctx.clearRect(0, 0, size, size)
 
+    ctx.save()
     ctx.beginPath()
     ctx.arc(size / 2, size / 2, RADIUS, 0, Math.PI * 2)
     ctx.clip()
@@ -150,6 +155,13 @@ function ColorPickerInner({
         ctx.stroke()
       }
     }
+    ctx.restore()
+
+    const hubR = Math.max(2.5, RADIUS * 0.12)
+    ctx.beginPath()
+    ctx.arc(size / 2, size / 2, hubR, 0, Math.PI * 2)
+    ctx.fillStyle = '#000000'
+    ctx.fill()
   }, [size, RADIUS, minLight, maxLight, sat])
 
   useEffect(() => {

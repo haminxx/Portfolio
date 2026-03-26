@@ -44,6 +44,9 @@ export const translations = {
       searchPlaceholder: 'Search Google or type a URL',
       home: 'Home',
     },
+    desktop: {
+      heroTitle: 'Creative developer · interactive portfolio',
+    },
     shortcuts: {
       about: 'About',
       project: 'Project',
@@ -219,6 +222,9 @@ export const translations = {
       searchPlaceholder: 'Google 검색 또는 URL 입력',
       home: '홈',
     },
+    desktop: {
+      heroTitle: '크리에이티브 개발자 · 인터랙티브 포트폴리오',
+    },
     shortcuts: {
       about: '소개',
       project: '프로젝트',
@@ -311,6 +317,9 @@ export const translations = {
       searchPlaceholder: 'Buscar en Google o escribir una URL',
       home: 'Inicio',
     },
+    desktop: {
+      heroTitle: 'Desarrollador creativo · portafolio interactivo',
+    },
     shortcuts: {
       about: 'Acerca de',
       project: 'Proyecto',
@@ -398,6 +407,9 @@ export const translations = {
     chrome: {
       searchPlaceholder: '在 Google 上搜索或输入网址',
       home: '主页',
+    },
+    desktop: {
+      heroTitle: '创意开发者 · 互动作品集',
     },
     shortcuts: {
       about: '关于',
@@ -487,6 +499,9 @@ export const translations = {
       searchPlaceholder: 'Rechercher sur Google ou saisir une URL',
       home: 'Accueil',
     },
+    desktop: {
+      heroTitle: 'Développeur créatif · portfolio interactif',
+    },
     shortcuts: {
       about: 'À propos',
       project: 'Projet',
@@ -574,6 +589,9 @@ export const translations = {
     chrome: {
       searchPlaceholder: 'Googleで検索またはURLを入力',
       home: 'ホーム',
+    },
+    desktop: {
+      heroTitle: 'クリエイティブ開発者 · インタラクティブなポートフォリオ',
     },
     shortcuts: {
       about: '概要',
@@ -663,6 +681,9 @@ export const translations = {
       searchPlaceholder: 'Google पर खोजें या URL लिखें',
       home: 'होम',
     },
+    desktop: {
+      heroTitle: 'रचनात्मक डेवलपर · इंटरैक्टिव पोर्टफोलियो',
+    },
     shortcuts: {
       about: 'के बारे में',
       project: 'प्रोजेक्ट',
@@ -750,6 +771,9 @@ export const translations = {
     chrome: {
       searchPlaceholder: 'البحث في Google أو كتابة عنوان URL',
       home: 'الرئيسية',
+    },
+    desktop: {
+      heroTitle: 'مطوّر مبدع · معرض تفاعلي',
     },
     shortcuts: {
       about: 'حول',

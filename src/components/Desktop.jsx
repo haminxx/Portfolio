@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react'
 import DesktopCustomIcons from './DesktopCustomIcons'
 import DesktopContextMenu from './DesktopContextMenu'
+import DesktopHero from './DesktopHero'
 import DesktopWidgets from './DesktopWidgets'
 import './Desktop.css'
 import { DESKTOP_ICON_WIDTH, DESKTOP_ICON_HEIGHT, DESKTOP_SAFE_TOP } from '../desktopConstants'
@@ -158,6 +159,7 @@ function DesktopContent({
       <Suspense fallback={null}>
         <DesktopShaderBackgroundGate />
       </Suspense>
+      <DesktopHero />
       <DesktopWidgets
         desktopItems={desktopItems}
         onLayoutChange={handleWidgetLayout}

@@ -16,7 +16,6 @@ import {
   ImageIcon,
   RefreshCw,
   ListTodo,
-  Plus,
   ArrowUpRight,
 } from 'lucide-react'
 import { Calendar } from './ui/calendar'
@@ -96,49 +95,74 @@ function formatWorldClockSubtitle(h) {
   return `Today ${rounded > 0 ? '+' : ''}${rounded}h`
 }
 
-function worldClockTimeParts(date, timeZone) {
-  const parts = new Intl.DateTimeFormat('en-US', {
+function worldClockHms24(date, timeZone) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone,
     hour: '2-digit',
     minute: '2-digit',
-    hour12: true,
+    second: '2-digit',
+    hour12: false,
   }).formatToParts(date)
-  let hour = '12'
-  let minute = '00'
-  let ampm = ''
+  let h = '00'
+  let m = '00'
+  let s = '00'
   for (const p of parts) {
-    if (p.type === 'hour') hour = p.value.padStart(2, '0')
-    if (p.type === 'minute') minute = p.value.padStart(2, '0')
-    if (p.type === 'dayPeriod') ampm = p.value
+    if (p.type === 'hour') h = p.value.padStart(2, '0')
+    if (p.type === 'minute') m = p.value.padStart(2, '0')
+    if (p.type === 'second') s = p.value.padStart(2, '0')
   }
-  return { hour, minute, ampm }
+  return { h, m, s }
 }
 
-function worldClockHeaderDate(d) {
-  const wd = d.toLocaleDateString('en', { weekday: 'short' })
-  const day = d.getDate()
-  const mon = d.toLocaleDateString('en', { month: 'short' })
-  const yr = d.getFullYear()
-  return `${day}-${mon}-${yr} ${wd}`
-}
+/** Square flip cell: top half folds down when `value` (e.g. "09") changes. */
+function FlipSquareUnit({ value }) {
+  const [visible, setVisible] = useState(value)
+  const [flipping, setFlipping] = useState(false)
+  const targetRef = useRef(value)
 
-function WorldClockFlipDigits({ date, timeZone, ariaLabel }) {
-  const { hour, minute, ampm } = worldClockTimeParts(date, timeZone)
+  useEffect(() => {
+    targetRef.current = value
+    if (value === visible) return
+    setFlipping(true)
+  }, [value, visible])
+
+  const handleFlapEnd = useCallback(() => {
+    setVisible(targetRef.current)
+    setFlipping(false)
+  }, [])
+
   return (
-    <div className="desktop-widgets__flip-time" aria-label={ariaLabel}>
-      <div className="desktop-widgets__flip-clock__panel desktop-widgets__flip-clock__panel--compact">
-        <div className="desktop-widgets__flip-clock__hinge" />
-        <div className="desktop-widgets__flip-clock__panel-body">
-          <span className="desktop-widgets__flip-clock__digit desktop-widgets__flip-clock__digit--compact">{hour}</span>
+    <div className="desktop-widgets__flip-square" aria-hidden>
+      <div className="desktop-widgets__flip-square__hinge" />
+      <div className="desktop-widgets__flip-square__static">
+        <div className="desktop-widgets__flip-square__half desktop-widgets__flip-square__half--top">
+          <span className="desktop-widgets__flip-square__digit">{visible}</span>
         </div>
-        <span className="desktop-widgets__flip-clock__ampm desktop-widgets__flip-clock__ampm--compact">{ampm}</span>
-      </div>
-      <div className="desktop-widgets__flip-clock__panel desktop-widgets__flip-clock__panel--compact">
-        <div className="desktop-widgets__flip-clock__hinge" />
-        <div className="desktop-widgets__flip-clock__panel-body">
-          <span className="desktop-widgets__flip-clock__digit desktop-widgets__flip-clock__digit--compact">{minute}</span>
+        <div className="desktop-widgets__flip-square__half desktop-widgets__flip-square__half--bottom">
+          <span className="desktop-widgets__flip-square__digit">{visible}</span>
         </div>
       </div>
+      {flipping && (
+        <div
+          className="desktop-widgets__flip-square__flap desktop-widgets__flip-square__flap--animate"
+          onAnimationEnd={handleFlapEnd}
+        >
+          <div className="desktop-widgets__flip-square__half desktop-widgets__flip-square__half--top">
+            <span className="desktop-widgets__flip-square__digit">{visible}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function WorldClockFlipRow({ date, timeZone, ariaLabel }) {
+  const { h, m, s } = worldClockHms24(date, timeZone)
+  return (
+    <div className="desktop-widgets__flip-row" aria-label={ariaLabel}>
+      <FlipSquareUnit value={h} />
+      <FlipSquareUnit value={m} />
+      <FlipSquareUnit value={s} />
     </div>
   )
 }
@@ -836,17 +860,6 @@ export default function DesktopWidgets({
         style={cardStyle('clock')}
       >
         <div className="desktop-widgets__glass-chrome desktop-widgets__world-clock-v2">
-          <div className="desktop-widgets__world-clock-v2__header">
-            <span className="desktop-widgets__world-clock-v2__date">{worldClockHeaderDate(now)}</span>
-            <button
-              type="button"
-              className="desktop-widgets__world-clock-v2__add"
-              aria-label="Add city"
-              title="Coming soon"
-            >
-              <Plus size={16} strokeWidth={2} />
-            </button>
-          </div>
           <div
             className="desktop-widgets__world-clock-v2__rows"
             role="timer"
@@ -860,7 +873,7 @@ export default function DesktopWidgets({
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit',
-                hour12: true,
+                hour12: false,
               })
               return (
                 <div key={z.key} className="desktop-widgets__world-clock-v2__row">
@@ -868,7 +881,7 @@ export default function DesktopWidgets({
                     <span className="desktop-widgets__world-clock-v2__city">{z.label.toUpperCase()}</span>
                     <span className="desktop-widgets__world-clock-v2__sub">{formatWorldClockSubtitle(off)}</span>
                   </div>
-                  <WorldClockFlipDigits date={now} timeZone={z.tz} ariaLabel={`${z.label} ${timeStr}`} />
+                  <WorldClockFlipRow date={now} timeZone={z.tz} ariaLabel={`${z.label} ${timeStr}`} />
                 </div>
               )
             })}

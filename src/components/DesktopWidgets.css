@@ -1,7 +1,7 @@
 .desktop-widgets {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 2;
   pointer-events: none;
   padding: 48px 20px 72px;
   overflow: visible;
@@ -29,6 +29,17 @@
   color: var(--portfolio-chrome-muted, rgba(245, 245, 247, 0.55));
   cursor: grab;
   touch-action: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.18s ease, visibility 0.18s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.desktop-widgets__card:hover .desktop-widgets__drag-strip,
+.desktop-widgets__card:focus-within .desktop-widgets__drag-strip {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .desktop-widgets__drag-strip:hover {
@@ -124,7 +135,7 @@
 
 .desktop-widgets__card--clock {
   min-width: 0;
-  min-height: 100px;
+  min-height: 120px;
 }
 
 .desktop-widgets__card--calendar .desktop-widgets__cal-nav,
@@ -236,29 +247,37 @@
   color: var(--portfolio-chrome-fg);
 }
 
-/* Today: white rounded tile, black numeral, small black dot below (reference UI) */
+/* Today: rounded square ring around the numeral */
 .desktop-widgets__cal-rdp .rdp-today .rdp-day_button {
   position: relative;
-  background: #ffffff !important;
-  color: #0a0a0a !important;
+  background: transparent !important;
+  color: var(--portfolio-chrome-fg, #f5f5f7) !important;
   border-radius: 10px !important;
-  border-color: transparent !important;
+  border: 1.5px solid color-mix(in srgb, var(--portfolio-chrome-fg, #f5f5f7) 52%, transparent) !important;
   font-weight: 700;
-  padding-bottom: 8px !important;
+  padding-bottom: 0 !important;
   box-shadow: none !important;
 }
 
 .desktop-widgets__cal-rdp .rdp-today .rdp-day_button::after {
-  content: '';
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #0a0a0a;
-  pointer-events: none;
+  display: none;
+}
+
+.desktop-widgets__cal-rdp .rdp-today .rdp-day_button[data-selected] {
+  background: var(--rdp-accent-background-color) !important;
+  color: var(--rdp-accent-color) !important;
+  border-color: color-mix(in srgb, var(--rdp-accent-color, #fff) 45%, transparent) !important;
+}
+
+.desktop-widgets__blend .desktop-widgets__cal-rdp .rdp-today .rdp-day_button:not([data-selected]) {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  color: #fff !important;
+}
+
+.desktop-widgets__blend .desktop-widgets__cal-rdp .rdp-today .rdp-day_button[data-selected] {
+  background: rgba(255, 255, 255, 0.22) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.65) !important;
 }
 
 .desktop-widgets__bg-controls-head {
@@ -1101,36 +1120,6 @@
   padding-top: 2px;
 }
 
-.desktop-widgets__world-clock-v2__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 2px;
-}
-
-.desktop-widgets__world-clock-v2__date {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--portfolio-chrome-muted, rgba(245, 245, 247, 0.62));
-}
-
-.desktop-widgets__world-clock-v2__add {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: none;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--portfolio-chrome-fg, #f5f5f7);
-  cursor: default;
-  opacity: 0.75;
-}
-
 .desktop-widgets__world-clock-v2__rows {
   display: flex;
   flex-direction: column;
@@ -1164,6 +1153,124 @@
   font-size: 11px;
   font-weight: 600;
   color: var(--portfolio-chrome-muted, rgba(245, 245, 247, 0.62));
+}
+
+/* Square flip clock cells (H / M / S per row) */
+.desktop-widgets__flip-row {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.desktop-widgets__flip-square {
+  --flip-fs: 32px;
+  width: var(--flip-fs);
+  aspect-ratio: 1;
+  position: relative;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #3e3e42 0%, #303034 48%, #28282c 52%, #222226 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 2px 10px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  perspective: 160px;
+  perspective-origin: 50% 50%;
+}
+
+.desktop-widgets__flip-square__static {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.desktop-widgets__flip-square__half--top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.desktop-widgets__flip-square__half--bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.desktop-widgets__flip-square__digit {
+  font-size: calc(var(--flip-fs) * 0.5);
+  font-weight: 800;
+  line-height: var(--flip-fs);
+  height: var(--flip-fs);
+  font-variant-numeric: tabular-nums;
+  color: rgba(236, 236, 240, 0.98);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.desktop-widgets__flip-square__hinge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.12) 100%);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.desktop-widgets__flip-square__flap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 50%;
+  overflow: hidden;
+  z-index: 3;
+  transform-origin: center bottom;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  border-radius: 7px 7px 0 0;
+  background: linear-gradient(180deg, #3e3e42 0%, #303034 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.desktop-widgets__flip-square__flap .desktop-widgets__flip-square__half--top {
+  position: relative;
+  inset: auto;
+  height: 100%;
+}
+
+@keyframes desktop-widgets-flip-fold {
+  from {
+    transform: rotateX(0deg);
+  }
+  to {
+    transform: rotateX(-90deg);
+  }
+}
+
+.desktop-widgets__flip-square__flap--animate {
+  animation: desktop-widgets-flip-fold 0.32s ease-in forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desktop-widgets__flip-square__flap--animate {
+    animation-duration: 0.001ms;
+  }
 }
 
 .desktop-widgets__flip-time {

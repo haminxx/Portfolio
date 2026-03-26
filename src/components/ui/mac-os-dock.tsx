@@ -340,8 +340,7 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
               }}
               className="absolute flex cursor-grab flex-col items-center justify-center active:cursor-grabbing"
               data-dock-app-id={app.id}
-              title={app.name}
-              role="presentation"
+              aria-label={app.name}
               onPointerDown={(e) => {
                 onIconPointerDown?.(e, app.id, index)
               }}
