@@ -7,6 +7,59 @@
   overflow: visible;
 }
 
+.desktop-widgets__card--has-drag-strip {
+  padding-top: 30px;
+}
+
+.desktop-widgets__drag-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 22px 22px 0 0;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--portfolio-chrome-muted, rgba(245, 245, 247, 0.55));
+  cursor: grab;
+  touch-action: none;
+}
+
+.desktop-widgets__drag-strip:hover {
+  color: var(--portfolio-chrome-fg, #f5f5f7);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.desktop-widgets__drag-strip:active {
+  cursor: grabbing;
+}
+
+.desktop-widgets__glass-chrome {
+  mix-blend-mode: normal;
+  color: var(--portfolio-chrome-fg, #f5f5f7);
+  text-shadow: none;
+}
+
+.desktop-widgets__glass-chrome svg {
+  color: currentColor;
+  stroke: currentColor;
+}
+
+.desktop-widgets__card--glass {
+  border-color: transparent;
+  background: transparent;
+}
+
+.desktop-widgets__card--glass.liquid-glass-panel {
+  box-sizing: border-box;
+}
+
 /*
  * mix-blend-mode: difference inverts foreground against the composited backdrop
  * (mesh / desktop), not raw wallpaper pixels behind the widget.
@@ -32,14 +85,13 @@
   isolation: isolate;
 }
 
-/* No frosted card layer: widgets are content-only over the mesh (lighter GPU). */
+/* No stacking isolation on whole card so mix-blend content can see the mesh; isolate only where needed (e.g. iPod chassis). */
 .desktop-widgets__card {
   position: absolute;
   pointer-events: auto;
   padding: 12px 14px 14px;
   padding-top: 14px;
   border-radius: 22px;
-  isolation: isolate;
   transition: width 0.22s ease, height 0.22s ease;
   background: transparent;
   backdrop-filter: none;
@@ -81,8 +133,8 @@
 }
 
 .desktop-widgets__card--weather {
-  width: 200px;
-  min-height: 100px;
+  min-width: 0;
+  min-height: 120px;
 }
 
 .desktop-widgets__card--music {
@@ -267,6 +319,7 @@
 }
 
 .desktop-widgets__card--photo {
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   padding: 0;
@@ -440,7 +493,7 @@
   bottom: 2px;
   width: 22px;
   height: 22px;
-  z-index: 4;
+  z-index: 28;
   padding: 0;
   border: none;
   border-radius: 10px 0 14px 0;
@@ -614,6 +667,7 @@
 }
 
 .desktop-widgets__ipod-chassis {
+  isolation: isolate;
   display: flex;
   align-items: stretch;
   gap: 12px;
@@ -1035,6 +1089,234 @@
   background: #1c1c1e;
   color: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* World clock v2: rows + flip digits + glass */
+.desktop-widgets__world-clock-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.desktop-widgets__world-clock-v2__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.desktop-widgets__world-clock-v2__date {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--portfolio-chrome-muted, rgba(245, 245, 247, 0.62));
+}
+
+.desktop-widgets__world-clock-v2__add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--portfolio-chrome-fg, #f5f5f7);
+  cursor: default;
+  opacity: 0.75;
+}
+
+.desktop-widgets__world-clock-v2__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.desktop-widgets__world-clock-v2__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.desktop-widgets__world-clock-v2__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.desktop-widgets__world-clock-v2__city {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+}
+
+.desktop-widgets__world-clock-v2__sub {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--portfolio-chrome-muted, rgba(245, 245, 247, 0.62));
+}
+
+.desktop-widgets__flip-time {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.desktop-widgets__flip-clock__panel--compact {
+  min-height: 52px;
+  min-width: 48px;
+  border-radius: 10px;
+}
+
+.desktop-widgets__flip-clock__panel--compact .desktop-widgets__flip-clock__panel-body {
+  min-height: 52px;
+  padding: 8px 6px 10px;
+}
+
+.desktop-widgets__flip-clock__digit--compact {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.desktop-widgets__flip-clock__ampm--compact {
+  left: 6px;
+  bottom: 5px;
+  font-size: 8px;
+}
+
+.desktop-widgets__weather-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.desktop-widgets__weather-v2__status {
+  margin: 0;
+  font-size: 12px;
+  color: var(--portfolio-chrome-muted, rgba(245, 245, 247, 0.62));
+}
+
+.desktop-widgets__weather-v2__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.desktop-widgets__weather-v2__temp-block {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.desktop-widgets__weather-v2__temp-nav {
+  display: flex;
+  margin-bottom: 2px;
+  opacity: 0.65;
+}
+
+.desktop-widgets__weather-v2__temp-big {
+  font-size: 42px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+}
+
+.desktop-widgets__weather-v2__summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.desktop-widgets__weather-v2__summary-icon {
+  display: flex;
+  opacity: 0.92;
+}
+
+.desktop-widgets__weather-v2__summary-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.desktop-widgets__weather-v2__condition {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.desktop-widgets__weather-v2__minmax {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--portfolio-chrome-muted, rgba(245, 245, 247, 0.62));
+  white-space: nowrap;
+}
+
+.desktop-widgets__weather-v2__hourly {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.desktop-widgets__weather-v2__hourly::-webkit-scrollbar {
+  display: none;
+}
+
+.desktop-widgets__weather-v2__hour {
+  flex: 1 1 0;
+  min-width: 44px;
+  max-width: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.desktop-widgets__weather-v2__hour-label {
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.desktop-widgets__weather-v2__hour-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.9;
+}
+
+.desktop-widgets__weather-v2__hour-temp {
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
 /* World clock: LA → Seoul → London → user (base) */

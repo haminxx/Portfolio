@@ -17,12 +17,15 @@ export const STATIC_WIDGET_IDS = [
 
 export const STATIC_SIZES = {
   calendar: { w: 200, h: 220 },
-  clock: { w: 400, h: 140 },
-  weather: { w: 200, h: 108 },
+  clock: { w: 360, h: 260 },
+  weather: { w: 400, h: 200 },
   music: { w: 312, h: 136 },
   bgControls: { w: 160, h: 160 },
   notesChecklist: { w: 200, h: 200 },
 }
+
+/** Widgets that always use default footprint (no corner resize). */
+export const NON_RESIZABLE_WIDGET_IDS = ['calendar', 'bgControls']
 
 export function clampGrid(n) {
   const v = Math.round(Number(n))
@@ -47,6 +50,9 @@ export function defaultGridForWidget(id) {
 
 export function getBoxSizeForWidget(id, entry) {
   const def = defaultGridForWidget(id)
+  if (NON_RESIZABLE_WIDGET_IDS.includes(id)) {
+    return { w: def.gridW * CELL, h: def.gridH * CELL }
+  }
   const gw = clampGrid(entry?.gridW ?? def.gridW)
   const gh = clampGrid(entry?.gridH ?? def.gridH)
   return { w: gw * CELL, h: gh * CELL }

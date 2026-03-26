@@ -98,12 +98,16 @@
   padding: 8px 0;
   mix-blend-mode: normal;
   isolation: isolate;
-  background: rgba(28, 28, 30, 0.88);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--liquid-glass-fill, rgba(255, 255, 255, 0.12));
+  backdrop-filter: var(--liquid-glass-blur, saturate(200%) blur(22px));
+  -webkit-backdrop-filter: var(--liquid-glass-blur, saturate(200%) blur(22px));
+  border: 1px solid var(--liquid-glass-border, rgba(255, 255, 255, 0.28));
   border-radius: 14px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+    0 16px 40px rgba(0, 0, 0, 0.18);
   z-index: 100;
 }
 
@@ -113,14 +117,14 @@
   padding: 8px 18px;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--portfolio-chrome-fg, rgba(10, 10, 12, 0.94));
   font-size: 13px;
   text-align: left;
   cursor: pointer;
 }
 
 .menu-bar__item:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .menu-bar__divider {

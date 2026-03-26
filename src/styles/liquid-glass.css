@@ -1,0 +1,20 @@
+/* Shared liquid-glass tokens (dock, menu dropdowns, desktop widgets). */
+:root {
+  --liquid-glass-fill: rgba(255, 255, 255, 0.12);
+  --liquid-glass-border: rgba(255, 255, 255, 0.28);
+  --liquid-glass-blur: saturate(200%) blur(22px);
+  --liquid-glass-radius: 22px;
+  --liquid-glass-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.08);
+}
+
+.liquid-glass-panel {
+  background: var(--liquid-glass-fill);
+  backdrop-filter: var(--liquid-glass-blur);
+  -webkit-backdrop-filter: var(--liquid-glass-blur);
+  border: 1px solid var(--liquid-glass-border);
+  border-radius: var(--liquid-glass-radius);
+  box-shadow: var(--liquid-glass-shadow);
+}

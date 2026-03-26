@@ -298,11 +298,26 @@ export default function DesktopCustomIcons({
           >
             <span className="desktop-custom-icons__icon">
               {isShortcut && item.appKey === 'doom' ? (
-                <img src="/dock-icons/doom.png" alt="DOOM" className="desktop-custom-icons__icon-img" />
+                <img
+                  src="/dock-icons/doom.png"
+                  alt="DOOM"
+                  className="desktop-custom-icons__icon-img"
+                  draggable={false}
+                />
               ) : isShortcut && item.appKey === 'dadnme' ? (
-                <img src="/dock-icons/dadnme.png" alt="Dad n Me" className="desktop-custom-icons__icon-img desktop-custom-icons__icon-img--rounded-square" />
+                <img
+                  src="/dock-icons/dadnme.png"
+                  alt="Dad n Me"
+                  className="desktop-custom-icons__icon-img desktop-custom-icons__icon-img--rounded-square"
+                  draggable={false}
+                />
               ) : isShortcut && item.appKey === 'tetris' ? (
-                <img src="/dock-icons/tetris.png" alt="Tetris" className="desktop-custom-icons__icon-img desktop-custom-icons__icon-img--rounded-square" />
+                <img
+                  src="/dock-icons/tetris.png"
+                  alt="Tetris"
+                  className="desktop-custom-icons__icon-img desktop-custom-icons__icon-img--rounded-square"
+                  draggable={false}
+                />
               ) : (
                 <Icon size={40} strokeWidth={1.5} />
               )}

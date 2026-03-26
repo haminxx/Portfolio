@@ -1,3 +1,8 @@
+.daedalos-desktop {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 .desktop__icons-wrap {
   position: absolute;
   inset: 0;

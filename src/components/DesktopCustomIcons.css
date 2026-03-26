@@ -21,6 +21,8 @@
   color: white;
   background: transparent;
   border: 2px solid transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .desktop-custom-icons__item:hover {
@@ -77,6 +79,8 @@
   word-break: break-word;
   color: var(--portfolio-chrome-fg, #f5f5f7);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .desktop-custom-icons__rename-input {
@@ -89,4 +93,6 @@
   color: white;
   padding: 2px 4px;
   outline: none;
+  user-select: text;
+  -webkit-user-select: text;
 }

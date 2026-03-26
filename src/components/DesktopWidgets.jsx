@@ -16,6 +16,8 @@ import {
   ImageIcon,
   RefreshCw,
   ListTodo,
+  Plus,
+  ArrowUpRight,
 } from 'lucide-react'
 import { Calendar } from './ui/calendar'
 import ColorPicker from './ui/color-picker'
@@ -32,6 +34,7 @@ import {
 } from '../lib/notesStorage'
 import {
   STATIC_WIDGET_IDS,
+  NON_RESIZABLE_WIDGET_IDS,
   CELL,
   clampGrid,
   defaultStaticGrid,
@@ -46,7 +49,6 @@ import {
   ADD_PHOTO_WIDGET_EVENT,
 } from '../lib/photoWidgetRegistry'
 import PhotoWidgetImportModal from './PhotoWidgetImportModal'
-import AnalogClockFace from './AnalogClockFace'
 import { DESKTOP_SAFE_TOP } from '../desktopConstants'
 import { getDesktopIconRects } from '../lib/widgetOverlapGeometry'
 import './DesktopWidgets.css'
@@ -86,14 +88,59 @@ function offsetHoursCityVsUser(userTz, cityTz, at) {
   }
 }
 
-function formatOffsetVersusUser(h) {
+function formatWorldClockSubtitle(h) {
   if (h == null || Number.isNaN(h)) return '—'
-  if (Math.abs(h) < 0.05) return 'Same as you'
-  const rounded = Math.round(h * 2) / 2
-  const a = Math.abs(rounded)
-  const unit = a === 1 ? 'hour' : 'hours'
-  if (rounded > 0) return `${a} ${unit} ahead`
-  return `${a} ${unit} behind`
+  if (Math.abs(h) < 0.05) return 'Today'
+  const rounded = Math.round(h)
+  if (rounded === 0) return 'Today'
+  return `Today ${rounded > 0 ? '+' : ''}${rounded}h`
+}
+
+function worldClockTimeParts(date, timeZone) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  }).formatToParts(date)
+  let hour = '12'
+  let minute = '00'
+  let ampm = ''
+  for (const p of parts) {
+    if (p.type === 'hour') hour = p.value.padStart(2, '0')
+    if (p.type === 'minute') minute = p.value.padStart(2, '0')
+    if (p.type === 'dayPeriod') ampm = p.value
+  }
+  return { hour, minute, ampm }
+}
+
+function worldClockHeaderDate(d) {
+  const wd = d.toLocaleDateString('en', { weekday: 'short' })
+  const day = d.getDate()
+  const mon = d.toLocaleDateString('en', { month: 'short' })
+  const yr = d.getFullYear()
+  return `${day}-${mon}-${yr} ${wd}`
+}
+
+function WorldClockFlipDigits({ date, timeZone, ariaLabel }) {
+  const { hour, minute, ampm } = worldClockTimeParts(date, timeZone)
+  return (
+    <div className="desktop-widgets__flip-time" aria-label={ariaLabel}>
+      <div className="desktop-widgets__flip-clock__panel desktop-widgets__flip-clock__panel--compact">
+        <div className="desktop-widgets__flip-clock__hinge" />
+        <div className="desktop-widgets__flip-clock__panel-body">
+          <span className="desktop-widgets__flip-clock__digit desktop-widgets__flip-clock__digit--compact">{hour}</span>
+        </div>
+        <span className="desktop-widgets__flip-clock__ampm desktop-widgets__flip-clock__ampm--compact">{ampm}</span>
+      </div>
+      <div className="desktop-widgets__flip-clock__panel desktop-widgets__flip-clock__panel--compact">
+        <div className="desktop-widgets__flip-clock__hinge" />
+        <div className="desktop-widgets__flip-clock__panel-body">
+          <span className="desktop-widgets__flip-clock__digit desktop-widgets__flip-clock__digit--compact">{minute}</span>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function formatTrackTime(sec) {
@@ -176,10 +223,11 @@ function loadLayout(photoIdList) {
   for (const id of STATIC_WIDGET_IDS) {
     const def = defaultStaticGrid(id)
     const base = { ...DEFAULT_LAYOUT[id], ...out[id] }
+    const locked = NON_RESIZABLE_WIDGET_IDS.includes(id)
     out[id] = {
       ...base,
-      gridW: clampGrid(base.gridW ?? def.gridW),
-      gridH: clampGrid(base.gridH ?? def.gridH),
+      gridW: locked ? def.gridW : clampGrid(base.gridW ?? def.gridW),
+      gridH: locked ? def.gridH : clampGrid(base.gridH ?? def.gridH),
     }
   }
   for (const id of photoIdList) {
@@ -218,6 +266,24 @@ function weatherCodeToIcon(code) {
   return Cloud
 }
 
+function weatherCodeToShortLabel(code) {
+  if (code == null || Number.isNaN(code)) return 'Weather'
+  const c = code
+  if (c === 0) return 'Clear'
+  if (c === 1 || c === 2) return 'Mainly clear'
+  if (c === 3) return 'Overcast'
+  if (c === 45 || c === 48) return 'Fog'
+  if (c >= 51 && c <= 55) return 'Drizzle'
+  if (c === 56 || c === 57) return 'Freezing drizzle'
+  if (c >= 61 && c <= 65) return 'Rain'
+  if (c === 66 || c === 67) return 'Freezing rain'
+  if (c >= 71 && c <= 77) return 'Snow'
+  if (c >= 80 && c <= 82) return 'Rain showers'
+  if (c >= 85 && c <= 86) return 'Snow showers'
+  if (c >= 95) return 'Thunderstorm'
+  return 'Weather'
+}
+
 /** Defaults match desktop hero layout: helmet (large), motion bike (tall), WORK HARD (square). Indices 0-based into gallery manifest. */
 const DEFAULT_PHOTO_WIDGET = {
   photoA: { galleryIndex: 34, cropPadding: 0 },
@@ -239,7 +305,14 @@ export default function DesktopWidgets({
   onOpenApp,
 }) {
   const [now, setNow] = useState(() => new Date())
-  const [weather, setWeather] = useState({ status: 'idle', current: null, error: null })
+  const [weather, setWeather] = useState({
+    status: 'idle',
+    current: null,
+    hourly: [],
+    dailyMax: null,
+    dailyMin: null,
+    error: null,
+  })
   const [userLoc, setUserLoc] = useState({
     status: 'pending',
     lat: null,
@@ -427,6 +500,9 @@ export default function DesktopWidgets({
       url.searchParams.set('latitude', String(lat))
       url.searchParams.set('longitude', String(lon))
       url.searchParams.set('current', 'temperature_2m,weather_code')
+      url.searchParams.set('hourly', 'temperature_2m,weather_code')
+      url.searchParams.set('daily', 'temperature_2m_max,temperature_2m_min')
+      url.searchParams.set('forecast_days', '2')
       url.searchParams.set('timezone', 'auto')
       const res = await fetch(url.toString())
       if (!res.ok) throw new Error('forecast failed')
@@ -435,13 +511,49 @@ export default function DesktopWidgets({
       const temp = cur?.temperature_2m
       const code = cur?.weather_code ?? cur?.weathercode
       if (temp == null && code == null) throw new Error('no current data')
+
+      const hourlyTimes = data.hourly?.time ?? []
+      const hourlyTemp = data.hourly?.temperature_2m ?? []
+      const hourlyCode = data.hourly?.weather_code ?? []
+      const curTime = cur?.time
+      let startIdx = 0
+      if (hourlyTimes.length) {
+        if (curTime) {
+          const at = hourlyTimes.findIndex((t) => t >= curTime)
+          startIdx = at >= 0 ? at : Math.max(0, hourlyTimes.length - 6)
+        }
+      }
+      const hourly = []
+      for (let i = 0; i < 6; i++) {
+        const j = startIdx + i
+        if (j >= hourlyTimes.length) break
+        hourly.push({
+          time: hourlyTimes[j],
+          temp: hourlyTemp[j],
+          code: hourlyCode[j],
+        })
+      }
+
+      const dailyMax = data.daily?.temperature_2m_max?.[0] ?? null
+      const dailyMin = data.daily?.temperature_2m_min?.[0] ?? null
+
       setWeather({
         status: 'ready',
         current: { temp, code },
+        hourly,
+        dailyMax,
+        dailyMin,
         error: null,
       })
     } catch (e) {
-      setWeather({ status: 'error', current: null, error: e?.message || 'unavailable' })
+      setWeather({
+        status: 'error',
+        current: null,
+        hourly: [],
+        dailyMax: null,
+        dailyMin: null,
+        error: e?.message || 'unavailable',
+      })
     }
   }, [])
 
@@ -572,6 +684,7 @@ export default function DesktopWidgets({
   const handleWidgetResizePointerDown = useCallback(
     (e, wid) => {
       if (e.button !== 0) return
+      if (NON_RESIZABLE_WIDGET_IDS.includes(wid)) return
       e.stopPropagation()
       e.preventDefault()
       const entry = layout[wid] || DEFAULT_LAYOUT[wid]
@@ -657,13 +770,6 @@ export default function DesktopWidgets({
     setPinnedChecklistItemDone(notesStore, itemId, done)
   }, [notesStore])
 
-  const homeTimeLabel = now.toLocaleTimeString(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: true,
-  })
-
   const cardClass = (id, extra) =>
     `desktop-widgets__card ${extra}${resizingWidgetId === id ? ' desktop-widgets__card--resizing' : ''}`.trim()
 
@@ -689,16 +795,11 @@ export default function DesktopWidgets({
         />
       )}
 
-      <div className={cardClass('calendar', 'desktop-widgets__card--calendar')} style={cardStyle('calendar')}>
+      <div
+        className={cardClass('calendar', 'desktop-widgets__card--calendar desktop-widgets__card--has-drag-strip')}
+        style={cardStyle('calendar')}
+      >
         <div className="desktop-widgets__blend">
-          <button
-            type="button"
-            className="desktop-widgets__grip"
-            aria-label="Move calendar widget"
-            onPointerDown={(e) => handleGripPointerDown(e, 'calendar')}
-          >
-            <GripVertical size={14} strokeWidth={2} />
-          </button>
           <div className="desktop-widgets__adaptive desktop-widgets__cal-rdp">
             <Calendar
               mode="single"
@@ -716,30 +817,41 @@ export default function DesktopWidgets({
               className="w-full rounded-xl [--cell-size:1.65rem] sm:[--cell-size:1.65rem]"
             />
           </div>
-          <button
-            type="button"
-            className="desktop-widgets__widget-resize-handle"
-            aria-label="Resize calendar widget"
-            onPointerDown={(e) => handleWidgetResizePointerDown(e, 'calendar')}
-          />
         </div>
+        <button
+          type="button"
+          className="desktop-widgets__drag-strip"
+          aria-label="Move calendar widget"
+          onPointerDown={(e) => handleGripPointerDown(e, 'calendar')}
+        >
+          <GripVertical size={14} strokeWidth={2} />
+        </button>
       </div>
 
-      <div className={cardClass('clock', 'desktop-widgets__card--clock')} style={cardStyle('clock')}>
-        <div className="desktop-widgets__blend">
-          <button
-            type="button"
-            className="desktop-widgets__grip"
-            aria-label="Move clock widget"
-            onPointerDown={(e) => handleGripPointerDown(e, 'clock')}
-          >
-            <GripVertical size={14} strokeWidth={2} />
-          </button>
+      <div
+        className={cardClass(
+          'clock',
+          'desktop-widgets__card--clock desktop-widgets__card--glass liquid-glass-panel desktop-widgets__card--has-drag-strip',
+        )}
+        style={cardStyle('clock')}
+      >
+        <div className="desktop-widgets__glass-chrome desktop-widgets__world-clock-v2">
+          <div className="desktop-widgets__world-clock-v2__header">
+            <span className="desktop-widgets__world-clock-v2__date">{worldClockHeaderDate(now)}</span>
+            <button
+              type="button"
+              className="desktop-widgets__world-clock-v2__add"
+              aria-label="Add city"
+              title="Coming soon"
+            >
+              <Plus size={16} strokeWidth={2} />
+            </button>
+          </div>
           <div
-            className="desktop-widgets__adaptive desktop-widgets__world-clock"
+            className="desktop-widgets__world-clock-v2__rows"
             role="timer"
             aria-live="polite"
-            aria-label={`World clock, home ${homeTimeLabel}`}
+            aria-label="World clock: Los Angeles, Seoul, London"
           >
             {WORLD_ZONES.map((z) => {
               const off = offsetHoursCityVsUser(userTz, z.tz, now)
@@ -751,88 +863,127 @@ export default function DesktopWidgets({
                 hour12: true,
               })
               return (
-                <div key={z.key} className="desktop-widgets__world-clock__col">
-                  <span className="desktop-widgets__world-clock__city">{z.label}</span>
-                  <AnalogClockFace
-                    now={now}
-                    timeZone={z.tz}
-                    size={50}
-                    ariaLabel={`${z.label} ${timeStr}`}
-                  />
-                  <span className="desktop-widgets__world-clock__delta">{formatOffsetVersusUser(off)}</span>
+                <div key={z.key} className="desktop-widgets__world-clock-v2__row">
+                  <div className="desktop-widgets__world-clock-v2__meta">
+                    <span className="desktop-widgets__world-clock-v2__city">{z.label.toUpperCase()}</span>
+                    <span className="desktop-widgets__world-clock-v2__sub">{formatWorldClockSubtitle(off)}</span>
+                  </div>
+                  <WorldClockFlipDigits date={now} timeZone={z.tz} ariaLabel={`${z.label} ${timeStr}`} />
                 </div>
               )
             })}
-            <div className="desktop-widgets__world-clock__col desktop-widgets__world-clock__col--home">
-              <span className="desktop-widgets__world-clock__city">
-                {userLoc.status === 'pending' ? 'Locating…' : userLoc.label || 'Your time'}
-              </span>
-              <AnalogClockFace now={now} size={50} ariaLabel={`Home ${homeTimeLabel}`} />
-              <span className="desktop-widgets__world-clock__delta">Base</span>
-            </div>
           </div>
-          <button
-            type="button"
-            className="desktop-widgets__widget-resize-handle"
-            aria-label="Resize clock widget"
-            onPointerDown={(e) => handleWidgetResizePointerDown(e, 'clock')}
-          />
         </div>
+        <button
+          type="button"
+          className="desktop-widgets__drag-strip"
+          aria-label="Move clock widget"
+          onPointerDown={(e) => handleGripPointerDown(e, 'clock')}
+        >
+          <GripVertical size={14} strokeWidth={2} />
+        </button>
+        <button
+          type="button"
+          className="desktop-widgets__widget-resize-handle"
+          aria-label="Resize clock widget"
+          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'clock')}
+        />
       </div>
 
-      <div className={cardClass('weather', 'desktop-widgets__card--weather')} style={cardStyle('weather')}>
-        <div className="desktop-widgets__blend">
-          <button
-            type="button"
-            className="desktop-widgets__grip"
-            aria-label="Move weather widget"
-            onPointerDown={(e) => handleGripPointerDown(e, 'weather')}
-          >
-            <GripVertical size={14} strokeWidth={2} />
-          </button>
-          <div className="desktop-widgets__adaptive desktop-widgets__weather-body">
-            <div className="desktop-widgets__card-title desktop-widgets__weather-city">
-              {userLoc.status === 'pending' ? '…' : userLoc.label || 'Weather'}
-            </div>
-            {weather.status === 'loading' && <p className="desktop-widgets__muted">Loading…</p>}
-            {weather.status === 'error' && <p className="desktop-widgets__muted">{weather.error}</p>}
-            {weather.status === 'ready' && weather.current && WeatherTodayIcon ? (
-              <div className="desktop-widgets__weather-today">
-                <span className="desktop-widgets__weather-today-icon" aria-hidden>
-                  <WeatherTodayIcon size={36} strokeWidth={1.75} />
-                </span>
-                <div className="desktop-widgets__weather-today-meta">
-                  <span className="desktop-widgets__weather-today-temp">
+      <div
+        className={cardClass(
+          'weather',
+          'desktop-widgets__card--weather desktop-widgets__card--glass liquid-glass-panel desktop-widgets__card--has-drag-strip',
+        )}
+        style={cardStyle('weather')}
+      >
+        <div className="desktop-widgets__glass-chrome desktop-widgets__weather-v2">
+          {weather.status === 'loading' && <p className="desktop-widgets__weather-v2__status">Loading…</p>}
+          {weather.status === 'error' && <p className="desktop-widgets__weather-v2__status">{weather.error}</p>}
+          {weather.status === 'ready' && weather.current && WeatherTodayIcon ? (
+            <>
+              <div className="desktop-widgets__weather-v2__top">
+                <div className="desktop-widgets__weather-v2__temp-block">
+                  <span className="desktop-widgets__weather-v2__temp-nav" aria-hidden>
+                    <ArrowUpRight size={14} strokeWidth={2} />
+                  </span>
+                  <span className="desktop-widgets__weather-v2__temp-big">
                     {weather.current.temp != null && Number.isFinite(weather.current.temp)
                       ? Math.round(weather.current.temp)
                       : '—'}
                     °
                   </span>
-                  <span className="desktop-widgets__weather-today-sub">Now</span>
+                </div>
+                <div className="desktop-widgets__weather-v2__summary">
+                  <span className="desktop-widgets__weather-v2__summary-icon" aria-hidden>
+                    <WeatherTodayIcon size={32} strokeWidth={1.75} />
+                  </span>
+                  <div className="desktop-widgets__weather-v2__summary-text">
+                    <span className="desktop-widgets__weather-v2__condition">
+                      {weatherCodeToShortLabel(weather.current.code)}
+                    </span>
+                    <span className="desktop-widgets__weather-v2__minmax">
+                      Max:
+                      {weather.dailyMax != null && Number.isFinite(weather.dailyMax)
+                        ? Math.round(weather.dailyMax)
+                        : '—'}
+                      ° Min:
+                      {weather.dailyMin != null && Number.isFinite(weather.dailyMin)
+                        ? Math.round(weather.dailyMin)
+                        : '—'}
+                      °
+                    </span>
+                  </div>
                 </div>
               </div>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            className="desktop-widgets__widget-resize-handle"
-            aria-label="Resize weather widget"
-            onPointerDown={(e) => handleWidgetResizePointerDown(e, 'weather')}
-          />
+              {weather.hourly?.length > 0 ? (
+                <div className="desktop-widgets__weather-v2__hourly">
+                  {weather.hourly.map((slot) => {
+                    const HIcon = weatherCodeToIcon(slot.code)
+                    const t = slot.time ? new Date(slot.time) : null
+                    const label = t
+                      ? t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+                      : '—'
+                    return (
+                      <div key={slot.time} className="desktop-widgets__weather-v2__hour">
+                        <span className="desktop-widgets__weather-v2__hour-label">{label}</span>
+                        <span className="desktop-widgets__weather-v2__hour-icon" aria-hidden>
+                          <HIcon size={22} strokeWidth={1.75} />
+                        </span>
+                        <span className="desktop-widgets__weather-v2__hour-temp">
+                          {slot.temp != null && Number.isFinite(slot.temp) ? `${Math.round(slot.temp)}°` : '—'}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : null}
+            </>
+          ) : null}
         </div>
+        <button
+          type="button"
+          className="desktop-widgets__drag-strip"
+          aria-label="Move weather widget"
+          onPointerDown={(e) => handleGripPointerDown(e, 'weather')}
+        >
+          <GripVertical size={14} strokeWidth={2} />
+        </button>
+        <button
+          type="button"
+          className="desktop-widgets__widget-resize-handle"
+          aria-label="Resize weather widget"
+          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'weather')}
+        />
       </div>
 
-      <div className={cardClass('bgControls', 'desktop-widgets__card--bg-controls')} style={cardStyle('bgControls')}>
-        <div className="desktop-widgets__blend">
-          <button
-            type="button"
-            className="desktop-widgets__grip"
-            aria-label="Move background controls widget"
-            onPointerDown={(e) => handleGripPointerDown(e, 'bgControls')}
-          >
-            <GripVertical size={14} strokeWidth={2} />
-          </button>
-        </div>
+      <div
+        className={cardClass(
+          'bgControls',
+          'desktop-widgets__card--bg-controls desktop-widgets__card--has-drag-strip',
+        )}
+        style={cardStyle('bgControls')}
+      >
         <div className="desktop-widgets__no-blend desktop-widgets__bg-controls-body desktop-widgets__bg-controls-body--compact">
           <div className="desktop-widgets__bg-wheel-square">
             <ColorPicker
@@ -859,27 +1010,28 @@ export default function DesktopWidgets({
             />
           </div>
         </div>
-        <div className="desktop-widgets__blend">
-          <button
-            type="button"
-            className="desktop-widgets__widget-resize-handle"
-            aria-label="Resize background controls widget"
-            onPointerDown={(e) => handleWidgetResizePointerDown(e, 'bgControls')}
-          />
-        </div>
+        <button
+          type="button"
+          className="desktop-widgets__drag-strip"
+          aria-label="Move background controls widget"
+          onPointerDown={(e) => handleGripPointerDown(e, 'bgControls')}
+        >
+          <GripVertical size={14} strokeWidth={2} />
+        </button>
       </div>
 
-      <div className={cardClass('music', 'desktop-widgets__card--music')} style={cardStyle('music')}>
-        <div className="desktop-widgets__blend">
-          <button
-            type="button"
-            className="desktop-widgets__grip"
-            aria-label="Move music widget"
-            onPointerDown={(e) => handleGripPointerDown(e, 'music')}
-          >
-            <GripVertical size={14} strokeWidth={2} />
-          </button>
-        </div>
+      <div
+        className={cardClass('music', 'desktop-widgets__card--music desktop-widgets__card--has-drag-strip')}
+        style={cardStyle('music')}
+      >
+        <button
+          type="button"
+          className="desktop-widgets__drag-strip"
+          aria-label="Move music widget"
+          onPointerDown={(e) => handleGripPointerDown(e, 'music')}
+        >
+          <GripVertical size={14} strokeWidth={2} />
+        </button>
         <div className="desktop-widgets__ipod">
           <div className="desktop-widgets__ipod-chassis">
             <div className="desktop-widgets__ipod-screen">
@@ -998,14 +1150,12 @@ export default function DesktopWidgets({
             </div>
           </div>
         </div>
-        <div className="desktop-widgets__blend">
-          <button
-            type="button"
-            className="desktop-widgets__widget-resize-handle"
-            aria-label="Resize music widget"
-            onPointerDown={(e) => handleWidgetResizePointerDown(e, 'music')}
-          />
-        </div>
+        <button
+          type="button"
+          className="desktop-widgets__widget-resize-handle"
+          aria-label="Resize music widget"
+          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'music')}
+        />
       </div>
 
       <div className={cardClass('notesChecklist', 'desktop-widgets__card--notes')} style={cardStyle('notesChecklist')}>

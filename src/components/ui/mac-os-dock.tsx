@@ -303,11 +303,11 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
       className={className}
       style={{
         width: `${contentWidth + padding * 2}px`,
-        background: 'rgba(255, 255, 255, 0.12)',
-        backdropFilter: 'saturate(200%) blur(22px)',
-        WebkitBackdropFilter: 'saturate(200%) blur(22px)',
+        background: 'var(--liquid-glass-fill, rgba(255, 255, 255, 0.12))',
+        backdropFilter: 'var(--liquid-glass-blur, saturate(200%) blur(22px))',
+        WebkitBackdropFilter: 'var(--liquid-glass-blur, saturate(200%) blur(22px))',
         borderRadius: `${Math.max(12, baseIconSize * 0.4)}px`,
-        border: '1px solid rgba(255, 255, 255, 0.28)',
+        border: '1px solid var(--liquid-glass-border, rgba(255, 255, 255, 0.28))',
         boxShadow: `
           0 ${Math.max(4, baseIconSize * 0.1)}px ${Math.max(20, baseIconSize * 0.45)}px rgba(0, 0, 0, 0.22),
           inset 0 1px 0 rgba(255, 255, 255, 0.35),

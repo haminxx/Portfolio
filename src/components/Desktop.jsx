@@ -43,6 +43,7 @@ function DesktopContent({
     if (e.target.closest('.desktop-widgets__card')) return
     setContextMenu(null)
     setSelectedIds([])
+    e.preventDefault()
     selectionStartRef.current = { x: e.clientX, y: e.clientY }
     setSelectionBox({ left: e.clientX, top: e.clientY, width: 0, height: 0 })
   }, [])
