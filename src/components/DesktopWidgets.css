@@ -133,9 +133,8 @@
 .desktop-widgets__card--calendar {
   display: flex;
   flex-direction: column;
-  width: 280px;
-  min-width: 260px;
-  min-height: 300px;
+  min-width: 0;
+  min-height: 0;
   padding-left: 0;
   padding-right: 0;
   padding-bottom: 0;
@@ -144,172 +143,220 @@
 
 .desktop-widgets__card--clock {
   min-width: 0;
-  min-height: 150px;
-}
-
-.desktop-widgets__glass-chrome--fliqlo {
-  width: 100%;
-  padding: 0;
-  border-radius: 12px;
+  min-height: 0;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 0;
   overflow: hidden;
 }
 
-/* Fliqlo split-flap: 12h, two squares, AM/PM, 3D fold */
-.desktop-widgets__fliqlo-panel {
+.desktop-widgets__quote-widget-shell {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 14px 12px 16px;
   background: #000000;
-  perspective: 900px;
-  perspective-origin: 50% 42%;
+  border-radius: inherit;
+  box-sizing: border-box;
+  padding: 10px 12px 12px;
 }
 
-.desktop-widgets__fliqlo-row {
+.desktop-widgets__quote-widget {
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-weight: 800;
+  color: #ffffff;
+  text-align: center;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  margin: 0;
+  width: 100%;
+  max-width: 26rem;
+}
+
+.desktop-widgets__quote-line {
+  margin: 0 0 0.35em;
+  font-size: clamp(0.65rem, 1.7cqw + 0.55rem, 0.95rem);
+}
+
+.desktop-widgets__quote-line--now {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.02em;
+  margin-bottom: 0;
+  font-size: clamp(0.72rem, 2cqw + 0.58rem, 1.05rem);
+}
+
+.desktop-widgets__quote-now-prefix,
+.desktop-widgets__quote-now-suffix {
+  flex-shrink: 0;
+}
+
+.desktop-widgets__quote-o-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15em;
+  height: 1.15em;
+  vertical-align: middle;
+  margin: 0 0.02em;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.desktop-widgets__quote-o-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.desktop-widgets__card--clock .desktop-widgets__quote-widget-shell {
+  container-type: inline-size;
+}
+
+.desktop-widgets__retro-cal {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  font-family: 'Roboto Slab', 'Rockwell', Georgia, serif;
+  color: #ffffff;
+}
+
+.desktop-widgets__retro-cal-summary {
+  flex: 0 0 32%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 8px 6px;
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.desktop-widgets__retro-cal-dow {
+  font-size: clamp(1.1rem, 3.5vw, 1.65rem);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.desktop-widgets__retro-cal-day-big {
+  font-size: clamp(2.5rem, 12cqw, 4.25rem);
+  font-weight: 800;
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+}
+
+.desktop-widgets__retro-cal-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px 8px 10px;
+}
+
+.desktop-widgets__retro-cal-month-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.desktop-widgets__retro-cal-month {
+  font-size: clamp(0.55rem, 1.8cqw + 0.45rem, 0.72rem);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  flex: 1;
+  text-align: right;
+  padding-right: 4px;
+}
+
+.desktop-widgets__retro-cal-nav {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  flex-shrink: 0;
-  transform-style: preserve-3d;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
 }
 
-.desktop-widgets__fliqlo-tile-wrap {
-  position: relative;
-  flex-shrink: 0;
+.desktop-widgets__retro-cal-nav:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
 }
 
-.desktop-widgets__fliqlo-ampm {
-  position: absolute;
-  left: 10px;
-  bottom: 7px;
-  font-size: 10px;
+.desktop-widgets__retro-cal-dow-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.desktop-widgets__retro-cal-dow-cell {
+  font-size: clamp(0.45rem, 1.2vw, 0.62rem);
   font-weight: 700;
-  letter-spacing: 0.06em;
-  color: #eeeeee;
-  z-index: 8;
-  pointer-events: none;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.02em;
 }
 
-.desktop-widgets__fliqlo-tile {
-  --fliqlo-size: 108px;
-  --fliqlo-digit: clamp(40px, calc(0.56 * var(--fliqlo-size)), 64px);
-  width: var(--fliqlo-size);
-  height: var(--fliqlo-size);
-  position: relative;
-  flex-shrink: 0;
-  border-radius: 16px;
-  background: #1a1a1a;
-  transform-style: preserve-3d;
-  box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+.desktop-widgets__retro-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px 2px;
+  flex: 1;
+  align-content: start;
 }
 
-.desktop-widgets__fliqlo-tile__static {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  overflow: hidden;
-}
-
-.desktop-widgets__fliqlo-tile__half--top {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 50%;
-  overflow: hidden;
+.desktop-widgets__retro-cal-cell {
+  min-height: 0;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
+  aspect-ratio: 1;
+  max-height: 1.85rem;
 }
 
-.desktop-widgets__fliqlo-tile__half--bottom {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 50%;
-  overflow: hidden;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-}
-
-.desktop-widgets__fliqlo-tile__digit {
-  font-size: var(--fliqlo-digit);
-  font-weight: 700;
-  line-height: var(--fliqlo-size);
-  height: var(--fliqlo-size);
+.desktop-widgets__retro-cal-num {
+  font-size: clamp(0.5rem, 1.5vw, 0.7rem);
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
-  color: #eeeeee;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  letter-spacing: -0.03em;
+  color: rgba(255, 255, 255, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35em;
+  min-height: 1.35em;
+  border-radius: 6px;
 }
 
-.desktop-widgets__fliqlo-tile__hinge {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 2px;
-  margin-top: -1px;
-  background: #0a0a0a;
-  pointer-events: none;
-  z-index: 6;
+.desktop-widgets__retro-cal-num--today {
+  background: #f5f5f5;
+  color: #000000;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
 }
 
-.desktop-widgets__fliqlo-tile__flap {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 50%;
-  overflow: hidden;
-  z-index: 3;
-  transform-origin: center bottom;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-  border-radius: 16px 16px 0 0;
-  background: #1a1a1a;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+.desktop-widgets__retro-cal-num--empty {
+  visibility: hidden;
 }
 
-.desktop-widgets__fliqlo-tile__flap .desktop-widgets__fliqlo-tile__half--top {
-  position: relative;
-  inset: auto;
-  height: 100%;
-}
-
-@keyframes desktop-widgets-fliqlo-fold {
-  0% {
-    transform: rotateX(0deg);
-  }
-  45% {
-    transform: rotateX(-90deg);
-  }
-  100% {
-    transform: rotateX(-180deg);
-  }
-}
-
-.desktop-widgets__fliqlo-tile__flap--animate {
-  animation: desktop-widgets-fliqlo-fold 0.48s ease-in forwards;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .desktop-widgets__fliqlo-tile__flap--animate {
-    animation-duration: 0.001ms;
-  }
-}
-
-.desktop-widgets__card--calendar .desktop-widgets__cal-nav,
-.desktop-widgets__card--clock .desktop-widgets__clock-accent {
-  text-shadow: none;
+.desktop-widgets__card--calendar .desktop-widgets__calendar-widget-body {
+  container-type: size;
 }
 
 .desktop-widgets__card--weather {
@@ -491,91 +538,20 @@
   color: currentColor;
 }
 
-/* Dark calendar widget shell (reference: centered, near-black) */
+/* B&W retro calendar shell */
 .desktop-widgets__calendar-widget-body {
   width: 100%;
   height: 100%;
   min-height: 0;
   flex: 1;
   box-sizing: border-box;
-  padding: 1.1rem 1.15rem 1.2rem;
-  background: #121212;
+  padding: 0;
+  background: #000000;
   border-radius: inherit;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: stretch;
   mix-blend-mode: normal;
-}
-
-
-
-.desktop-widgets__calendar-widget-body .desktop-widgets__adaptive {
-  text-shadow: none;
-  color: inherit;
-}
-
-.desktop-widgets__cal-rdp .rdp-month_caption {
-  margin-bottom: 0.85rem;
-}
-.desktop-widgets__cal-rdp {
-  margin-top: 0;
-  width: 100%;
-  max-width: 100%;
-  --rdp-accent-color: #ffffff;
-  --rdp-accent-background-color: rgba(255, 255, 255, 0.22);
-  --rdp-today-color: #0a0a0a;
-  --rdp-day_button-border-radius: 12px;
-  color: #ffffff;
-  --color-primary: #000000;
-}
-
-.desktop-widgets__cal-rdp > * {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.desktop-widgets__cal-rdp .rdp-weekday {
-  color: #9ca3af;
-  opacity: 1;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.desktop-widgets__cal-rdp .rdp-caption_label {
-  color: #ffffff;
-  font-weight: 600;
-  font-size: 1.05rem;
-}
-
-.desktop-widgets__cal-rdp .rdp-button_previous,
-.desktop-widgets__cal-rdp .rdp-button_next {
-  color: #9ca3af;
-}
-
-.desktop-widgets__cal-rdp .rdp-day_button {
-  color: #ffffff;
-}
-
-.desktop-widgets__cal-rdp .rdp-outside .rdp-day_button {
-  color: #52525b;
-}
-
-.desktop-widgets__cal-rdp .rdp-today .rdp-day_button {
-  position: relative;
-}
-
-.desktop-widgets__cal-rdp .rdp-today .rdp-day_button:not([data-selected]) {
-  background: #e5e5e5 !important;
-  color: #000000 !important;
-  border-radius: 14px !important;
-  font-weight: 600;
-}
-
-.desktop-widgets__cal-rdp .rdp-today .rdp-day_button[data-selected] {
-  background: rgba(255, 255, 255, 0.2) !important;
-  color: #ffffff !important;
-  border-radius: 14px !important;
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.45);
 }
 
 .desktop-widgets__bg-controls-head {
@@ -689,16 +665,6 @@
   object-position: center;
 }
 
-.desktop-widgets__grip--photo {
-  position: absolute;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  opacity: 0;
-  visibility: hidden;
-}
-
-.desktop-widgets__card--photo:hover .desktop-widgets__grip--photo,
 .desktop-widgets__card--photo:hover .desktop-widgets__sync-trigger {
   opacity: 1;
   visibility: visible;
@@ -799,15 +765,14 @@
   pointer-events: none;
 }
 
-.desktop-widgets__photo-overlay .desktop-widgets__grip--photo,
 .desktop-widgets__photo-overlay .desktop-widgets__sync-trigger {
   pointer-events: auto;
 }
 
 .desktop-widgets__widget-resize-handle {
   position: absolute;
-  right: 2px;
-  bottom: 2px;
+  right: 0;
+  bottom: 0;
   width: 22px;
   height: 22px;
   z-index: 28;
@@ -826,11 +791,6 @@
     rgba(255, 255, 255, 0.55) 100%
   );
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-}
-
-.desktop-widgets__card--photo .desktop-widgets__widget-resize-handle {
-  right: 0;
-  bottom: 0;
 }
 
 .desktop-widgets__card:hover .desktop-widgets__widget-resize-handle {
@@ -1257,38 +1217,6 @@
   background: linear-gradient(185deg, #fff 0%, #e4e4ea 100%);
 }
 
-.desktop-widgets__cal-header {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 8px;
-}
-
-.desktop-widgets__cal-nav {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: none;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  color: inherit;
-  cursor: pointer;
-  opacity: 0.85;
-  transition: background 0.15s ease;
-}
-
-.desktop-widgets__cal-nav:hover {
-  background: rgba(255, 255, 255, 0.14);
-}
-
-[data-theme='light'] .desktop-widgets__cal-nav {
-  background: rgba(0, 0, 0, 0.06);
-}
-
 .desktop-widgets__muted {
   margin: 0;
   font-size: 13px;
@@ -1302,10 +1230,19 @@
 }
 
 .desktop-widgets__card--notes {
-  width: 200px;
-  min-height: 180px;
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+.desktop-widgets__notes-inner {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 2px;
 }
 
 .desktop-widgets__notes-head {

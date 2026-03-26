@@ -8,8 +8,9 @@ import {
   ImageIcon,
   RefreshCw,
   ListTodo,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
-import { Calendar } from './ui/calendar'
 import ColorPicker from './ui/color-picker'
 import BackgroundMotionSlider from './ui/BackgroundMotionSlider'
 import { useMusicPlayer } from '../context/MusicPlayerContext'
@@ -47,81 +48,154 @@ const SD_LAT = 32.72
 const SD_LON = -117.16
 const LAYOUT_KEY = 'desktop-widget-layout'
 
-/** 12h values for split-flap; only the panel whose unit changes runs the flip animation. */
-function localTime12hSplit(date) {
-  const h = date.getHours()
-  const m = date.getMinutes()
-  const hour12 = h % 12 || 12
-  return {
-    hour: String(hour12).padStart(2, '0'),
-    minute: String(m).padStart(2, '0'),
-    ampm: h >= 12 ? 'PM' : 'AM',
-  }
+/** Month grid cells: null = empty pad, number = day of month (local timezone). */
+function buildMonthCells(year, monthIndex) {
+  const first = new Date(year, monthIndex, 1)
+  const pad = first.getDay()
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
+  const cells = []
+  for (let i = 0; i < pad; i += 1) cells.push(null)
+  for (let d = 1; d <= daysInMonth; d += 1) cells.push(d)
+  while (cells.length % 7 !== 0) cells.push(null)
+  return cells
 }
 
-/** Fliqlo-style split-flap: square panel, top half rotates when `value` changes. */
-function SplitFlapPanel({ value }) {
-  const [visible, setVisible] = useState(value)
-  const [flipping, setFlipping] = useState(false)
-  const targetRef = useRef(value)
+/** B&W slab-serif calendar: left = today summary; right = month grid. Dates use the device local clock. */
+function RetroCalendarWidget({ viewMonth, now, onPrevMonth, onNextMonth }) {
+  const y = viewMonth.getFullYear()
+  const m = viewMonth.getMonth()
+  const cells = useMemo(() => buildMonthCells(y, m), [y, m])
+  const monthName = viewMonth.toLocaleString(undefined, { month: 'long' }).toUpperCase()
+  const dowToday = now.toLocaleString(undefined, { weekday: 'short' }).toUpperCase()
+  const dayToday = String(now.getDate())
 
-  useEffect(() => {
-    targetRef.current = value
-    if (value === visible) return
-    setFlipping(true)
-  }, [value, visible])
-
-  const handleFlapEnd = useCallback(() => {
-    setVisible(targetRef.current)
-    setFlipping(false)
-  }, [])
+  const isToday = (day) =>
+    day != null &&
+    now.getFullYear() === y &&
+    now.getMonth() === m &&
+    now.getDate() === day
 
   return (
-    <div className="desktop-widgets__fliqlo-tile" aria-hidden>
-      <div className="desktop-widgets__fliqlo-tile__hinge" />
-      <div className="desktop-widgets__fliqlo-tile__static">
-        <div className="desktop-widgets__fliqlo-tile__half desktop-widgets__fliqlo-tile__half--top">
-          <span className="desktop-widgets__fliqlo-tile__digit">{visible}</span>
+    <div className="desktop-widgets__retro-cal">
+      <div className="desktop-widgets__retro-cal-summary">
+        <div className="desktop-widgets__retro-cal-dow">{dowToday}</div>
+        <div className="desktop-widgets__retro-cal-day-big">{dayToday}</div>
+      </div>
+      <div className="desktop-widgets__retro-cal-main">
+        <div className="desktop-widgets__retro-cal-month-row">
+          <button
+            type="button"
+            className="desktop-widgets__retro-cal-nav"
+            aria-label="Previous month"
+            onClick={onPrevMonth}
+          >
+            <ChevronLeft size={16} strokeWidth={2.25} />
+          </button>
+          <span className="desktop-widgets__retro-cal-month">{monthName}</span>
+          <button
+            type="button"
+            className="desktop-widgets__retro-cal-nav"
+            aria-label="Next month"
+            onClick={onNextMonth}
+          >
+            <ChevronRight size={16} strokeWidth={2.25} />
+          </button>
         </div>
-        <div className="desktop-widgets__fliqlo-tile__half desktop-widgets__fliqlo-tile__half--bottom">
-          <span className="desktop-widgets__fliqlo-tile__digit">{visible}</span>
+        <div className="desktop-widgets__retro-cal-dow-row" aria-hidden>
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((letter, i) => (
+            <span key={`${letter}-${i}`} className="desktop-widgets__retro-cal-dow-cell">
+              {letter}
+            </span>
+          ))}
+        </div>
+        <div className="desktop-widgets__retro-cal-grid" role="grid" aria-label={`Calendar ${monthName} ${y}`}>
+          {cells.map((day, idx) => (
+            <div key={idx} className="desktop-widgets__retro-cal-cell" role="presentation">
+              {day != null ? (
+                <span
+                  className={
+                    isToday(day)
+                      ? 'desktop-widgets__retro-cal-num desktop-widgets__retro-cal-num--today'
+                      : 'desktop-widgets__retro-cal-num'
+                  }
+                >
+                  {day}
+                </span>
+              ) : (
+                <span className="desktop-widgets__retro-cal-num desktop-widgets__retro-cal-num--empty" />
+              )}
+            </div>
+          ))}
         </div>
       </div>
-      {flipping ? (
-        <div
-          className="desktop-widgets__fliqlo-tile__flap desktop-widgets__fliqlo-tile__flap--animate"
-          onAnimationEnd={handleFlapEnd}
-        >
-          <div className="desktop-widgets__fliqlo-tile__half desktop-widgets__fliqlo-tile__half--top">
-            <span className="desktop-widgets__fliqlo-tile__digit">{visible}</span>
-          </div>
-        </div>
-      ) : null}
     </div>
   )
 }
 
-function FliqloClock({ date }) {
-  const { hour, minute, ampm } = localTime12hSplit(date)
+/** Analog clock as the “O” in NOW; hands use local time from `date`. */
+function QuoteAnalogClockO({ date }) {
+  const h = (date.getHours() % 12) + date.getMinutes() / 60 + date.getSeconds() / 3600
+  const hourDeg = h * 30
+  const minDeg = date.getMinutes() * 6 + date.getSeconds() * 0.1
+  const secDeg = date.getSeconds() * 6
   const label = date.toLocaleTimeString(undefined, {
     hour: 'numeric',
     minute: '2-digit',
+    second: '2-digit',
     hour12: true,
   })
+
   return (
-    <div
-      className="desktop-widgets__fliqlo-panel"
-      role="timer"
-      aria-live="polite"
-      aria-label={`Current time ${label}`}
-    >
-      <div className="desktop-widgets__fliqlo-row">
-        <div className="desktop-widgets__fliqlo-tile-wrap">
-          <SplitFlapPanel value={hour} />
-          <span className="desktop-widgets__fliqlo-ampm">{ampm}</span>
-        </div>
-        <SplitFlapPanel value={minute} />
-      </div>
+    <span className="desktop-widgets__quote-o-wrap" role="timer" aria-live="polite" aria-label={`Time ${label}`}>
+      <svg className="desktop-widgets__quote-o-svg" viewBox="0 0 100 100" aria-hidden>
+        <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" strokeWidth="2.5" />
+        <g transform="translate(50,50)">
+          <line
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="-22"
+            stroke="#fff"
+            strokeWidth="3.5"
+            strokeLinecap="square"
+            transform={`rotate(${hourDeg})`}
+          />
+          <line
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="-32"
+            stroke="#fff"
+            strokeWidth="2.5"
+            strokeLinecap="square"
+            transform={`rotate(${minDeg})`}
+          />
+          <line
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="-38"
+            stroke="#e53935"
+            strokeWidth="1.25"
+            strokeLinecap="square"
+            transform={`rotate(${secDeg})`}
+          />
+          <circle cx="0" cy="0" r="3.5" fill="#fff" />
+        </g>
+      </svg>
+    </span>
+  )
+}
+
+function QuoteTimeWidget({ date }) {
+  return (
+    <div className="desktop-widgets__quote-widget">
+      <p className="desktop-widgets__quote-line">There is not perfect timing,</p>
+      <p className="desktop-widgets__quote-line desktop-widgets__quote-line--now">
+        <span className="desktop-widgets__quote-now-prefix">DO IT N</span>
+        <QuoteAnalogClockO date={date} />
+        <span className="desktop-widgets__quote-now-suffix">W</span>
+      </p>
     </div>
   )
 }
@@ -342,7 +416,6 @@ export default function DesktopWidgets({
     const d = new Date()
     return new Date(d.getFullYear(), d.getMonth(), 1)
   })
-  const [selectedDate, setSelectedDate] = useState(() => new Date())
   const [photoImportFor, setPhotoImportFor] = useState(null)
   const [photoData, setPhotoData] = useState(() => readInitialPhotoMap(loadPhotoWidgetIdList()))
   const [notesStore, setNotesStore] = useState(() => loadNotesStore())
@@ -806,23 +879,16 @@ export default function DesktopWidgets({
         style={cardStyle('calendar')}
       >
         <div className="desktop-widgets__calendar-widget-body">
-          <div className="desktop-widgets__adaptive desktop-widgets__cal-rdp">
-            <Calendar
-              mode="single"
-              month={calMonth}
-              onMonthChange={(d) => setCalMonth(new Date(d.getFullYear(), d.getMonth(), 1))}
-              selected={selectedDate}
-              onSelect={(d) => {
-                if (d) {
-                  setSelectedDate(d)
-                  setCalMonth(new Date(d.getFullYear(), d.getMonth(), 1))
-                }
-              }}
-              today={now}
-              weekStartsOn={0}
-              className="w-full max-w-sm mx-auto rounded-2xl [--cell-size:2rem] sm:[--cell-size:2rem] p-1"
-            />
-          </div>
+          <RetroCalendarWidget
+            viewMonth={calMonth}
+            now={now}
+            onPrevMonth={() =>
+              setCalMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
+            }
+            onNextMonth={() =>
+              setCalMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
+            }
+          />
         </div>
         <button
           type="button"
@@ -832,17 +898,20 @@ export default function DesktopWidgets({
         >
           <GripVertical size={14} strokeWidth={2} />
         </button>
+        <button
+          type="button"
+          className="desktop-widgets__widget-resize-handle"
+          aria-label="Resize calendar widget"
+          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'calendar')}
+        />
       </div>
 
       <div
-        className={cardClass(
-          'clock',
-          'desktop-widgets__card--clock desktop-widgets__card--glass liquid-glass-panel desktop-widgets__card--has-drag-strip',
-        )}
+        className={cardClass('clock', 'desktop-widgets__card--clock desktop-widgets__card--has-drag-strip')}
         style={cardStyle('clock')}
       >
-        <div className="desktop-widgets__glass-chrome desktop-widgets__glass-chrome--fliqlo">
-          <FliqloClock date={now} />
+        <div className="desktop-widgets__quote-widget-shell">
+          <QuoteTimeWidget date={now} />
         </div>
         <button
           type="button"
@@ -1129,16 +1198,14 @@ export default function DesktopWidgets({
         />
       </div>
 
-      <div className={cardClass('notesChecklist', 'desktop-widgets__card--notes')} style={cardStyle('notesChecklist')}>
-        <div className="desktop-widgets__blend">
-          <button
-            type="button"
-            className="desktop-widgets__grip"
-            aria-label="Move notes widget"
-            onPointerDown={(e) => handleGripPointerDown(e, 'notesChecklist')}
-          >
-            <GripVertical size={14} strokeWidth={2} />
-          </button>
+      <div
+        className={cardClass(
+          'notesChecklist',
+          'desktop-widgets__card--notes desktop-widgets__card--has-drag-strip',
+        )}
+        style={cardStyle('notesChecklist')}
+      >
+        <div className="desktop-widgets__blend desktop-widgets__notes-inner">
           <div className="desktop-widgets__adaptive desktop-widgets__notes-head">
             <ListTodo size={14} strokeWidth={2} aria-hidden />
             <span className="desktop-widgets__card-title desktop-widgets__card-title--inline">Pinned note</span>
@@ -1169,19 +1236,31 @@ export default function DesktopWidgets({
               ))}
             </ul>
           )}
-          <button
-            type="button"
-            className="desktop-widgets__widget-resize-handle"
-            aria-label="Resize notes widget"
-            onPointerDown={(e) => handleWidgetResizePointerDown(e, 'notesChecklist')}
-          />
         </div>
+        <button
+          type="button"
+          className="desktop-widgets__drag-strip"
+          aria-label="Move notes widget"
+          onPointerDown={(e) => handleGripPointerDown(e, 'notesChecklist')}
+        >
+          <GripVertical size={14} strokeWidth={2} />
+        </button>
+        <button
+          type="button"
+          className="desktop-widgets__widget-resize-handle"
+          aria-label="Resize notes widget"
+          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'notesChecklist')}
+        />
       </div>
 
       {photoIds.map((pid) => {
         const pdata = photoData[pid]
         return (
-          <div key={pid} className={cardClass(pid, 'desktop-widgets__card--photo')} style={cardStyle(pid)}>
+          <div
+            key={pid}
+            className={cardClass(pid, 'desktop-widgets__card--photo desktop-widgets__card--has-drag-strip')}
+            style={cardStyle(pid)}
+          >
             <div className="desktop-widgets__photo-body">
               {pdata ? (
                 <img
@@ -1199,14 +1278,6 @@ export default function DesktopWidgets({
               <div className="desktop-widgets__photo-overlay desktop-widgets__blend">
                 <button
                   type="button"
-                  className="desktop-widgets__grip desktop-widgets__grip--photo"
-                  aria-label={`Move ${pid} widget`}
-                  onPointerDown={(e) => handleGripPointerDown(e, pid)}
-                >
-                  <GripVertical size={14} strokeWidth={2} />
-                </button>
-                <button
-                  type="button"
                   className="desktop-widgets__sync-trigger"
                   aria-label="Import from Photos gallery"
                   onPointerDown={(e) => e.stopPropagation()}
@@ -1218,15 +1289,21 @@ export default function DesktopWidgets({
                   <RefreshCw size={14} strokeWidth={2} />
                 </button>
               </div>
-              <div className="desktop-widgets__blend">
-                <button
-                  type="button"
-                  className="desktop-widgets__widget-resize-handle"
-                  aria-label="Resize photo widget"
-                  onPointerDown={(e) => handleWidgetResizePointerDown(e, pid)}
-                />
-              </div>
             </div>
+            <button
+              type="button"
+              className="desktop-widgets__drag-strip"
+              aria-label={`Move ${pid} widget`}
+              onPointerDown={(e) => handleGripPointerDown(e, pid)}
+            >
+              <GripVertical size={14} strokeWidth={2} />
+            </button>
+            <button
+              type="button"
+              className="desktop-widgets__widget-resize-handle"
+              aria-label="Resize photo widget"
+              onPointerDown={(e) => handleWidgetResizePointerDown(e, pid)}
+            />
           </div>
         )
       })}

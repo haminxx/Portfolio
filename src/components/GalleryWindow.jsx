@@ -364,15 +364,12 @@ export default function GalleryWindow() {
             ) : (
               <motion.div
                 key={`grid-${activeSection}-${activeAlbumId ?? 'x'}`}
-                className={`gallery-window__grid ${viewMode === 'list' ? 'gallery-window__grid--list' : ''}`}
+                className={`gallery-window__grid ${viewMode === 'list' ? 'gallery-window__grid--list' : ''}${activeSection === 'all' && !searchQuery.trim() ? ' gallery-window__grid--all-photos' : ''}`}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
               >
-                {activeSection === 'all' && !searchQuery && (
-                  <p className="gallery-window__section-hint">All photos in your library</p>
-                )}
                 {activeSection === 'recents' && !searchQuery && (
                   <p className="gallery-window__section-hint">Recently added</p>
                 )}

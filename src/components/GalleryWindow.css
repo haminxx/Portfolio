@@ -351,6 +351,10 @@
   align-content: start;
 }
 
+.gallery-window__grid--all-photos {
+  padding-top: 8px;
+}
+
 .gallery-window__cell {
   aspect-ratio: 1;
   background: #2c2c2e;

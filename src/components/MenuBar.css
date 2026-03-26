@@ -98,17 +98,32 @@
   padding: 8px 0;
   mix-blend-mode: normal;
   isolation: isolate;
-  background: var(--liquid-glass-fill, rgba(255, 255, 255, 0.12));
-  backdrop-filter: var(--liquid-glass-blur, saturate(200%) blur(22px));
-  -webkit-backdrop-filter: var(--liquid-glass-blur, saturate(200%) blur(22px));
-  border: 1px solid var(--liquid-glass-border, rgba(255, 255, 255, 0.28));
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: saturate(200%) blur(56px);
+  -webkit-backdrop-filter: saturate(200%) blur(56px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
   border-radius: 14px;
   box-shadow:
     0 4px 20px rgba(0, 0, 0, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
     inset 0 -1px 0 rgba(0, 0, 0, 0.08),
     0 16px 40px rgba(0, 0, 0, 0.18);
   z-index: 100;
+}
+
+[data-theme='dark'] .menu-bar__dropdown {
+  background: rgba(28, 28, 30, 0.72);
+  border-color: rgba(255, 255, 255, 0.2);
+  backdrop-filter: saturate(200%) blur(64px);
+  -webkit-backdrop-filter: saturate(200%) blur(64px);
+}
+
+[data-theme='dark'] .menu-bar__dropdown .menu-bar__item {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+[data-theme='dark'] .menu-bar__dropdown .menu-bar__item:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .menu-bar__item {
