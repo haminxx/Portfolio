@@ -1053,6 +1053,7 @@ export default function DesktopWidgets({
                       className="desktop-widgets__ipod-art desktop-widgets__no-blend"
                       width={44}
                       height={44}
+                      draggable={false}
                     />
                     <div className="desktop-widgets__blend desktop-widgets__adaptive desktop-widgets__ipod-meta">
                       <div className="desktop-widgets__ipod-title">{currentTrack.title}</div>
