@@ -16,7 +16,7 @@ export const STATIC_WIDGET_IDS = [
 ]
 
 export const STATIC_SIZES = {
-  calendar: { w: 360, h: 200 },
+  calendar: { w: 320, h: 180 },
   clock: { w: 440, h: 200 },
   weather: { w: 280, h: 280 },
   music: { w: 312, h: 136 },

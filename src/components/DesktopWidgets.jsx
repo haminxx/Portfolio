@@ -8,8 +8,6 @@ import {
   ImageIcon,
   RefreshCw,
   ListTodo,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react'
 import ColorPicker from './ui/color-picker'
 import BackgroundMotionSlider from './ui/BackgroundMotionSlider'
@@ -60,127 +58,47 @@ function buildMonthCells(year, monthIndex) {
   return cells
 }
 
-function weatherGraphicVariant(code) {
-  if (code == null || Number.isNaN(code)) return 'cloud'
-  const c = code
-  if (c === 0 || c === 1) return 'clear'
-  if (c === 2 || c === 3) return 'cloud'
-  if (c === 45 || c === 48) return 'fog'
-  if ((c >= 51 && c <= 67) || (c >= 80 && c <= 82)) return 'rain'
-  if ((c >= 71 && c <= 77) || (c >= 85 && c <= 86)) return 'snow'
-  if (c >= 95) return 'storm'
-  return 'cloud'
-}
-
-/** Halftone / gradient weather illustration driven by WMO weather_code (spread dots + soft vertical fade). */
-function WeatherConditionGraphic({ code, className = '' }) {
+/** Halftone-style cloud for square weather widget (SVG pattern + vertical fade). */
+function HalftoneCloudGraphic({ className = '' }) {
   const uid = useId().replace(/:/g, '')
-  const pid = `wtp-${uid}`
-  const gid = `wtg-${uid}`
-  const mid = `wtm-${uid}`
-  const variant = weatherGraphicVariant(code)
-
-  const patternSize = 14
-  const dotR = 1.35
-
-  let clipInner = null
-  if (variant === 'clear') {
-    clipInner = <ellipse cx="100" cy="62" rx="56" ry="52" />
-  } else if (variant === 'cloud' || variant === 'fog') {
-    clipInner = (
-      <g>
-        <circle cx="78" cy="68" r="28" />
-        <circle cx="118" cy="64" r="32" />
-        <circle cx="148" cy="70" r="24" />
-        <rect x="54" y="66" width="112" height="38" rx="19" />
-      </g>
-    )
-  } else if (variant === 'rain' || variant === 'storm') {
-    clipInner = (
-      <g>
-        <circle cx="78" cy="58" r="26" />
-        <circle cx="116" cy="54" r="30" />
-        <circle cx="146" cy="60" r="22" />
-        <rect x="52" y="56" width="108" height="36" rx="18" />
-        <rect x="40" y="88" width="140" height="36" />
-      </g>
-    )
-  } else if (variant === 'snow') {
-    clipInner = (
-      <g>
-        <circle cx="80" cy="58" r="26" />
-        <circle cx="118" cy="54" r="30" />
-        <rect x="54" y="56" width="108" height="36" rx="18" />
-        <rect x="36" y="82" width="152" height="44" />
-      </g>
-    )
-  }
-
-  const rainLines =
-    variant === 'rain' || variant === 'storm' ? (
-      <g opacity={0.45} stroke="#a8c4d8" strokeWidth={1.2} strokeLinecap="round">
-        {[0, 14, 28, 42, 56, 70, 84, 98].map((x, i) => (
-          <line key={i} x1={46 + x} y1={96} x2={38 + x} y2={118} />
-        ))}
-      </g>
-    ) : null
-
-  const snowDots =
-    variant === 'snow' ? (
-      <g fill="rgba(255,255,255,0.5)">
-        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-          <circle key={i} cx={52 + (i % 3) * 36} cy={94 + Math.floor(i / 3) * 14} r={1.8} />
-        ))}
-      </g>
-    ) : null
-
-  const bolt =
-    variant === 'storm' ? (
-      <path
-        d="M108 22 L98 48 L112 48 L96 78 L118 44 L102 44 Z"
-        fill="rgba(255,220,120,0.35)"
-        stroke="rgba(255,230,160,0.5)"
-        strokeWidth={0.8}
-      />
-    ) : null
-
+  const pid = `htp-${uid}`
+  const gid = `htg-${uid}`
+  const mid = `htm-${uid}`
+  const clipId = `htc-${uid}`
   return (
-    <svg className={className} viewBox="0 0 200 126" aria-hidden>
+    <svg className={className} viewBox="0 0 200 120" aria-hidden>
       <defs>
-        <pattern id={pid} width={patternSize} height={patternSize} patternUnits="userSpaceOnUse">
-          <circle cx={patternSize / 2} cy={patternSize / 2} r={dotR} fill="#ffffff" />
+        <pattern id={pid} width="6" height="6" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.05" fill="#ffffff" />
         </pattern>
-        <linearGradient id={gid} x1="0" y1="126" x2="0" y2="0" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-          <stop offset="35%" stopColor="#ffffff" stopOpacity="0.45" />
-          <stop offset="65%" stopColor="#ffffff" stopOpacity="0.18" />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.04" />
+        <linearGradient id={gid} x1="0" y1="120" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+          <stop offset="45%" stopColor="#ffffff" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.06" />
         </linearGradient>
         <mask id={mid}>
-          <rect width="200" height="126" fill={`url(#${gid})`} />
+          <rect width="200" height="120" fill={`url(#${gid})`} />
         </mask>
-        {clipInner ? <clipPath id={`wtc-${uid}`}>{clipInner}</clipPath> : null}
+        <clipPath id={clipId}>
+          <circle cx="72" cy="68" r="30" />
+          <circle cx="108" cy="64" r="34" />
+          <circle cx="140" cy="70" r="26" />
+          <rect x="48" y="66" width="104" height="36" rx="18" />
+        </clipPath>
       </defs>
-      {bolt}
-      {clipInner ? (
-        <g clipPath={`url(#wtc-${uid})`}>
-          <rect width="200" height="126" fill={`url(#${pid})`} mask={`url(#${mid})`} />
-        </g>
-      ) : (
-        <rect width="200" height="126" fill={`url(#${pid})`} mask={`url(#${mid})`} />
-      )}
-      {rainLines}
-      {snowDots}
+      <g clipPath={`url(#${clipId})`}>
+        <rect width="200" height="120" fill={`url(#${pid})`} mask={`url(#${mid})`} />
+      </g>
     </svg>
   )
 }
 
-/** Slate + cream calendar; right column height tracks left column. Dates use device local time. */
-function RetroCalendarWidget({ viewMonth, now, onPrevMonth, onNextMonth }) {
-  const y = viewMonth.getFullYear()
-  const m = viewMonth.getMonth()
+/** Slate + cream calendar; current month only (from `now`). Right column height tracks left column. */
+function RetroCalendarWidget({ now }) {
+  const y = now.getFullYear()
+  const m = now.getMonth()
   const cells = useMemo(() => buildMonthCells(y, m), [y, m])
-  const monthName = viewMonth.toLocaleString(undefined, { month: 'long' }).toUpperCase()
+  const monthName = new Date(y, m, 1).toLocaleString(undefined, { month: 'long' }).toUpperCase()
   const dowToday = now.toLocaleString(undefined, { weekday: 'short' }).toUpperCase()
   const dayToday = String(now.getDate())
   const wrapRef = useRef(null)
@@ -214,23 +132,7 @@ function RetroCalendarWidget({ viewMonth, now, onPrevMonth, onNextMonth }) {
       </div>
       <div className="desktop-widgets__retro-cal-main">
         <div className="desktop-widgets__retro-cal-month-row">
-          <button
-            type="button"
-            className="desktop-widgets__retro-cal-nav"
-            aria-label="Previous month"
-            onClick={onPrevMonth}
-          >
-            <ChevronLeft size={16} strokeWidth={2.25} />
-          </button>
           <span className="desktop-widgets__retro-cal-month">{monthName}</span>
-          <button
-            type="button"
-            className="desktop-widgets__retro-cal-nav"
-            aria-label="Next month"
-            onClick={onNextMonth}
-          >
-            <ChevronRight size={16} strokeWidth={2.25} />
-          </button>
         </div>
         <div className="desktop-widgets__retro-cal-dow-row" aria-hidden>
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((letter, i) => (
@@ -320,14 +222,11 @@ function QuoteAnalogClockO({ date }) {
 function QuoteTimeWidget({ date }) {
   return (
     <div className="desktop-widgets__quote-widget">
-      <p className="desktop-widgets__quote-line desktop-widgets__quote-line--1">There is no</p>
-      <p className="desktop-widgets__quote-line desktop-widgets__quote-line--2">perfect timing</p>
-      <p className="desktop-widgets__quote-line desktop-widgets__quote-line--3">
+      <p className="desktop-widgets__quote-line desktop-widgets__quote-line--now-only">
         <span className="desktop-widgets__quote-now-prefix">DO IT N</span>
         <QuoteAnalogClockO date={date} />
         <span className="desktop-widgets__quote-now-suffix">W</span>
       </p>
-      <p className="desktop-widgets__quote-watermark">@office_oasis</p>
     </div>
   )
 }
@@ -509,10 +408,6 @@ export default function DesktopWidgets({
   })
   const [photoIds, setPhotoIds] = useState(() => loadPhotoWidgetIdList())
   const [layout, setLayout] = useState(() => loadLayout(loadPhotoWidgetIdList()))
-  const [calMonth, setCalMonth] = useState(() => {
-    const d = new Date()
-    return new Date(d.getFullYear(), d.getMonth(), 1)
-  })
   const [photoImportFor, setPhotoImportFor] = useState(null)
   const [photoData, setPhotoData] = useState(() => readInitialPhotoMap(loadPhotoWidgetIdList()))
   const [notesStore, setNotesStore] = useState(() => loadNotesStore())
@@ -683,7 +578,6 @@ export default function DesktopWidgets({
       url.searchParams.set('daily', 'temperature_2m_max,temperature_2m_min')
       url.searchParams.set('forecast_days', '2')
       url.searchParams.set('timezone', 'auto')
-      url.searchParams.set('temperature_unit', 'fahrenheit')
       const res = await fetch(url.toString())
       if (!res.ok) throw new Error('forecast failed')
       const data = await res.json()
@@ -977,16 +871,7 @@ export default function DesktopWidgets({
         style={cardStyle('calendar')}
       >
         <div className="desktop-widgets__calendar-widget-body">
-          <RetroCalendarWidget
-            viewMonth={calMonth}
-            now={now}
-            onPrevMonth={() =>
-              setCalMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
-            }
-            onNextMonth={() =>
-              setCalMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
-            }
-          />
+          <RetroCalendarWidget now={now} />
         </div>
         <button
           type="button"
@@ -1028,10 +913,7 @@ export default function DesktopWidgets({
       </div>
 
       <div
-        className={cardClass(
-          'weather',
-          'desktop-widgets__card--weather desktop-widgets__card--glass liquid-glass-panel desktop-widgets__card--has-drag-strip',
-        )}
+        className={cardClass('weather', 'desktop-widgets__card--weather desktop-widgets__card--has-drag-strip')}
         style={cardStyle('weather')}
       >
         <div className="desktop-widgets__glass-chrome desktop-widgets__weather-square-wrap">
@@ -1052,7 +934,7 @@ export default function DesktopWidgets({
                   {weather.current.temp != null && Number.isFinite(weather.current.temp)
                     ? Math.round(weather.current.temp)
                     : '—'}
-                  °F
+                  °
                 </span>
                 <p className="desktop-widgets__weather-square__blurb">
                   {(() => {
@@ -1068,10 +950,7 @@ export default function DesktopWidgets({
                 </p>
               </div>
               <div className="desktop-widgets__weather-square__graphic">
-                <WeatherConditionGraphic
-                  code={weather.current?.code}
-                  className="desktop-widgets__weather-square__cloud"
-                />
+                <HalftoneCloudGraphic className="desktop-widgets__weather-square__cloud" />
               </div>
               {weather.hourly?.length > 0 ? (
                 <div className="desktop-widgets__weather-square__hourly">
@@ -1091,7 +970,7 @@ export default function DesktopWidgets({
                       >
                         <span className="desktop-widgets__weather-square__hour-time">{timeLabel}</span>
                         <span className="desktop-widgets__weather-square__hour-temp">
-                          {slot.temp != null && Number.isFinite(slot.temp) ? `${Math.round(slot.temp)}°F` : '—'}
+                          {slot.temp != null && Number.isFinite(slot.temp) ? `${Math.round(slot.temp)}°` : '—'}
                         </span>
                       </div>
                     )
