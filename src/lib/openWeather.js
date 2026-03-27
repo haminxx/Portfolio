@@ -93,21 +93,6 @@ export function formatSunriseSunsetLine(sunrise, sunset) {
   return ''
 }
 
-/** Tight line for inline next to condition (e.g. ↑6:45am ↓7:07pm). */
-export function formatSunriseSunsetCompact(sunrise, sunset) {
-  const compact = (t) =>
-    String(t || '')
-      .replace(/\s+/g, '')
-      .replace(/AM/gi, 'am')
-      .replace(/PM/gi, 'pm')
-  const a = typeof sunrise === 'string' ? compact(sunrise) : compact(formatSunLocal(sunrise))
-  const b = typeof sunset === 'string' ? compact(sunset) : compact(formatSunLocal(sunset))
-  if (a && b) return `↑${a} ↓${b}`
-  if (a) return `↑${a}`
-  if (b) return `↓${b}`
-  return ''
-}
-
 async function fetchOpenWeather(lat, lon, apiKey) {
   const base = `https://api.openweathermap.org/data/2.5`
   const curUrl = `${base}/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${apiKey}`

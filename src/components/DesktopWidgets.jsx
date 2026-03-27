@@ -51,7 +51,6 @@ import { getDesktopIconRects } from '../lib/widgetOverlapGeometry'
 import {
   fetchWeatherImperial,
   buildWeatherNextHint,
-  formatSunriseSunsetCompact,
 } from '../lib/openWeather'
 import RetroCalendarPanel from './desktop/RetroCalendarPanel'
 import { DoItNowClockWidget } from './desktop/QuoteClockPanel'
@@ -60,7 +59,7 @@ import './DesktopWidgets.css'
 
 const SD_LAT = 32.72
 const SD_LON = -117.16
-const LAYOUT_KEY = 'desktop-widget-layout'
+const LAYOUT_KEY = 'desktop-widget-layout-v3'
 
 function formatLocationLabel(raw) {
   if (!raw || typeof raw !== 'string') return 'Local'
@@ -128,18 +127,19 @@ function formatTrackTime(sec) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
+/** Hero desktop: clock + calendar (left column), weather + knot; tall photo left; photos + stack right; year bottom-right. Uses CELL from layout for stacking math. */
 const DEFAULT_LAYOUT = {
-  calendar: { x: 20, y: 56, ...defaultStaticGrid('calendar') },
-  clock: { x: 240, y: 56, ...defaultStaticGrid('clock') },
-  weather: { x: 20, y: 260, ...defaultStaticGrid('weather') },
-  music: { x: 240, y: 300, ...defaultStaticGrid('music') },
-  bgControls: { x: 1000, y: 420, ...defaultStaticGrid('bgControls') },
-  notesChecklist: { x: 480, y: 300, ...defaultStaticGrid('notesChecklist') },
-  knotWidget: { x: 700, y: 56, ...defaultStaticGrid('knotWidget') },
-  yearProgress: { x: 700, y: 240, ...defaultStaticGrid('yearProgress') },
-  photoA: { x: 24, y: 260, gridW: 8, gridH: 12 },
-  photoB: { x: 400, y: 56, gridW: 6, gridH: 8 },
-  photoC: { x: 860, y: 56, gridW: 8, gridH: 7 },
+  clock: { x: 20, y: 56, ...defaultStaticGrid('clock') },
+  calendar: { x: 20, y: 56 + 5 * CELL, ...defaultStaticGrid('calendar') },
+  weather: { x: 20 + 7 * CELL, y: 56 + 5 * CELL, ...defaultStaticGrid('weather') },
+  knotWidget: { x: 20 + 7 * CELL, y: 56 + 5 * CELL + 7 * CELL, ...defaultStaticGrid('knotWidget') },
+  photoA: { x: 20, y: 56 + 5 * CELL + 7 * CELL + 20, gridW: 7, gridH: 12 },
+  photoB: { x: 1000, y: 56, gridW: 6, gridH: 8 },
+  photoC: { x: 1000 + 6 * CELL, y: 56, gridW: 8, gridH: 7 },
+  music: { x: 1000, y: 56 + 8 * CELL + 8, ...defaultStaticGrid('music') },
+  notesChecklist: { x: 1000, y: 56 + 8 * CELL + 8 + 4 * CELL, ...defaultStaticGrid('notesChecklist') },
+  bgControls: { x: 1000 + 5 * CELL, y: 56 + 8 * CELL + 8 + 4 * CELL, ...defaultStaticGrid('bgControls') },
+  yearProgress: { x: 1000 + 5 * CELL + 20, y: 56 + 8 * CELL + 8 + 4 * CELL + 5 * CELL + 8, ...defaultStaticGrid('yearProgress') },
 }
 
 const YEAR_WEEKS = 52
@@ -904,19 +904,15 @@ export default function DesktopWidgets({
                   </span>
                   <span className="desktop-widgets__weather-compact__weather-primary">
                     <span className="desktop-widgets__weather-compact__white">{weatherCurrentLabel}</span>
-                    {weatherSunCompact ? (
-                      <span className="desktop-widgets__weather-compact__grey desktop-widgets__weather-compact__sun-inline">
-                        {' '}
-                        {weatherSunCompact}
-                      </span>
-                    ) : null}
                   </span>
                 </p>
-                <p className="desktop-widgets__weather-compact__row desktop-widgets__weather-compact__row--body">
-                  <span className="desktop-widgets__weather-compact__grey">Next </span>
-                  <span className="desktop-widgets__weather-compact__white">{weatherNext.conditionWord}</span>
-                  <span className="desktop-widgets__weather-compact__grey"> · {weatherNext.horizon}</span>
-                </p>
+                {weatherNext.horizon && weatherNext.horizon !== '—' ? (
+                  <p className="desktop-widgets__weather-compact__row desktop-widgets__weather-compact__row--body">
+                    <span className="desktop-widgets__weather-compact__grey">Next </span>
+                    <span className="desktop-widgets__weather-compact__white">{weatherNext.conditionWord}</span>
+                    <span className="desktop-widgets__weather-compact__grey"> · {weatherNext.horizon}</span>
+                  </p>
+                ) : null}
                 {weather.sameConditionHint ? (
                   <p className="desktop-widgets__weather-compact__row desktop-widgets__weather-compact__row--body desktop-widgets__weather-compact__row--horizon">
                     <span className="desktop-widgets__weather-compact__grey">{weather.sameConditionHint}</span>
