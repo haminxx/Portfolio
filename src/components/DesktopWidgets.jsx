@@ -59,7 +59,7 @@ import './DesktopWidgets.css'
 
 const SD_LAT = 32.72
 const SD_LON = -117.16
-const LAYOUT_KEY = 'desktop-widget-layout-v6'
+const LAYOUT_KEY = 'desktop-widget-layout-v7'
 
 function formatLocationLabel(raw) {
   if (!raw || typeof raw !== 'string') return 'Local'
@@ -128,24 +128,25 @@ function formatTrackTime(sec) {
 }
 
 /**
- * Hero reference: weather to the right of clock (same row); knot to the right of date; tall photo left;
- * right column: two 5×5 photos, wide music, notes + color wheel, year bar.
+ * Hero reference: weather right of clock; knot right of date; smaller photos so layout stays stable.
+ * Top-right photos 4×4 each; left hero photo 5×8.
  */
 const RX = 900
+const TOP_PHOTO_ROWS = 4
 const DEFAULT_LAYOUT = {
   clock: { x: 20, y: 56, ...defaultStaticGrid('clock') },
   weather: { x: 20 + 7 * CELL, y: 56, ...defaultStaticGrid('weather') },
   calendar: { x: 20, y: 56 + 3 * CELL, ...defaultStaticGrid('calendar') },
   knotWidget: { x: 20 + 4 * CELL, y: 56 + 3 * CELL, ...defaultStaticGrid('knotWidget') },
-  photoA: { x: 20, y: 56 + 3 * CELL + 4 * CELL + 10, gridW: 7, gridH: 10 },
-  photoB: { x: RX, y: 56, gridW: 5, gridH: 5 },
-  photoC: { x: RX + 5 * CELL, y: 56, gridW: 5, gridH: 5 },
-  music: { x: RX, y: 56 + 5 * CELL + 8, ...defaultStaticGrid('music') },
-  notesChecklist: { x: RX, y: 56 + 5 * CELL + 8 + 3 * CELL + 8, ...defaultStaticGrid('notesChecklist') },
-  bgControls: { x: RX + 5 * CELL, y: 56 + 5 * CELL + 8 + 3 * CELL + 8, ...defaultStaticGrid('bgControls') },
+  photoA: { x: 20, y: 56 + 3 * CELL + 4 * CELL + 10, gridW: 5, gridH: 8 },
+  photoB: { x: RX, y: 56, gridW: 4, gridH: 4 },
+  photoC: { x: RX + 4 * CELL, y: 56, gridW: 4, gridH: 4 },
+  music: { x: RX, y: 56 + TOP_PHOTO_ROWS * CELL + 8, ...defaultStaticGrid('music') },
+  notesChecklist: { x: RX, y: 56 + TOP_PHOTO_ROWS * CELL + 8 + 3 * CELL + 8, ...defaultStaticGrid('notesChecklist') },
+  bgControls: { x: RX + 5 * CELL, y: 56 + TOP_PHOTO_ROWS * CELL + 8 + 3 * CELL + 8, ...defaultStaticGrid('bgControls') },
   yearProgress: {
     x: RX,
-    y: 56 + 5 * CELL + 8 + 3 * CELL + 8 + 4 * CELL + 8,
+    y: 56 + TOP_PHOTO_ROWS * CELL + 8 + 3 * CELL + 8 + 4 * CELL + 8,
     ...defaultStaticGrid('yearProgress'),
   },
 }
@@ -801,11 +802,6 @@ export default function DesktopWidgets({
     const api = (weather.locationLabel && String(weather.locationLabel).trim()) || ''
     return formatLocationLabel(geo || api || userLoc.label || '')
   }, [userLoc.status, userLoc.label, weather.locationLabel])
-
-  const weatherSunCompact = useMemo(
-    () => (weather.status === 'ready' ? formatSunriseSunsetCompact(weather.sunrise, weather.sunset) : ''),
-    [weather.status, weather.sunrise, weather.sunset],
-  )
 
   const weatherCurrentLabel = useMemo(() => {
     if (weather.status !== 'ready') return '—'

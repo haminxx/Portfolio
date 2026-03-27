@@ -354,11 +354,15 @@ export default function ChromeLanding({ onReboot }) {
     return () => document.removeEventListener('fullscreenchange', handler)
   }, [])
 
-  /** Request fullscreen on load; browsers often require a gesture, so retry after first pointer. */
+  /**
+   * Fullscreen may only run inside a user gesture (otherwise Chrome logs a warning and rejects).
+   * Enter on first trusted pointerdown; no load/timeout calls.
+   */
   useEffect(() => {
     const el = document.documentElement
-    const requestFs = () => {
+    const tryFullscreen = (e) => {
       if (document.fullscreenElement) return
+      if (e && !e.isTrusted) return
       try {
         const p = el.requestFullscreen?.()
         if (p && typeof p.catch === 'function') p.catch(() => {})
@@ -371,17 +375,12 @@ export default function ChromeLanding({ onReboot }) {
         // ignore
       }
     }
-    requestFs()
-    const t = window.setTimeout(requestFs, 400)
-    const onFirstPointer = () => {
-      requestFs()
+    const onFirstPointer = (e) => {
+      tryFullscreen(e)
       window.removeEventListener('pointerdown', onFirstPointer)
     }
     window.addEventListener('pointerdown', onFirstPointer, { passive: true })
-    return () => {
-      window.clearTimeout(t)
-      window.removeEventListener('pointerdown', onFirstPointer)
-    }
+    return () => window.removeEventListener('pointerdown', onFirstPointer)
   }, [])
 
   const handleFullScreenToggle = useCallback(() => {

@@ -51,7 +51,7 @@ export function defaultStaticGrid(id) {
 
 export function defaultGridForWidget(id) {
   if (typeof id === 'string' && id.startsWith('photo')) {
-    return { gridW: 6, gridH: 6 }
+    return { gridW: 4, gridH: 4 }
   }
   return defaultStaticGrid(id)
 }
