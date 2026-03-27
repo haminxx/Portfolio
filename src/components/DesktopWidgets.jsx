@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
   Play,
   Pause,
@@ -8,6 +8,13 @@ import {
   ImageIcon,
   RefreshCw,
   ListTodo,
+  Sun,
+  Cloud,
+  CloudRain,
+  CloudLightning,
+  Snowflake,
+  CloudFog,
+  CloudSun,
 } from 'lucide-react'
 import ColorPicker from './ui/color-picker'
 import BackgroundMotionSlider from './ui/BackgroundMotionSlider'
@@ -40,8 +47,9 @@ import {
 import PhotoWidgetImportModal from './PhotoWidgetImportModal'
 import { DESKTOP_SAFE_TOP } from '../desktopConstants'
 import { getDesktopIconRects } from '../lib/widgetOverlapGeometry'
-import { fetchWeatherImperial } from '../lib/openWeather'
-import DottedGradientCloud from './DottedGradientCloud'
+import { fetchWeatherImperial, buildWeatherNextHint } from '../lib/openWeather'
+import RetroCalendarPanel from './desktop/RetroCalendarPanel'
+import { DoItNowClockWidget } from './desktop/QuoteClockPanel'
 import { KnotAnimation } from './ui/knot-animation'
 import './DesktopWidgets.css'
 
@@ -49,154 +57,58 @@ const SD_LAT = 32.72
 const SD_LON = -117.16
 const LAYOUT_KEY = 'desktop-widget-layout'
 
-/** Month grid cells: null = empty pad, number = day of month (local timezone). */
-function buildMonthCells(year, monthIndex) {
-  const first = new Date(year, monthIndex, 1)
-  const pad = first.getDay()
-  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
-  const cells = []
-  for (let i = 0; i < pad; i += 1) cells.push(null)
-  for (let d = 1; d <= daysInMonth; d += 1) cells.push(d)
-  while (cells.length % 7 !== 0) cells.push(null)
-  return cells
+function formatLocationLabel(raw) {
+  if (!raw || typeof raw !== 'string') return 'Local'
+  let s = raw.trim()
+  if (s.includes(',')) {
+    s = s.split(',')[0].trim()
+  }
+  if (/\b(county|parish|municipality)\b/i.test(s) && s.length > 24) {
+    s = s.replace(/\b(county|parish|municipality)\b.*$/i, '').trim()
+  }
+  return s || 'Local'
 }
 
-/** Slate + cream calendar; current month only (from `now`). Right column height tracks left column. */
-function RetroCalendarWidget({ now }) {
-  const y = now.getFullYear()
-  const m = now.getMonth()
-  const cells = useMemo(() => buildMonthCells(y, m), [y, m])
-  const monthName = new Date(y, m, 1).toLocaleString(undefined, { month: 'long' }).toUpperCase()
-  const dowToday = now.toLocaleString(undefined, { weekday: 'short' }).toUpperCase()
-  const dayToday = String(now.getDate())
-  const wrapRef = useRef(null)
-  const leftRef = useRef(null)
-
-  useLayoutEffect(() => {
-    const wrap = wrapRef.current
-    const left = leftRef.current
-    if (!wrap || !left) return
-    const sync = () => {
-      const h = Math.ceil(left.getBoundingClientRect().height)
-      wrap.style.setProperty('--retro-cal-left-h', `${Math.max(72, h)}px`)
-    }
-    sync()
-    const ro = new ResizeObserver(sync)
-    ro.observe(left)
-    return () => ro.disconnect()
-  }, [y, m, now])
-
-  const isToday = (day) =>
-    day != null &&
-    now.getFullYear() === y &&
-    now.getMonth() === m &&
-    now.getDate() === day
-
+function WidgetDragGrip({ id, label, onDown }) {
   return (
-    <div className="desktop-widgets__retro-cal" ref={wrapRef}>
-      <div className="desktop-widgets__retro-cal-summary" ref={leftRef}>
-        <div className="desktop-widgets__retro-cal-dow">{dowToday}</div>
-        <div className="desktop-widgets__retro-cal-day-big">{dayToday}</div>
-      </div>
-      <div className="desktop-widgets__retro-cal-main">
-        <div className="desktop-widgets__retro-cal-month-row">
-          <span className="desktop-widgets__retro-cal-month">{monthName}</span>
-        </div>
-        <div className="desktop-widgets__retro-cal-dow-row" aria-hidden>
-          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((letter, i) => (
-            <span key={`${letter}-${i}`} className="desktop-widgets__retro-cal-dow-cell">
-              {letter}
-            </span>
-          ))}
-        </div>
-        <div className="desktop-widgets__retro-cal-grid" role="grid" aria-label={`Calendar ${monthName} ${y}`}>
-          {cells.map((day, idx) => (
-            <div key={idx} className="desktop-widgets__retro-cal-cell" role="presentation">
-              {day != null ? (
-                <span
-                  className={
-                    isToday(day)
-                      ? 'desktop-widgets__retro-cal-num desktop-widgets__retro-cal-num--today'
-                      : 'desktop-widgets__retro-cal-num'
-                  }
-                >
-                  {day}
-                </span>
-              ) : (
-                <span className="desktop-widgets__retro-cal-num desktop-widgets__retro-cal-num--empty" />
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+    <button
+      type="button"
+      className="desktop-widgets__grip desktop-widgets__widget-drag-grip"
+      aria-label={label}
+      onPointerDown={(e) => onDown(e, id)}
+    >
+      <GripVertical size={14} strokeWidth={2} />
+    </button>
   )
 }
 
-/** Hands-only clock as the “O” in NOW (no ring); local time from `date`. */
-function QuoteAnalogClockO({ date }) {
-  const h = (date.getHours() % 12) + date.getMinutes() / 60 + date.getSeconds() / 3600
-  const hourDeg = h * 30
-  const minDeg = date.getMinutes() * 6 + date.getSeconds() * 0.1
-  const secDeg = date.getSeconds() * 6
-  const label = date.toLocaleTimeString(undefined, {
-    hour: 'numeric',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: true,
-  })
-
-  return (
-    <span className="desktop-widgets__quote-o-wrap" role="timer" aria-live="polite" aria-label={`Time ${label}`}>
-      <svg className="desktop-widgets__quote-o-svg" viewBox="0 0 100 100" aria-hidden>
-        <g transform="translate(50,50)">
-          <line
-            x1="0"
-            y1="0"
-            x2="0"
-            y2="-26"
-            stroke="#fff"
-            strokeWidth="5"
-            strokeLinecap="round"
-            transform={`rotate(${hourDeg})`}
-          />
-          <line
-            x1="0"
-            y1="0"
-            x2="0"
-            y2="-36"
-            stroke="#fff"
-            strokeWidth="3"
-            strokeLinecap="round"
-            transform={`rotate(${minDeg})`}
-          />
-          <line
-            x1="0"
-            y1="0"
-            x2="0"
-            y2="-40"
-            stroke="#ff2d2d"
-            strokeWidth="1.35"
-            strokeLinecap="round"
-            transform={`rotate(${secDeg})`}
-          />
-          <circle cx="0" cy="0" r="4" fill="#fff" />
-        </g>
-      </svg>
-    </span>
-  )
-}
-
-function QuoteTimeWidget({ date }) {
-  return (
-    <div className="desktop-widgets__quote-widget">
-      <p className="desktop-widgets__quote-line desktop-widgets__quote-line--now-only">
-        <span className="desktop-widgets__quote-now-prefix">DO IT N</span>
-        <QuoteAnalogClockO date={date} />
-        <span className="desktop-widgets__quote-now-suffix">W</span>
-      </p>
-    </div>
-  )
+function WeatherGlyph({ main, code, description }) {
+  const m = (main || '').toLowerCase()
+  const d = (description || '').toLowerCase()
+  const sz = 22
+  const stroke = 1.75
+  if (m.includes('thunder') || d.includes('thunder') || (code >= 200 && code < 300)) {
+    return <CloudLightning size={sz} strokeWidth={stroke} aria-hidden />
+  }
+  if (m.includes('snow') || d.includes('snow') || (code >= 71 && code <= 77) || (code >= 600 && code < 700)) {
+    return <Snowflake size={sz} strokeWidth={stroke} aria-hidden />
+  }
+  if (m.includes('rain') || m.includes('drizzle') || d.includes('rain') || (code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
+    return <CloudRain size={sz} strokeWidth={stroke} aria-hidden />
+  }
+  if (m.includes('fog') || m.includes('mist') || d.includes('fog') || (code >= 45 && code <= 48)) {
+    return <CloudFog size={sz} strokeWidth={stroke} aria-hidden />
+  }
+  if (m.includes('clear') || code === 0 || d.includes('clear')) {
+    return <Sun size={sz} strokeWidth={stroke} aria-hidden />
+  }
+  if (m.includes('cloud') || code === 3 || d.includes('overcast')) {
+    return <Cloud size={sz} strokeWidth={stroke} aria-hidden />
+  }
+  if (code === 1 || code === 2 || d.includes('mainly')) {
+    return <CloudSun size={sz} strokeWidth={stroke} aria-hidden />
+  }
+  return <Cloud size={sz} strokeWidth={stroke} aria-hidden />
 }
 
 function formatTrackTime(sec) {
@@ -209,7 +121,7 @@ function formatTrackTime(sec) {
 const DEFAULT_LAYOUT = {
   calendar: { x: 20, y: 56, ...defaultStaticGrid('calendar') },
   clock: { x: 240, y: 56, ...defaultStaticGrid('clock') },
-  weather: { x: 20, y: 280, ...defaultStaticGrid('weather') },
+  weather: { x: 20, y: 260, ...defaultStaticGrid('weather') },
   music: { x: 240, y: 300, ...defaultStaticGrid('music') },
   bgControls: { x: 1000, y: 420, ...defaultStaticGrid('bgControls') },
   notesChecklist: { x: 480, y: 300, ...defaultStaticGrid('notesChecklist') },
@@ -220,18 +132,39 @@ const DEFAULT_LAYOUT = {
   photoC: { x: 860, y: 56, gridW: 8, gridH: 7 },
 }
 
-/** 52 dots = weeks; click toggles calendar year vs graduation timeline (Oct 2024 → Oct 2026). */
+/** year → grad → month (click header); month uses 28–31 day dots. */
 function YearProgressWidget({ now }) {
   const [mode, setMode] = useState('year')
-  const { filled, pct, label } = useMemo(() => {
+  const cycleMode = () => setMode((m) => (m === 'year' ? 'grad' : m === 'grad' ? 'month' : 'year'))
+
+  const { filled, pct, label, rightLabel, totalDots, gridClass } = useMemo(() => {
     if (mode === 'grad') {
       const start = new Date(2024, 9, 1).getTime()
       const end = new Date(2026, 9, 1).getTime()
       const t = Math.max(0, Math.min(1, (now.getTime() - start) / (end - start)))
+      const filledN = Math.min(52, Math.round(t * 52))
       return {
-        filled: Math.min(52, Math.round(t * 52)),
+        filled: filledN,
         pct: Math.round(t * 100),
         label: 'Graduation',
+        rightLabel: `${Math.round(t * 100)}%`,
+        totalDots: 52,
+        gridClass: 'desktop-widgets__year-dots-grid--weeks',
+      }
+    }
+    if (mode === 'month') {
+      const y = now.getFullYear()
+      const mo = now.getMonth()
+      const dim = new Date(y, mo + 1, 0).getDate()
+      const day = now.getDate()
+      const monthName = new Date(y, mo, 1).toLocaleString(undefined, { month: 'long' })
+      return {
+        filled: day,
+        pct: null,
+        label: 'Month',
+        rightLabel: monthName,
+        totalDots: dim,
+        gridClass: 'desktop-widgets__year-dots-grid--month',
       }
     }
     const y = now.getFullYear()
@@ -242,26 +175,34 @@ function YearProgressWidget({ now }) {
       filled: Math.min(52, Math.round(t * 52)),
       pct: Math.round(t * 100),
       label: 'Year',
+      rightLabel: `${Math.round(t * 100)}%`,
+      totalDots: 52,
+      gridClass: 'desktop-widgets__year-dots-grid--weeks',
     }
   }, [now, mode])
 
+  const ariaPct = pct != null ? `${pct} percent` : `${filled} of ${totalDots} days`
+
   return (
-    <button
-      type="button"
-      className="desktop-widgets__year-widget"
-      onClick={() => setMode((m) => (m === 'year' ? 'grad' : 'year'))}
-      aria-label={`${label} progress ${pct} percent, click to switch view`}
-    >
-      <div className="desktop-widgets__year-widget-head">
+    <div className="desktop-widgets__year-widget">
+      <button
+        type="button"
+        className="desktop-widgets__year-widget-head"
+        onClick={cycleMode}
+        aria-label={`${label} view, ${ariaPct}. Click to change view.`}
+      >
         <span className="desktop-widgets__year-widget-title">{label}</span>
-        <span className="desktop-widgets__year-widget-pct">{pct}%</span>
-      </div>
-      <div className="desktop-widgets__year-dots-grid" aria-hidden>
-        {Array.from({ length: 52 }, (_, i) => (
-          <span key={i} className={i < filled ? 'desktop-widgets__year-dot desktop-widgets__year-dot--on' : 'desktop-widgets__year-dot'} />
+        <span className="desktop-widgets__year-widget-right">{rightLabel}</span>
+      </button>
+      <div className={`desktop-widgets__year-dots-grid ${gridClass}`} aria-hidden>
+        {Array.from({ length: totalDots }, (_, i) => (
+          <span
+            key={i}
+            className={i < filled ? 'desktop-widgets__year-dot desktop-widgets__year-dot--on' : 'desktop-widgets__year-dot'}
+          />
         ))}
       </div>
-    </button>
+    </div>
   )
 }
 
@@ -379,6 +320,8 @@ export default function DesktopWidgets({
     temp: null,
     feelsLike: null,
     description: '',
+    weatherMain: '',
+    weatherCode: null,
     locationLabel: '',
     hourly: [],
     error: null,
@@ -560,6 +503,8 @@ export default function DesktopWidgets({
         temp: data.temp,
         feelsLike: data.feelsLike,
         description: data.description,
+        weatherMain: data.weatherMain ?? '',
+        weatherCode: data.weatherCode ?? null,
         locationLabel: data.locationLabel,
         hourly: data.hourly,
         error: null,
@@ -571,6 +516,8 @@ export default function DesktopWidgets({
         temp: null,
         feelsLike: null,
         description: '',
+        weatherMain: '',
+        weatherCode: null,
         locationLabel: '',
         hourly: [],
         error: e?.message || 'unavailable',
@@ -787,6 +734,21 @@ export default function DesktopWidgets({
     setPinnedChecklistItemDone(notesStore, itemId, done)
   }, [notesStore])
 
+  const weatherNext = useMemo(() => {
+    if (weather.status !== 'ready') return { conditionWord: '—', horizon: '—' }
+    return buildWeatherNextHint(
+      weather.description,
+      weather.weatherMain,
+      weather.weatherCode,
+      weather.hourly,
+    )
+  }, [weather])
+
+  const weatherCity = useMemo(
+    () => formatLocationLabel(weather.locationLabel || userLoc.label || ''),
+    [weather.locationLabel, userLoc.label],
+  )
+
   const cardClass = (id, extra) =>
     `desktop-widgets__card ${extra}${resizingWidgetId === id ? ' desktop-widgets__card--resizing' : ''}`.trim()
 
@@ -812,21 +774,13 @@ export default function DesktopWidgets({
         />
       )}
 
-      <div
-        className={cardClass('calendar', 'desktop-widgets__card--calendar desktop-widgets__card--has-drag-strip')}
-        style={cardStyle('calendar')}
-      >
-        <div className="desktop-widgets__calendar-widget-body">
-          <RetroCalendarWidget now={now} />
+      <div className={cardClass('calendar', 'desktop-widgets__card--calendar')} style={cardStyle('calendar')}>
+        <div className="desktop-widgets__card-chrome">
+          <WidgetDragGrip id="calendar" label="Move calendar widget" onDown={handleGripPointerDown} />
+          <div className="desktop-widgets__calendar-widget-body">
+            <RetroCalendarPanel now={now} />
+          </div>
         </div>
-        <button
-          type="button"
-          className="desktop-widgets__drag-strip"
-          aria-label="Move calendar widget"
-          onPointerDown={(e) => handleGripPointerDown(e, 'calendar')}
-        >
-          <GripVertical size={14} strokeWidth={2} />
-        </button>
         <button
           type="button"
           className="desktop-widgets__widget-resize-handle"
@@ -835,21 +789,11 @@ export default function DesktopWidgets({
         />
       </div>
 
-      <div
-        className={cardClass('clock', 'desktop-widgets__card--clock desktop-widgets__card--has-drag-strip')}
-        style={cardStyle('clock')}
-      >
-        <div className="desktop-widgets__quote-widget-shell desktop-widgets__blend">
-          <QuoteTimeWidget date={now} />
+      <div className={cardClass('clock', 'desktop-widgets__card--clock')} style={cardStyle('clock')}>
+        <div className="desktop-widgets__card-chrome desktop-widgets__quote-widget-shell desktop-widgets__blend">
+          <WidgetDragGrip id="clock" label="Move clock widget" onDown={handleGripPointerDown} />
+          <DoItNowClockWidget date={now} />
         </div>
-        <button
-          type="button"
-          className="desktop-widgets__drag-strip"
-          aria-label="Move clock widget"
-          onPointerDown={(e) => handleGripPointerDown(e, 'clock')}
-        >
-          <GripVertical size={14} strokeWidth={2} />
-        </button>
         <button
           type="button"
           className="desktop-widgets__widget-resize-handle"
@@ -858,84 +802,61 @@ export default function DesktopWidgets({
         />
       </div>
 
-      <div
-        className={cardClass('weather', 'desktop-widgets__card--weather desktop-widgets__card--has-drag-strip')}
-        style={cardStyle('weather')}
-      >
-        <div className="desktop-widgets__weather-landscape">
-          {weather.status === 'loading' && (
-            <p className="desktop-widgets__weather-landscape__status">Loading weather…</p>
-          )}
-          {weather.status === 'error' && (
-            <div className="desktop-widgets__weather-landscape__status-wrap">
-              <p className="desktop-widgets__weather-landscape__status">{weather.error}</p>
-              <p className="desktop-widgets__weather-landscape__hint">
-                Add VITE_OPENWEATHER_API_KEY for OpenWeather, or allow location for Open-Meteo fallback.
-              </p>
-            </div>
-          )}
-          {weather.status === 'ready' ? (
-            <>
-              <div className="desktop-widgets__weather-landscape__grid">
-                <div className="desktop-widgets__weather-landscape__temp-col">
-                  <span className="desktop-widgets__weather-landscape__temp-big">
+      <div className={cardClass('weather', 'desktop-widgets__card--weather')} style={cardStyle('weather')}>
+        <div className="desktop-widgets__card-chrome">
+          <WidgetDragGrip id="weather" label="Move weather widget" onDown={handleGripPointerDown} />
+          <div className="desktop-widgets__weather-compact">
+            {weather.status === 'loading' && (
+              <p className="desktop-widgets__weather-compact__status">Loading…</p>
+            )}
+            {weather.status === 'error' && (
+              <div className="desktop-widgets__weather-compact__status-wrap">
+                <p className="desktop-widgets__weather-compact__status">{weather.error}</p>
+                <p className="desktop-widgets__weather-compact__hint">
+                  Set VITE_OPENWEATHER_API_KEY or allow location.
+                </p>
+              </div>
+            )}
+            {weather.status === 'ready' ? (
+              <div className="desktop-widgets__weather-compact__stack">
+                <p className="desktop-widgets__weather-compact__row">
+                  <span className="desktop-widgets__weather-compact__white">
                     {weather.temp != null && Number.isFinite(weather.temp) ? Math.round(weather.temp) : '—'}°F
                   </span>
-                </div>
-                <div className="desktop-widgets__weather-landscape__cloud-col">
-                  <DottedGradientCloud className="desktop-widgets__weather-landscape__cloud" />
-                </div>
-                <div className="desktop-widgets__weather-landscape__meta-col">
-                  <p className="desktop-widgets__weather-landscape__line">
-                    <span className="desktop-widgets__weather-landscape__muted">now in </span>
-                    <span className="desktop-widgets__weather-landscape__strong">
-                      {weather.locationLabel || userLoc.label || 'Local'}
-                    </span>
-                  </p>
-                  <p className="desktop-widgets__weather-landscape__line">
-                    <span className="desktop-widgets__weather-landscape__muted">feels like </span>
-                    <span className="desktop-widgets__weather-landscape__strong">
-                      {weather.feelsLike != null && Number.isFinite(weather.feelsLike)
-                        ? `${Math.round(weather.feelsLike)}°F`
-                        : '—'}
-                    </span>
-                  </p>
-                  <p className="desktop-widgets__weather-landscape__desc">{weather.description}</p>
-                  {weather.hourly?.length > 0 ? (
-                    <ul className="desktop-widgets__weather-landscape__hourly">
-                      {weather.hourly.slice(0, 6).map((slot, idx) => {
-                        const t = slot.time ? new Date(slot.time) : null
-                        const timeLabel = t
-                          ? t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
-                          : '—'
-                        return (
-                          <li key={slot.time ?? idx} className="desktop-widgets__weather-landscape__hour-row">
-                            <span className="desktop-widgets__weather-landscape__hour-t">{timeLabel}</span>
-                            <span className="desktop-widgets__weather-landscape__hour-v">
-                              {slot.temp != null && Number.isFinite(slot.temp) ? `${Math.round(slot.temp)}°F` : '—'}
-                            </span>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  ) : null}
-                </div>
+                  <span className="desktop-widgets__weather-compact__grey"> now</span>
+                </p>
+                <p className="desktop-widgets__weather-compact__row">
+                  <span className="desktop-widgets__weather-compact__grey">in </span>
+                  <span className="desktop-widgets__weather-compact__white">{weatherCity}</span>
+                </p>
+                <p className="desktop-widgets__weather-compact__row">
+                  <span className="desktop-widgets__weather-compact__grey">feels </span>
+                  <span className="desktop-widgets__weather-compact__white">
+                    {weather.feelsLike != null && Number.isFinite(weather.feelsLike)
+                      ? `${Math.round(weather.feelsLike)}°F`
+                      : '—'}
+                  </span>
+                </p>
+                <p className="desktop-widgets__weather-compact__row desktop-widgets__weather-compact__row--icon">
+                  <span className="desktop-widgets__weather-compact__icon">
+                    <WeatherGlyph
+                      main={weather.weatherMain}
+                      code={weather.weatherCode}
+                      description={weather.description}
+                    />
+                  </span>
+                  <span className="desktop-widgets__weather-compact__white">
+                    {weatherNext.conditionWord}
+                  </span>
+                  <span className="desktop-widgets__weather-compact__grey"> next</span>
+                </p>
+                <p className="desktop-widgets__weather-compact__row desktop-widgets__weather-compact__row--horizon">
+                  <span className="desktop-widgets__weather-compact__grey">{weatherNext.horizon}</span>
+                </p>
               </div>
-              <div className="desktop-widgets__weather-landscape__marks">
-                <span>Created by Christian Lee</span>
-                <span>Portfolio Weather Widget</span>
-              </div>
-            </>
-          ) : null}
+            ) : null}
+          </div>
         </div>
-        <button
-          type="button"
-          className="desktop-widgets__drag-strip"
-          aria-label="Move weather widget"
-          onPointerDown={(e) => handleGripPointerDown(e, 'weather')}
-        >
-          <GripVertical size={14} strokeWidth={2} />
-        </button>
         <button
           type="button"
           className="desktop-widgets__widget-resize-handle"
@@ -944,62 +865,42 @@ export default function DesktopWidgets({
         />
       </div>
 
-      <div
-        className={cardClass(
-          'bgControls',
-          'desktop-widgets__card--bg-controls desktop-widgets__card--has-drag-strip',
-        )}
-        style={cardStyle('bgControls')}
-      >
-        <div className="desktop-widgets__no-blend desktop-widgets__bg-controls-body desktop-widgets__bg-controls-body--compact">
-          <div className="desktop-widgets__bg-wheel-square">
-            <ColorPicker
-              size={100}
-              padding={8}
-              bulletRadius={11}
-              numPoints={2}
-              minLight={6}
-              maxLight={38}
-              maxSaturation={52}
-              showColorWheel
-              initialPrimaryHex={bgColor2}
-              onColorChange={onMeshColorsFromWheel}
-            />
-          </div>
-          <div className="desktop-widgets__bg-speed-wrap">
-            <BackgroundMotionSlider
-              min={0.15}
-              max={1.5}
-              step={0.03}
-              value={bgSpeed}
-              onChange={setBgSpeed}
-              aria-label="Background motion speed"
-            />
+      <div className={cardClass('bgControls', 'desktop-widgets__card--bg-controls')} style={cardStyle('bgControls')}>
+        <div className="desktop-widgets__card-chrome">
+          <WidgetDragGrip id="bgControls" label="Move background controls widget" onDown={handleGripPointerDown} />
+          <div className="desktop-widgets__no-blend desktop-widgets__bg-controls-body desktop-widgets__bg-controls-body--compact">
+            <div className="desktop-widgets__bg-wheel-square">
+              <ColorPicker
+                size={100}
+                padding={8}
+                bulletRadius={11}
+                numPoints={2}
+                minLight={6}
+                maxLight={38}
+                maxSaturation={52}
+                showColorWheel
+                initialPrimaryHex={bgColor2}
+                onColorChange={onMeshColorsFromWheel}
+              />
+            </div>
+            <div className="desktop-widgets__bg-speed-wrap">
+              <BackgroundMotionSlider
+                min={0.15}
+                max={1.5}
+                step={0.03}
+                value={bgSpeed}
+                onChange={setBgSpeed}
+                aria-label="Background motion speed"
+              />
+            </div>
           </div>
         </div>
-        <button
-          type="button"
-          className="desktop-widgets__drag-strip"
-          aria-label="Move background controls widget"
-          onPointerDown={(e) => handleGripPointerDown(e, 'bgControls')}
-        >
-          <GripVertical size={14} strokeWidth={2} />
-        </button>
       </div>
 
-      <div
-        className={cardClass('music', 'desktop-widgets__card--music desktop-widgets__card--has-drag-strip')}
-        style={cardStyle('music')}
-      >
-        <button
-          type="button"
-          className="desktop-widgets__drag-strip"
-          aria-label="Move music widget"
-          onPointerDown={(e) => handleGripPointerDown(e, 'music')}
-        >
-          <GripVertical size={14} strokeWidth={2} />
-        </button>
-        <div className="desktop-widgets__ipod">
+      <div className={cardClass('music', 'desktop-widgets__card--music')} style={cardStyle('music')}>
+        <div className="desktop-widgets__card-chrome desktop-widgets__card-chrome--music">
+          <WidgetDragGrip id="music" label="Move music widget" onDown={handleGripPointerDown} />
+          <div className="desktop-widgets__ipod">
           <div className="desktop-widgets__ipod-chassis">
             <div className="desktop-widgets__ipod-screen">
               {currentTrack ? (
@@ -1118,6 +1019,7 @@ export default function DesktopWidgets({
             </div>
           </div>
         </div>
+        </div>
         <button
           type="button"
           className="desktop-widgets__widget-resize-handle"
@@ -1126,14 +1028,10 @@ export default function DesktopWidgets({
         />
       </div>
 
-      <div
-        className={cardClass(
-          'notesChecklist',
-          'desktop-widgets__card--notes desktop-widgets__card--has-drag-strip',
-        )}
-        style={cardStyle('notesChecklist')}
-      >
-        <div className="desktop-widgets__blend desktop-widgets__notes-inner">
+      <div className={cardClass('notesChecklist', 'desktop-widgets__card--notes')} style={cardStyle('notesChecklist')}>
+        <div className="desktop-widgets__card-chrome">
+          <WidgetDragGrip id="notesChecklist" label="Move notes widget" onDown={handleGripPointerDown} />
+          <div className="desktop-widgets__blend desktop-widgets__notes-inner">
           <div className="desktop-widgets__adaptive desktop-widgets__notes-head">
             <ListTodo size={14} strokeWidth={2} aria-hidden />
             <span className="desktop-widgets__card-title desktop-widgets__card-title--inline">Pinned note</span>
@@ -1164,15 +1062,8 @@ export default function DesktopWidgets({
               ))}
             </ul>
           )}
+          </div>
         </div>
-        <button
-          type="button"
-          className="desktop-widgets__drag-strip"
-          aria-label="Move notes widget"
-          onPointerDown={(e) => handleGripPointerDown(e, 'notesChecklist')}
-        >
-          <GripVertical size={14} strokeWidth={2} />
-        </button>
         <button
           type="button"
           className="desktop-widgets__widget-resize-handle"
@@ -1181,21 +1072,13 @@ export default function DesktopWidgets({
         />
       </div>
 
-      <div
-        className={cardClass('knotWidget', 'desktop-widgets__card--knot desktop-widgets__card--has-drag-strip')}
-        style={cardStyle('knotWidget')}
-      >
-        <div className="desktop-widgets__knot-shell">
-          <KnotAnimation color speedA={0.045} speedB={0.022} />
+      <div className={cardClass('knotWidget', 'desktop-widgets__card--knot')} style={cardStyle('knotWidget')}>
+        <div className="desktop-widgets__card-chrome">
+          <WidgetDragGrip id="knotWidget" label="Move knot widget" onDown={handleGripPointerDown} />
+          <div className="desktop-widgets__knot-shell">
+            <KnotAnimation color={false} speedA={0.045} speedB={0.022} />
+          </div>
         </div>
-        <button
-          type="button"
-          className="desktop-widgets__drag-strip"
-          aria-label="Move knot widget"
-          onPointerDown={(e) => handleGripPointerDown(e, 'knotWidget')}
-        >
-          <GripVertical size={14} strokeWidth={2} />
-        </button>
         <button
           type="button"
           className="desktop-widgets__widget-resize-handle"
@@ -1204,19 +1087,11 @@ export default function DesktopWidgets({
         />
       </div>
 
-      <div
-        className={cardClass('yearProgress', 'desktop-widgets__card--year desktop-widgets__card--has-drag-strip')}
-        style={cardStyle('yearProgress')}
-      >
-        <YearProgressWidget now={now} />
-        <button
-          type="button"
-          className="desktop-widgets__drag-strip"
-          aria-label="Move year progress widget"
-          onPointerDown={(e) => handleGripPointerDown(e, 'yearProgress')}
-        >
-          <GripVertical size={14} strokeWidth={2} />
-        </button>
+      <div className={cardClass('yearProgress', 'desktop-widgets__card--year')} style={cardStyle('yearProgress')}>
+        <div className="desktop-widgets__card-chrome">
+          <WidgetDragGrip id="yearProgress" label="Move year progress widget" onDown={handleGripPointerDown} />
+          <YearProgressWidget now={now} />
+        </div>
         <button
           type="button"
           className="desktop-widgets__widget-resize-handle"
@@ -1250,7 +1125,7 @@ export default function DesktopWidgets({
               <div className="desktop-widgets__photo-overlay desktop-widgets__blend">
                 <button
                   type="button"
-                  className="desktop-widgets__grip desktop-widgets__photo-drag-grip"
+                  className="desktop-widgets__grip desktop-widgets__widget-drag-grip desktop-widgets__photo-drag-grip"
                   aria-label={`Move ${pid} widget`}
                   onPointerDown={(e) => handleGripPointerDown(e, pid)}
                 >

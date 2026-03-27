@@ -21,7 +21,7 @@ const LAYOUT_KEY = 'desktop-widget-layout'
 const DEFAULT_LAYOUT = {
   calendar: { x: 20, y: 56, ...defaultStaticGrid('calendar') },
   clock: { x: 240, y: 56, ...defaultStaticGrid('clock') },
-  weather: { x: 20, y: 280, ...defaultStaticGrid('weather') },
+  weather: { x: 20, y: 260, ...defaultStaticGrid('weather') },
   music: { x: 240, y: 300, ...defaultStaticGrid('music') },
   bgControls: { x: 1000, y: 420, ...defaultStaticGrid('bgControls') },
   notesChecklist: { x: 480, y: 300, ...defaultStaticGrid('notesChecklist') },

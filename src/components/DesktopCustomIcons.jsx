@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { FileText, Gamepad2 } from 'lucide-react'
 import { DesktopIconGlyph } from './DesktopIconGlyph'
 import './DesktopCustomIcons.css'
@@ -27,17 +27,6 @@ export default function DesktopCustomIcons({
   const [dropTargetId, setDropTargetId] = useState(null)
   const [draggingIds, setDraggingIds] = useState(() => [])
   const rootItems = desktopItems.filter((i) => !i.parentId)
-
-  const childrenByParent = useMemo(() => {
-    const m = new Map()
-    for (const i of desktopItems) {
-      if (!i.parentId) continue
-      const list = m.get(i.parentId)
-      if (list) list.push(i)
-      else m.set(i.parentId, [i])
-    }
-    return m
-  }, [desktopItems])
 
   const desktopItemsRef = useRef(desktopItems)
   useEffect(() => {
@@ -294,7 +283,6 @@ export default function DesktopCustomIcons({
         const isFolder = item.type === 'folder'
         const isDropTarget = dropTargetId === item.id
         const isDragging = draggingIds.includes(item.id)
-        const folderKids = isFolder ? (childrenByParent.get(item.id) ?? []).slice(0, 3) : []
 
         return (
           <div
@@ -309,22 +297,31 @@ export default function DesktopCustomIcons({
           >
             <span className="desktop-custom-icons__icon">
               {isFolder ? (
-                <span className="desktop-glass-folder" aria-hidden>
-                  <span className="desktop-glass-folder__back" />
-                  <span className="desktop-glass-folder__papers">
-                    {[0, 1, 2].map((slot) => (
-                      <span key={slot} className={`desktop-glass-folder__paper desktop-glass-folder__paper--${slot}`}>
-                        {folderKids[slot] ? (
-                          <span className="desktop-glass-folder__paper-icon">
-                            <DesktopIconGlyph item={folderKids[slot]} size={20} />
-                          </span>
-                        ) : (
-                          <span className="desktop-glass-folder__paper-lines" />
-                        )}
+                <span className="desktop-folder-iso" aria-hidden>
+                  <span className="desktop-folder-iso__shadow" />
+                  <span className="desktop-folder-iso__body" />
+                  <span className="desktop-folder-iso__inner">
+                    <span className="desktop-folder-iso__paper desktop-folder-iso__paper--a">
+                      <span className="desktop-folder-iso__mini-cal">
+                        <span className="desktop-folder-iso__mini-cal-top">
+                          <span className="desktop-folder-iso__mini-dow">WED</span>
+                          <span className="desktop-folder-iso__mini-day">31</span>
+                        </span>
+                        <span className="desktop-folder-iso__mini-grid">
+                          {Array.from({ length: 12 }, (_, i) => (
+                            <span key={i} className={i === 5 ? 'on' : ''} />
+                          ))}
+                        </span>
                       </span>
-                    ))}
+                    </span>
+                    <span className="desktop-folder-iso__paper desktop-folder-iso__paper--b">
+                      <span className="desktop-folder-iso__mini-quote">
+                        The problem is, You think you have
+                      </span>
+                      <span className="desktop-folder-iso__mini-hands" />
+                    </span>
                   </span>
-                  <span className="desktop-glass-folder__glass" />
+                  <span className="desktop-folder-iso__glass" />
                 </span>
               ) : (
                 <DesktopIconGlyph item={item} size={40} />

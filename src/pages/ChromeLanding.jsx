@@ -5,7 +5,7 @@ import ChromeWindow from '../components/ChromeWindow'
 import ChromeHome from '../components/ChromeHome'
 import ChromeContextMenu from '../components/ChromeContextMenu'
 import Desktop from '../components/Desktop'
-import DesktopFolderSheet from '../components/DesktopFolderSheet'
+import DesktopDocumentsFolderModal from '../components/DesktopDocumentsFolderModal'
 import {
   LazyInstagramWindow,
   LazyAboutPage,
@@ -456,9 +456,8 @@ export default function ChromeLanding({ onReboot }) {
         openAppWindows={openAppWindows}
       />
       {openFolderId && (
-        <DesktopFolderSheet
+        <DesktopDocumentsFolderModal
           folderId={openFolderId}
-          folderName={desktopItems.find((i) => i.id === openFolderId)?.name ?? 'Folder'}
           desktopItems={desktopItems}
           onClose={() => setOpenFolderId(null)}
           onOpenFolder={handleOpenFolder}
