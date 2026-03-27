@@ -358,20 +358,19 @@
   visibility: hidden;
 }
 
-/* Compact square calendar (desktop widget): liquid glass, WED MAR + day */
+/* Compact calendar: no panel fill; weekday color from accent prop */
 .desktop-widgets__retro-cal--compact {
   flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: clamp(6px, 2.5cqh, 20px);
   text-align: center;
-  padding: clamp(10px, 4cqw, 22px);
-  background: rgba(6, 8, 14, 0.52);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  padding: clamp(6px, 2cqw, 14px);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .desktop-widgets__retro-cal-compact-top {
@@ -1315,8 +1314,12 @@
 
 .desktop-widgets__notes-check-label input {
   margin-top: 2px;
-  accent-color: #5eead4;
+  accent-color: #000000;
   flex-shrink: 0;
+}
+
+[data-theme='light'] .desktop-widgets__notes-check-label input {
+  accent-color: #0a0a0c;
 }
 
 .desktop-widgets__notes-text {
@@ -1887,18 +1890,22 @@
 
 .desktop-widgets__weather-compact__row {
   margin: 0;
-  line-height: 1.2;
-  font-size: clamp(0.72rem, 2.8cqw, 0.95rem);
+  line-height: 1.25;
   font-weight: 700;
   max-width: 100%;
   overflow-wrap: anywhere;
+}
+
+.desktop-widgets__weather-compact__row--body,
+.desktop-widgets__weather-compact__row--icon {
+  font-size: clamp(0.82rem, 3.2cqw, 1.05rem);
 }
 
 .desktop-widgets__weather-compact__row--icon {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 0.35em;
+  margin-top: 0.25em;
 }
 
 .desktop-widgets__weather-compact__row--horizon {
@@ -1958,11 +1965,12 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 4px 0;
+  padding: 2px 0;
+  container-type: size;
 }
 
 .desktop-widgets__knot-pre {
-  font-size: clamp(4px, 5.5cqw, 9px);
+  font-size: clamp(2px, min(5.2cqw, 4.5cqh), 7px);
   line-height: 1;
   margin: 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -2003,6 +2011,14 @@
   color: #f1f0e8;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-sizing: border-box;
+}
+
+.desktop-widgets__year-widget--days {
+  padding: 10px 10px 8px;
+}
+
+.desktop-widgets__year-widget--days .desktop-widgets__year-dots-wrap {
+  justify-content: flex-end;
 }
 
 .desktop-widgets__year-widget-head {
@@ -2058,6 +2074,27 @@
   grid-auto-rows: 1fr;
 }
 
+.desktop-widgets__year-dots-grid--days {
+  grid-template-columns: repeat(19, 1fr);
+  gap: 2px;
+  align-content: end;
+  min-height: 0;
+}
+
+.desktop-widgets__year-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: ui-monospace, 'Cascadia Code', 'Roboto Mono', Menlo, monospace;
+  font-weight: 300;
+  font-size: clamp(0.62rem, 2.4cqw, 0.78rem);
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.88);
+}
+
 .desktop-widgets__year-dot {
   width: 100%;
   max-width: clamp(10px, 3.5cqw, 22px);
@@ -2067,8 +2104,21 @@
   background: rgba(255, 255, 255, 0.14);
 }
 
+.desktop-widgets__year-dots-grid--days .desktop-widgets__year-dot {
+  max-width: none;
+  margin: 0;
+}
+
 .desktop-widgets__year-dot--on {
   background: #f1f0e8;
+}
+
+.desktop-widgets__year-dot--past {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.desktop-widgets__year-dot--left {
+  background: rgba(255, 255, 255, 0.92);
 }
 
 .desktop-widgets__photo-overlay .desktop-widgets__photo-drag-grip {

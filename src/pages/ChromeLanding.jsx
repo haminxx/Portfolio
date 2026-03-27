@@ -57,8 +57,8 @@ const APP_ICONS = {
 const HOME_TAB = { id: 'home', title: 'Home', type: 'home' }
 const DESKTOP_ITEMS_KEY = 'desktop-items'
 const DOCK_ORDER_KEY = 'dock-order'
-const GLASS_FOLDER_ID = 'seed-desktop-glass-folder'
-const GLASS_FOLDER_FLAG = 'portfolio-glass-folder-v1'
+/** Legacy seeded desktop folder — removed from layout on load. */
+const REMOVED_SEED_FOLDER_ID = 'seed-desktop-glass-folder'
 
 function loadDesktopItems() {
   try {
@@ -130,10 +130,12 @@ export default function ChromeLanding({ onReboot }) {
   const [chromeContextMenu, setChromeContextMenu] = useState(null)
   const [desktopItems, setDesktopItemsState] = useState(() => {
     const loaded = loadDesktopItems()
-    const hasDoom = loaded.some((i) => i.type === 'shortcut' && i.appKey === 'doom')
-    const hasDadnme = loaded.some((i) => i.type === 'shortcut' && i.appKey === 'dadnme')
-    const hasTetris = loaded.some((i) => i.type === 'shortcut' && i.appKey === 'tetris')
-    let next = [...loaded]
+    const withoutFolder = loaded.filter((i) => i.id !== REMOVED_SEED_FOLDER_ID)
+    const removedFolder = withoutFolder.length !== loaded.length
+    let next = [...withoutFolder]
+    const hasDoom = next.some((i) => i.type === 'shortcut' && i.appKey === 'doom')
+    const hasDadnme = next.some((i) => i.type === 'shortcut' && i.appKey === 'dadnme')
+    const hasTetris = next.some((i) => i.type === 'shortcut' && i.appKey === 'tetris')
     if (!hasDoom) {
       next = [...next, { id: 'doom-shortcut', type: 'shortcut', name: 'DOOM', appKey: 'doom', parentId: null, x: 24, y: 40 }]
     }
@@ -143,26 +145,7 @@ export default function ChromeLanding({ onReboot }) {
     if (!hasTetris) {
       next = [...next, { id: 'tetris-shortcut', type: 'shortcut', name: 'Tetris', appKey: 'tetris', parentId: null, x: 216, y: 40 }]
     }
-    if (!next.some((i) => i.id === GLASS_FOLDER_ID) && !localStorage.getItem(GLASS_FOLDER_FLAG)) {
-      next = [
-        ...next,
-        { id: GLASS_FOLDER_ID, type: 'folder', name: 'Folder', parentId: null, x: 40, y: 420 },
-      ]
-      try {
-        localStorage.setItem(GLASS_FOLDER_FLAG, '1')
-      } catch {
-        // ignore
-      }
-    } else if (next.some((i) => i.id === GLASS_FOLDER_ID)) {
-      try {
-        localStorage.setItem(GLASS_FOLDER_FLAG, '1')
-      } catch {
-        // ignore
-      }
-    }
-    const folderAdded =
-      !loaded.some((i) => i.id === GLASS_FOLDER_ID) && next.some((i) => i.id === GLASS_FOLDER_ID)
-    if (!hasDoom || !hasDadnme || !hasTetris || folderAdded) {
+    if (!hasDoom || !hasDadnme || !hasTetris || removedFolder) {
       saveDesktopItems(next)
     }
     return next

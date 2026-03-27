@@ -7,7 +7,6 @@ import {
   SkipForward,
   ImageIcon,
   RefreshCw,
-  ListTodo,
   Sun,
   Cloud,
   CloudRain,
@@ -37,7 +36,8 @@ import {
   defaultGridForWidget,
   getBoxSizeForWidget,
   getWidgetRectFromEntry,
-  snapWeatherLayoutEntry,
+  SQUARE_WIDGET_IDS,
+  snapSquareLayoutEntry,
 } from '../lib/widgetLayoutShared'
 import {
   loadPhotoWidgetIdList,
@@ -48,7 +48,11 @@ import {
 import PhotoWidgetImportModal from './PhotoWidgetImportModal'
 import { DESKTOP_SAFE_TOP } from '../desktopConstants'
 import { getDesktopIconRects } from '../lib/widgetOverlapGeometry'
-import { fetchWeatherImperial, buildWeatherNextHint } from '../lib/openWeather'
+import {
+  fetchWeatherImperial,
+  buildWeatherNextHint,
+  formatSunriseSunsetLine,
+} from '../lib/openWeather'
 import RetroCalendarPanel from './desktop/RetroCalendarPanel'
 import { DoItNowClockWidget } from './desktop/QuoteClockPanel'
 import { KnotAnimation } from './ui/knot-animation'
@@ -91,8 +95,8 @@ function WidgetDragGrip({ id, label, onDown }) {
 function WeatherGlyph({ main, code, description }) {
   const m = (main || '').toLowerCase()
   const d = (description || '').toLowerCase()
-  const sz = 22
-  const stroke = 1.75
+  const sz = 16
+  const stroke = 1.65
   if (m.includes('thunder') || d.includes('thunder') || (code >= 200 && code < 300)) {
     return <CloudLightning size={sz} strokeWidth={stroke} aria-hidden />
   }
@@ -138,77 +142,42 @@ const DEFAULT_LAYOUT = {
   photoC: { x: 860, y: 56, gridW: 8, gridH: 7 },
 }
 
-/** year → grad → month (click header); month uses 28–31 day dots. */
+/** One dot per day: dim = elapsed, bright = remaining; footer year + days left. */
 function YearProgressWidget({ now }) {
-  const [mode, setMode] = useState('year')
-  const cycleMode = () => setMode((m) => (m === 'year' ? 'grad' : m === 'grad' ? 'month' : 'year'))
-
-  const { filled, pct, label, rightLabel, totalDots, gridClass } = useMemo(() => {
-    if (mode === 'grad') {
-      const start = new Date(2024, 9, 1).getTime()
-      const end = new Date(2026, 9, 1).getTime()
-      const t = Math.max(0, Math.min(1, (now.getTime() - start) / (end - start)))
-      const filledN = Math.min(52, Math.round(t * 52))
-      return {
-        filled: filledN,
-        pct: Math.round(t * 100),
-        label: 'Graduation',
-        rightLabel: `${Math.round(t * 100)}%`,
-        totalDots: 52,
-        gridClass: 'desktop-widgets__year-dots-grid--weeks',
-      }
-    }
-    if (mode === 'month') {
-      const y = now.getFullYear()
-      const mo = now.getMonth()
-      const dim = new Date(y, mo + 1, 0).getDate()
-      const day = now.getDate()
-      const monthName = new Date(y, mo, 1).toLocaleString(undefined, { month: 'long' })
-      return {
-        filled: day,
-        pct: null,
-        label: 'Month',
-        rightLabel: monthName,
-        totalDots: dim,
-        gridClass: 'desktop-widgets__year-dots-grid--month',
-      }
-    }
+  const { year, totalDays, dayOfYear, daysLeft } = useMemo(() => {
     const y = now.getFullYear()
-    const start = new Date(y, 0, 1).getTime()
-    const end = new Date(y + 1, 0, 1).getTime()
-    const t = Math.max(0, Math.min(1, (now.getTime() - start) / (end - start)))
-    return {
-      filled: Math.min(52, Math.round(t * 52)),
-      pct: Math.round(t * 100),
-      label: 'Year',
-      rightLabel: `${Math.round(t * 100)}%`,
-      totalDots: 52,
-      gridClass: 'desktop-widgets__year-dots-grid--weeks',
-    }
-  }, [now, mode])
-
-  const ariaPct = pct != null ? `${pct} percent` : `${filled} of ${totalDots} days`
+    const start = new Date(y, 0, 1)
+    const end = new Date(y + 1, 0, 1)
+    const total = Math.round((end - start) / 86400000)
+    const dof = Math.min(total, Math.max(0, Math.floor((now - start) / 86400000)))
+    return { year: y, totalDays: total, dayOfYear: dof, daysLeft: total - dof }
+  }, [now])
 
   return (
-    <div className="desktop-widgets__year-widget">
-      <button
-        type="button"
-        className="desktop-widgets__year-widget-head"
-        onClick={cycleMode}
-        aria-label={`${label} view, ${ariaPct}. Click to change view.`}
-      >
-        <span className="desktop-widgets__year-widget-title">{label}</span>
-        <span className="desktop-widgets__year-widget-right">{rightLabel}</span>
-      </button>
+    <div
+      className="desktop-widgets__year-widget desktop-widgets__year-widget--days"
+      role="img"
+      aria-label={`Year ${year}, ${daysLeft} days remaining in this year`}
+    >
       <div className="desktop-widgets__year-dots-wrap">
-        <div className={`desktop-widgets__year-dots-grid ${gridClass}`} aria-hidden>
-          {Array.from({ length: totalDots }, (_, i) => (
+        <div className="desktop-widgets__year-dots-grid desktop-widgets__year-dots-grid--days" aria-hidden>
+          {Array.from({ length: totalDays }, (_, i) => (
             <span
               key={i}
-              className={i < filled ? 'desktop-widgets__year-dot desktop-widgets__year-dot--on' : 'desktop-widgets__year-dot'}
+              className={
+                i < dayOfYear
+                  ? 'desktop-widgets__year-dot desktop-widgets__year-dot--past'
+                  : 'desktop-widgets__year-dot desktop-widgets__year-dot--left'
+              }
             />
           ))}
         </div>
+      </div>
+      <div className="desktop-widgets__year-footer">
+        <span>{year}</span>
+        <span>
+          {daysLeft} days left
+        </span>
       </div>
     </div>
   )
@@ -291,7 +260,9 @@ function loadLayout(photoIdList) {
       gridH: clampGrid(base.gridH ?? def.gridH),
     }
   }
-  if (out.weather) out.weather = snapWeatherLayoutEntry(out.weather)
+  for (const sid of SQUARE_WIDGET_IDS) {
+    if (out[sid]) out[sid] = snapSquareLayoutEntry(sid, out[sid])
+  }
   return out
 }
 
@@ -335,6 +306,9 @@ export default function DesktopWidgets({
     hourly: [],
     error: null,
     source: '',
+    sunrise: null,
+    sunset: null,
+    sameConditionHint: '',
   })
   const [userLoc, setUserLoc] = useState({
     status: 'pending',
@@ -491,7 +465,8 @@ export default function DesktopWidgets({
             `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,
           )
           const j = await r.json()
-          label = j.city || j.locality || j.principalSubdivision || label
+          label = j.locality || j.city || j.principalSubdivision || label
+          if (/coast|region|metro|valley$/i.test(String(label)) && j.locality) label = j.locality
         } catch {
           // keep "Local"
         }
@@ -519,6 +494,9 @@ export default function DesktopWidgets({
         hourly: data.hourly,
         error: null,
         source: data.source,
+        sunrise: data.sunrise ?? null,
+        sunset: data.sunset ?? null,
+        sameConditionHint: data.sameConditionHint ?? '',
       })
     } catch (e) {
       setWeather({
@@ -532,6 +510,9 @@ export default function DesktopWidgets({
         hourly: [],
         error: e?.message || 'unavailable',
         source: '',
+        sunrise: null,
+        sunset: null,
+        sameConditionHint: '',
       })
     }
   }, [])
@@ -669,6 +650,7 @@ export default function DesktopWidgets({
       const entry = layout[wid] || DEFAULT_LAYOUT[wid]
       const origW = clampGrid(entry.gridW)
       const origH = clampGrid(entry.gridH)
+      const origS = SQUARE_WIDGET_IDS.includes(wid) ? clampGrid(Math.min(origW, origH)) : null
       setResizingWidgetId(wid)
       widgetResizeRef.current = {
         wid,
@@ -676,6 +658,7 @@ export default function DesktopWidgets({
         startY: e.clientY,
         origW,
         origH,
+        origS,
       }
       const handleEl = e.currentTarget
       const capId = e.pointerId
@@ -688,12 +671,16 @@ export default function DesktopWidgets({
       const onMove = (ev) => {
         const d = widgetResizeRef.current
         if (!d) return
-        let nextW = clampGrid(d.origW + Math.round((ev.clientX - d.startX) / CELL))
-        let nextH = clampGrid(d.origH + Math.round((ev.clientY - d.startY) / CELL))
-        if (d.wid === 'weather') {
-          const s = clampGrid(Math.max(nextW, nextH))
+        let nextW
+        let nextH
+        if (d.origS != null) {
+          const delta = Math.round(((ev.clientX - d.startX) + (ev.clientY - d.startY)) / (2 * CELL))
+          const s = clampGrid(d.origS + delta)
           nextW = s
           nextH = s
+        } else {
+          nextW = clampGrid(d.origW + Math.round((ev.clientX - d.startX) / CELL))
+          nextH = clampGrid(d.origH + Math.round((ev.clientY - d.startY) / CELL))
         }
         setLayout((prev) => {
           const base = { ...(prev[d.wid] || DEFAULT_LAYOUT[d.wid]), gridW: nextW, gridH: nextH }
@@ -765,6 +752,11 @@ export default function DesktopWidgets({
     return formatLocationLabel(geo || api || userLoc.label || '')
   }, [userLoc.status, userLoc.label, weather.locationLabel])
 
+  const weatherSunLine = useMemo(
+    () => (weather.status === 'ready' ? formatSunriseSunsetLine(weather.sunrise, weather.sunset) : ''),
+    [weather.status, weather.sunrise, weather.sunset],
+  )
+
   const cardClass = (id, extra) =>
     `desktop-widgets__card ${extra}${resizingWidgetId === id ? ' desktop-widgets__card--resizing' : ''}`.trim()
 
@@ -794,7 +786,7 @@ export default function DesktopWidgets({
         <div className="desktop-widgets__card-chrome">
           <WidgetDragGrip id="calendar" label="Move calendar widget" onDown={handleGripPointerDown} />
           <div className="desktop-widgets__calendar-widget-body">
-            <RetroCalendarPanel now={now} variant="compact" />
+            <RetroCalendarPanel now={now} variant="compact" weekdayAccentColor={knotFg} />
           </div>
         </div>
         <button
@@ -835,17 +827,17 @@ export default function DesktopWidgets({
             )}
             {weather.status === 'ready' ? (
               <div className="desktop-widgets__weather-compact__stack">
-                <p className="desktop-widgets__weather-compact__row">
+                <p className="desktop-widgets__weather-compact__row desktop-widgets__weather-compact__row--body">
                   <span className="desktop-widgets__weather-compact__white">
                     {weather.temp != null && Number.isFinite(weather.temp) ? Math.round(weather.temp) : '—'}°F
                   </span>
                   <span className="desktop-widgets__weather-compact__grey"> now</span>
                 </p>
-                <p className="desktop-widgets__weather-compact__row">
+                <p className="desktop-widgets__weather-compact__row desktop-widgets__weather-compact__row--body">
                   <span className="desktop-widgets__weather-compact__grey">in </span>
                   <span className="desktop-widgets__weather-compact__white">{weatherCity}</span>
                 </p>
-                <p className="desktop-widgets__weather-compact__row">
+                <p className="desktop-widgets__weather-compact__row desktop-widgets__weather-compact__row--body">
                   <span className="desktop-widgets__weather-compact__grey">feels </span>
                   <span className="desktop-widgets__weather-compact__white">
                     {weather.feelsLike != null && Number.isFinite(weather.feelsLike)
@@ -853,6 +845,11 @@ export default function DesktopWidgets({
                       : '—'}
                   </span>
                 </p>
+                {weatherSunLine ? (
+                  <p className="desktop-widgets__weather-compact__row desktop-widgets__weather-compact__row--body">
+                    <span className="desktop-widgets__weather-compact__grey">{weatherSunLine}</span>
+                  </p>
+                ) : null}
                 <p className="desktop-widgets__weather-compact__row desktop-widgets__weather-compact__row--icon">
                   <span className="desktop-widgets__weather-compact__icon">
                     <WeatherGlyph
@@ -866,8 +863,14 @@ export default function DesktopWidgets({
                   </span>
                   <span className="desktop-widgets__weather-compact__grey"> next</span>
                 </p>
-                <p className="desktop-widgets__weather-compact__row desktop-widgets__weather-compact__row--horizon">
+                <p className="desktop-widgets__weather-compact__row desktop-widgets__weather-compact__row--body desktop-widgets__weather-compact__row--horizon">
                   <span className="desktop-widgets__weather-compact__grey">{weatherNext.horizon}</span>
+                  {weather.sameConditionHint ? (
+                    <span className="desktop-widgets__weather-compact__grey">
+                      {' · '}
+                      {weather.sameConditionHint}
+                    </span>
+                  ) : null}
                 </p>
               </div>
             ) : null}
@@ -1048,10 +1051,6 @@ export default function DesktopWidgets({
         <div className="desktop-widgets__card-chrome">
           <WidgetDragGrip id="notesChecklist" label="Move notes widget" onDown={handleGripPointerDown} />
           <div className="desktop-widgets__blend desktop-widgets__notes-inner">
-          <div className="desktop-widgets__adaptive desktop-widgets__notes-head">
-            <ListTodo size={14} strokeWidth={2} aria-hidden />
-            <span className="desktop-widgets__card-title desktop-widgets__card-title--inline">Pinned note</span>
-          </div>
           {!notesStore.pinnedNoteId ? (
             <p className="desktop-widgets__adaptive desktop-widgets__muted desktop-widgets__muted--small">
               Open Notes and pin a note for this list.

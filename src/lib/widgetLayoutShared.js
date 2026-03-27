@@ -17,6 +17,9 @@ export const STATIC_WIDGET_IDS = [
   'yearProgress',
 ]
 
+/** Widgets whose layout gridW/gridH are forced equal (square footprint). */
+export const SQUARE_WIDGET_IDS = ['weather', 'calendar']
+
 export const STATIC_SIZES = {
   calendar: { w: 280, h: 280 },
   clock: { w: 440, h: 200 },
@@ -52,15 +55,19 @@ export function defaultGridForWidget(id) {
   return defaultStaticGrid(id)
 }
 
-/** Weather footprint is always square (min of saved W/H). */
-function weatherSquareSide(entry, def) {
+function squareSide(entry, def) {
   return clampGrid(Math.min(clampGrid(entry?.gridW ?? def.gridW), clampGrid(entry?.gridH ?? def.gridH)))
 }
 
-export function snapWeatherLayoutEntry(entry) {
-  const def = defaultGridForWidget('weather')
-  const s = weatherSquareSide(entry, def)
+export function snapSquareLayoutEntry(id, entry) {
+  if (!SQUARE_WIDGET_IDS.includes(id)) return entry
+  const def = defaultGridForWidget(id)
+  const s = squareSide(entry, def)
   return { ...entry, gridW: s, gridH: s }
+}
+
+export function snapWeatherLayoutEntry(entry) {
+  return snapSquareLayoutEntry('weather', entry)
 }
 
 export function getBoxSizeForWidget(id, entry) {
@@ -68,8 +75,8 @@ export function getBoxSizeForWidget(id, entry) {
   if (NON_RESIZABLE_WIDGET_IDS.includes(id)) {
     return { w: def.gridW * CELL, h: def.gridH * CELL }
   }
-  if (id === 'weather') {
-    const s = weatherSquareSide(entry, def)
+  if (SQUARE_WIDGET_IDS.includes(id)) {
+    const s = squareSide(entry, def)
     return { w: s * CELL, h: s * CELL }
   }
   const gw = clampGrid(entry?.gridW ?? def.gridW)

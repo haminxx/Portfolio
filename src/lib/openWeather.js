@@ -9,6 +9,90 @@ function pickLabelFromOw(json) {
   return parts.join(', ') || 'Local'
 }
 
+/** OpenWeather condition groups (rough match for persistence hints). */
+function owGroup(id) {
+  if (id == null || !Number.isFinite(Number(id))) return null
+  const c = Number(id)
+  if (c >= 200 && c < 300) return 'storm'
+  if (c >= 300 && c < 400) return 'drizzle'
+  if (c >= 500 && c < 600) return 'rain'
+  if (c >= 600 && c < 700) return 'snow'
+  if (c >= 700 && c < 800) return 'atmos'
+  if (c === 800) return 'clear'
+  if (c === 801 || c === 802) return 'few'
+  if (c === 803 || c === 804) return 'broken'
+  return `x${c}`
+}
+
+/** WMO weather codes (Open-Meteo hourly). */
+function wmoGroup(code) {
+  if (code == null || !Number.isFinite(Number(code))) return null
+  const c = Number(code)
+  if (c === 0) return 'clear'
+  if (c <= 3) return 'cloud'
+  if (c <= 48) return 'fog'
+  if (c <= 67) return 'rain'
+  if (c <= 77) return 'snow'
+  if (c >= 95) return 'storm'
+  return `w${c}`
+}
+
+/** Compare “same enough” across forecast slots. */
+function conditionMatches(curMain, curCode, hMain, hCode) {
+  if (curCode != null && hCode != null) {
+    const a = Number(curCode)
+    const b = Number(hCode)
+    if (a < 100 && b < 100) return wmoGroup(a) === wmoGroup(b)
+    if (a < 900 && b < 900) return owGroup(a) === owGroup(b)
+    return Math.floor(a / 10) === Math.floor(b / 10)
+  }
+  const cm = (curMain || '').toLowerCase()
+  const hm = (hMain || '').toLowerCase()
+  if (cm && hm) return cm === hm
+  return true
+}
+
+/**
+ * Hours until hourly forecast first differs from current (walk forward from `now`).
+ * @returns {string} e.g. "~2h same", "until 4:30 PM", ""
+ */
+export function buildSameConditionHint(hourly, weatherMain, weatherCode, now = new Date()) {
+  const slots = hourly || []
+  if (!slots.length) return ''
+  let i = 0
+  while (
+    i < slots.length &&
+    conditionMatches(weatherMain, weatherCode, slots[i].weatherMain, slots[i].weatherCode)
+  ) {
+    i += 1
+  }
+  if (i >= slots.length) return '12h+ same'
+  if (i === 0) return ''
+  const change = slots[i]
+  const t = change.time ? new Date(change.time) : null
+  if (!t || Number.isNaN(t.getTime())) return ''
+  const hrs = (t - now) / 3600000
+  if (hrs <= 0.25) return ''
+  if (hrs < 24) return `~${Math.max(1, Math.round(hrs))}h same`
+  return `until ${t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
+}
+
+function formatSunLocal(tsSecOrIso) {
+  if (tsSecOrIso == null) return null
+  const d = typeof tsSecOrIso === 'number' ? new Date(tsSecOrIso * 1000) : new Date(tsSecOrIso)
+  if (Number.isNaN(d.getTime())) return null
+  return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+}
+
+export function formatSunriseSunsetLine(sunrise, sunset) {
+  const a = typeof sunrise === 'string' ? sunrise : formatSunLocal(sunrise)
+  const b = typeof sunset === 'string' ? sunset : formatSunLocal(sunset)
+  if (a && b) return `↑ ${a} · ↓ ${b}`
+  if (a) return `↑ ${a}`
+  if (b) return `↓ ${b}`
+  return ''
+}
+
 async function fetchOpenWeather(lat, lon, apiKey) {
   const base = `https://api.openweathermap.org/data/2.5`
   const curUrl = `${base}/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${apiKey}`
@@ -31,9 +115,12 @@ async function fetchOpenWeather(lat, lon, apiKey) {
   const desc = w0?.description ? String(w0.description) : '—'
   const weatherCode = typeof w0?.id === 'number' ? w0.id : null
   const weatherMain = w0?.main ? String(w0.main) : ''
+  const sys = c.sys || {}
+  const sunrise = typeof sys.sunrise === 'number' ? sys.sunrise : null
+  const sunset = typeof sys.sunset === 'number' ? sys.sunset : null
 
   const list = Array.isArray(f.list) ? f.list : []
-  const hourly = list.slice(0, 8).map((slot) => {
+  const hourly = list.slice(0, 24).map((slot) => {
     const tMs = slot.dt * 1000
     const tMain = slot.main || {}
     const sw = Array.isArray(slot.weather) ? slot.weather[0] : null
@@ -56,6 +143,9 @@ async function fetchOpenWeather(lat, lon, apiKey) {
     weatherMain,
     locationLabel: pickLabelFromOw(c),
     hourly,
+    sunrise,
+    sunset,
+    sameConditionHint: buildSameConditionHint(hourly, weatherMain, weatherCode, new Date()),
   }
 }
 
@@ -65,7 +155,8 @@ async function fetchOpenMeteoImperial(lat, lon) {
   url.searchParams.set('longitude', String(lon))
   url.searchParams.set('current', 'temperature_2m,apparent_temperature,weather_code')
   url.searchParams.set('hourly', 'temperature_2m,weather_code,precipitation_probability')
-  url.searchParams.set('forecast_days', '2')
+  url.searchParams.set('daily', 'sunrise,sunset')
+  url.searchParams.set('forecast_days', '3')
   url.searchParams.set('timezone', 'auto')
   url.searchParams.set('temperature_unit', 'fahrenheit')
   const res = await fetch(url.toString())
@@ -79,7 +170,7 @@ async function fetchOpenMeteoImperial(lat, lon) {
   const codes = data.hourly?.weather_code ?? []
   const pops = data.hourly?.precipitation_probability ?? []
   const hourly = []
-  for (let i = 0; i < Math.min(8, times.length); i += 1) {
+  for (let i = 0; i < Math.min(48, times.length); i += 1) {
     hourly.push({
       time: times[i],
       temp: temps[i],
@@ -99,15 +190,27 @@ async function fetchOpenMeteoImperial(lat, lon) {
   else if (code >= 71 && code <= 77) description = 'Snow'
   else if (code >= 95) description = 'Storm'
 
+  const dSun = data.daily?.sunrise
+  const dSet = data.daily?.sunset
+  const sunriseIso = Array.isArray(dSun) && dSun[0] ? dSun[0] : null
+  const sunsetIso = Array.isArray(dSet) && dSet[0] ? dSet[0] : null
+  const sr = formatSunLocal(sunriseIso)
+  const ss = formatSunLocal(sunsetIso)
+
+  const weatherMain = ''
+  const weatherCode = typeof code === 'number' ? code : null
   return {
     source: 'open-meteo',
     temp,
     feelsLike,
     description,
-    weatherCode: typeof code === 'number' ? code : null,
-    weatherMain: '',
+    weatherCode,
+    weatherMain,
     locationLabel: 'Local',
     hourly,
+    sunrise: sr,
+    sunset: ss,
+    sameConditionHint: buildSameConditionHint(hourly, weatherMain, weatherCode, new Date()),
   }
 }
 
