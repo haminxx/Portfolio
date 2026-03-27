@@ -47,16 +47,22 @@ export function KnotAnimation({ color = true, speedA = 0.04, speedB = 0.02 }) {
       const pw = pre.offsetWidth
       const ph = pre.offsetHeight
       if (pw < 2 || ph < 2) return
-      setNatural({ w: pw, h: ph })
       const s = Math.min(1, (outer.clientWidth * 0.96) / pw, (outer.clientHeight * 0.96) / ph)
-      setScale(Number.isFinite(s) && s > 0 ? s : 1)
+      const nextS = Number.isFinite(s) && s > 0 ? s : 1
+      // Avoid new object / number when unchanged — prevents ResizeObserver ↔ setState loops.
+      setNatural((prev) => (prev.w === pw && prev.h === ph ? prev : { w: pw, h: ph }))
+      setScale((prev) => (Math.abs(prev - nextS) < 0.0005 ? prev : nextS))
     }
 
-    const ro = new ResizeObserver(run)
+    const ro = new ResizeObserver(() => window.requestAnimationFrame(run))
     ro.observe(outer)
-    const id = window.requestAnimationFrame(() => window.requestAnimationFrame(run))
+    let rafNest = 0
+    const id1 = window.requestAnimationFrame(() => {
+      rafNest = window.requestAnimationFrame(run)
+    })
     return () => {
-      window.cancelAnimationFrame(id)
+      window.cancelAnimationFrame(id1)
+      if (rafNest) window.cancelAnimationFrame(rafNest)
       ro.disconnect()
     }
   }, [frame.length])
