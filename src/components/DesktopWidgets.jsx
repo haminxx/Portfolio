@@ -37,6 +37,7 @@ import {
   defaultGridForWidget,
   getBoxSizeForWidget,
   getWidgetRectFromEntry,
+  snapWeatherLayoutEntry,
 } from '../lib/widgetLayoutShared'
 import {
   loadPhotoWidgetIdList,
@@ -60,13 +61,18 @@ const LAYOUT_KEY = 'desktop-widget-layout'
 function formatLocationLabel(raw) {
   if (!raw || typeof raw !== 'string') return 'Local'
   let s = raw.trim()
-  if (s.includes(',')) {
-    s = s.split(',')[0].trim()
-  }
+  if (s.includes(',')) s = s.split(',')[0].trim()
   if (/\b(county|parish|municipality)\b/i.test(s) && s.length > 24) {
     s = s.replace(/\b(county|parish|municipality)\b.*$/i, '').trim()
   }
   return s || 'Local'
+}
+
+function hexRgbInvert(hex) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(String(hex ?? '').trim())
+  if (!m) return '#ffffff'
+  const x = (i) => (255 - parseInt(m[i], 16)).toString(16).padStart(2, '0')
+  return `#${x(1)}${x(2)}${x(3)}`
 }
 
 function WidgetDragGrip({ id, label, onDown }) {
@@ -194,13 +200,15 @@ function YearProgressWidget({ now }) {
         <span className="desktop-widgets__year-widget-title">{label}</span>
         <span className="desktop-widgets__year-widget-right">{rightLabel}</span>
       </button>
-      <div className={`desktop-widgets__year-dots-grid ${gridClass}`} aria-hidden>
-        {Array.from({ length: totalDots }, (_, i) => (
-          <span
-            key={i}
-            className={i < filled ? 'desktop-widgets__year-dot desktop-widgets__year-dot--on' : 'desktop-widgets__year-dot'}
-          />
-        ))}
+      <div className="desktop-widgets__year-dots-wrap">
+        <div className={`desktop-widgets__year-dots-grid ${gridClass}`} aria-hidden>
+          {Array.from({ length: totalDots }, (_, i) => (
+            <span
+              key={i}
+              className={i < filled ? 'desktop-widgets__year-dot desktop-widgets__year-dot--on' : 'desktop-widgets__year-dot'}
+            />
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -283,6 +291,7 @@ function loadLayout(photoIdList) {
       gridH: clampGrid(base.gridH ?? def.gridH),
     }
   }
+  if (out.weather) out.weather = snapWeatherLayoutEntry(out.weather)
   return out
 }
 
@@ -361,6 +370,7 @@ export default function DesktopWidgets({
     setColor2: setBgColor2,
     setSpeed: setBgSpeed,
   } = useDesktopBackground()
+  const knotFg = useMemo(() => hexRgbInvert(bgColor2), [bgColor2])
 
   const onMeshColorsFromWheel = useCallback(
     (colors) => {
@@ -678,8 +688,13 @@ export default function DesktopWidgets({
       const onMove = (ev) => {
         const d = widgetResizeRef.current
         if (!d) return
-        const nextW = clampGrid(d.origW + Math.round((ev.clientX - d.startX) / CELL))
-        const nextH = clampGrid(d.origH + Math.round((ev.clientY - d.startY) / CELL))
+        let nextW = clampGrid(d.origW + Math.round((ev.clientX - d.startX) / CELL))
+        let nextH = clampGrid(d.origH + Math.round((ev.clientY - d.startY) / CELL))
+        if (d.wid === 'weather') {
+          const s = clampGrid(Math.max(nextW, nextH))
+          nextW = s
+          nextH = s
+        }
         setLayout((prev) => {
           const base = { ...(prev[d.wid] || DEFAULT_LAYOUT[d.wid]), gridW: nextW, gridH: nextH }
           const pos = clampPos(d.wid, base.x, base.y, { ...prev, [d.wid]: base })
@@ -744,10 +759,11 @@ export default function DesktopWidgets({
     )
   }, [weather])
 
-  const weatherCity = useMemo(
-    () => formatLocationLabel(weather.locationLabel || userLoc.label || ''),
-    [weather.locationLabel, userLoc.label],
-  )
+  const weatherCity = useMemo(() => {
+    const geo = userLoc.status === 'ok' && userLoc.label && userLoc.label !== 'Local' ? userLoc.label : ''
+    const api = (weather.locationLabel && String(weather.locationLabel).trim()) || ''
+    return formatLocationLabel(geo || api || userLoc.label || '')
+  }, [userLoc.status, userLoc.label, weather.locationLabel])
 
   const cardClass = (id, extra) =>
     `desktop-widgets__card ${extra}${resizingWidgetId === id ? ' desktop-widgets__card--resizing' : ''}`.trim()
@@ -778,7 +794,7 @@ export default function DesktopWidgets({
         <div className="desktop-widgets__card-chrome">
           <WidgetDragGrip id="calendar" label="Move calendar widget" onDown={handleGripPointerDown} />
           <div className="desktop-widgets__calendar-widget-body">
-            <RetroCalendarPanel now={now} />
+            <RetroCalendarPanel now={now} variant="compact" />
           </div>
         </div>
         <button
@@ -1075,7 +1091,7 @@ export default function DesktopWidgets({
       <div className={cardClass('knotWidget', 'desktop-widgets__card--knot')} style={cardStyle('knotWidget')}>
         <div className="desktop-widgets__card-chrome">
           <WidgetDragGrip id="knotWidget" label="Move knot widget" onDown={handleGripPointerDown} />
-          <div className="desktop-widgets__knot-shell">
+          <div className="desktop-widgets__knot-shell" style={{ color: knotFg }}>
             <KnotAnimation color={false} speedA={0.045} speedB={0.022} />
           </div>
         </div>

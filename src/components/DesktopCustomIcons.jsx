@@ -296,36 +296,7 @@ export default function DesktopCustomIcons({
             onContextMenu={(e) => onIconContextMenu?.(e, item)}
           >
             <span className="desktop-custom-icons__icon">
-              {isFolder ? (
-                <span className="desktop-folder-iso" aria-hidden>
-                  <span className="desktop-folder-iso__shadow" />
-                  <span className="desktop-folder-iso__body" />
-                  <span className="desktop-folder-iso__inner">
-                    <span className="desktop-folder-iso__paper desktop-folder-iso__paper--a">
-                      <span className="desktop-folder-iso__mini-cal">
-                        <span className="desktop-folder-iso__mini-cal-top">
-                          <span className="desktop-folder-iso__mini-dow">WED</span>
-                          <span className="desktop-folder-iso__mini-day">31</span>
-                        </span>
-                        <span className="desktop-folder-iso__mini-grid">
-                          {Array.from({ length: 12 }, (_, i) => (
-                            <span key={i} className={i === 5 ? 'on' : ''} />
-                          ))}
-                        </span>
-                      </span>
-                    </span>
-                    <span className="desktop-folder-iso__paper desktop-folder-iso__paper--b">
-                      <span className="desktop-folder-iso__mini-quote">
-                        The problem is, You think you have
-                      </span>
-                      <span className="desktop-folder-iso__mini-hands" />
-                    </span>
-                  </span>
-                  <span className="desktop-folder-iso__glass" />
-                </span>
-              ) : (
-                <DesktopIconGlyph item={item} size={40} />
-              )}
+              <DesktopIconGlyph item={item} size={40} />
             </span>
             {renamingId === item.id ? (
               <input

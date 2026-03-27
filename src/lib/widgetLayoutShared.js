@@ -18,7 +18,7 @@ export const STATIC_WIDGET_IDS = [
 ]
 
 export const STATIC_SIZES = {
-  calendar: { w: 340, h: 200 },
+  calendar: { w: 280, h: 280 },
   clock: { w: 440, h: 200 },
   weather: { w: 280, h: 280 },
   music: { w: 312, h: 136 },
@@ -52,10 +52,25 @@ export function defaultGridForWidget(id) {
   return defaultStaticGrid(id)
 }
 
+/** Weather footprint is always square (min of saved W/H). */
+function weatherSquareSide(entry, def) {
+  return clampGrid(Math.min(clampGrid(entry?.gridW ?? def.gridW), clampGrid(entry?.gridH ?? def.gridH)))
+}
+
+export function snapWeatherLayoutEntry(entry) {
+  const def = defaultGridForWidget('weather')
+  const s = weatherSquareSide(entry, def)
+  return { ...entry, gridW: s, gridH: s }
+}
+
 export function getBoxSizeForWidget(id, entry) {
   const def = defaultGridForWidget(id)
   if (NON_RESIZABLE_WIDGET_IDS.includes(id)) {
     return { w: def.gridW * CELL, h: def.gridH * CELL }
+  }
+  if (id === 'weather') {
+    const s = weatherSquareSide(entry, def)
+    return { w: s * CELL, h: s * CELL }
   }
   const gw = clampGrid(entry?.gridW ?? def.gridW)
   const gh = clampGrid(entry?.gridH ?? def.gridH)

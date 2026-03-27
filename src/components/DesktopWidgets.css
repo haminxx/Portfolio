@@ -358,6 +358,38 @@
   visibility: hidden;
 }
 
+/* Compact square calendar (desktop widget): liquid glass, WED MAR + day */
+.desktop-widgets__retro-cal--compact {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(6px, 2.5cqh, 20px);
+  text-align: center;
+  padding: clamp(10px, 4cqw, 22px);
+  background: rgba(6, 8, 14, 0.52);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.desktop-widgets__retro-cal-compact-top {
+  font-size: clamp(0.8rem, 4.2cqw, 1.2rem);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #f1f0e8;
+  line-height: 1.15;
+}
+
+.desktop-widgets__retro-cal-compact-day {
+  font-size: clamp(2.2rem, 16cqw, 4.2rem);
+  font-weight: 800;
+  line-height: 0.88;
+  font-variant-numeric: tabular-nums;
+  color: #f1f0e8;
+}
+
 .desktop-widgets__card--calendar .desktop-widgets__calendar-widget-body {
   container-type: size;
 }
@@ -1847,7 +1879,10 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  flex-wrap: wrap;
   gap: 0.1em;
+  width: 100%;
+  min-width: 0;
 }
 
 .desktop-widgets__weather-compact__row {
@@ -1855,6 +1890,8 @@
   line-height: 1.2;
   font-size: clamp(0.72rem, 2.8cqw, 0.95rem);
   font-weight: 700;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .desktop-widgets__weather-compact__row--icon {
@@ -1931,7 +1968,11 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   white-space: pre;
   text-align: center;
-  color: var(--portfolio-accent, #e8e4df);
+  color: inherit;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .desktop-widgets__knot-pre span {
@@ -1952,10 +1993,12 @@
   flex: 1;
   min-height: 0;
   width: 100%;
+  display: flex;
+  flex-direction: column;
   background: #000000;
   border-radius: 16px;
   text-align: left;
-  padding: 10px 12px 12px;
+  padding: 12px 12px 12px;
   font: inherit;
   color: #f1f0e8;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1966,7 +2009,8 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 10px;
+  margin-bottom: 0;
+  flex-shrink: 0;
   width: 100%;
   border: none;
   background: transparent;
@@ -1988,6 +2032,14 @@
   font-weight: 800;
   font-size: clamp(0.75rem, 3.2cqw, 0.95rem);
   font-variant-numeric: tabular-nums;
+}
+
+.desktop-widgets__year-dots-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 
 .desktop-widgets__year-dots-grid {

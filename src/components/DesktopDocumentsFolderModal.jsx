@@ -59,7 +59,7 @@ export default function DesktopDocumentsFolderModal({
         </div>
         <div className="desktop-docs-folder__panels">
           <div className="desktop-docs-folder__panel desktop-docs-folder__panel--cal">
-            <RetroCalendarPanel now={now} />
+            <RetroCalendarPanel now={now} variant="full" />
           </div>
           <div className="desktop-docs-folder__panel desktop-docs-folder__panel--quote">
             <FolderQuoteClockWidget date={now} />

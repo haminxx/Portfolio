@@ -14,6 +14,7 @@ import {
   defaultGridForWidget,
   getWidgetRectFromEntry,
   collectWidgetIdsFromLayout,
+  snapWeatherLayoutEntry,
 } from './widgetLayoutShared'
 
 const LAYOUT_KEY = 'desktop-widget-layout'
@@ -61,6 +62,8 @@ function mergeLayoutFromStorage(parsed) {
     out[id].gridW = clampGrid(out[id].gridW ?? def.gridW)
     out[id].gridH = clampGrid(out[id].gridH ?? def.gridH)
   }
+
+  if (out.weather) out.weather = snapWeatherLayoutEntry(out.weather)
 
   return out
 }

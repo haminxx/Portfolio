@@ -1,6 +1,5 @@
 import { useMemo, useRef, useLayoutEffect } from 'react'
 
-/** Month grid cells: null = empty pad, number = day of month (local timezone). */
 export function buildMonthCells(year, monthIndex) {
   const first = new Date(year, monthIndex, 1)
   const pad = first.getDay()
@@ -12,18 +11,22 @@ export function buildMonthCells(year, monthIndex) {
   return cells
 }
 
-/** Slate + cream calendar; current month from `now`. */
-export default function RetroCalendarPanel({ now }) {
+const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+
+/** `compact` = square liquid-glass summary; `full` = two-column month grid (folder modal). */
+export default function RetroCalendarPanel({ now, variant = 'full' }) {
   const y = now.getFullYear()
   const m = now.getMonth()
   const cells = useMemo(() => buildMonthCells(y, m), [y, m])
   const monthName = new Date(y, m, 1).toLocaleString(undefined, { month: 'long' }).toUpperCase()
   const dowToday = now.toLocaleString(undefined, { weekday: 'short' }).toUpperCase()
+  const monthShort = now.toLocaleString(undefined, { month: 'short' }).toUpperCase()
   const dayToday = String(now.getDate())
   const wrapRef = useRef(null)
   const leftRef = useRef(null)
 
   useLayoutEffect(() => {
+    if (variant !== 'full') return
     const wrap = wrapRef.current
     const left = leftRef.current
     if (!wrap || !left) return
@@ -35,10 +38,21 @@ export default function RetroCalendarPanel({ now }) {
     const ro = new ResizeObserver(sync)
     ro.observe(left)
     return () => ro.disconnect()
-  }, [y, m, now])
+  }, [y, m, now, variant])
 
   const isToday = (day) =>
     day != null && now.getFullYear() === y && now.getMonth() === m && now.getDate() === day
+
+  if (variant === 'compact') {
+    return (
+      <div className="desktop-widgets__retro-cal desktop-widgets__retro-cal--compact">
+        <div className="desktop-widgets__retro-cal-compact-top">
+          {dowToday} {monthShort}
+        </div>
+        <div className="desktop-widgets__retro-cal-compact-day">{dayToday}</div>
+      </div>
+    )
+  }
 
   return (
     <div className="desktop-widgets__retro-cal" ref={wrapRef}>
@@ -51,7 +65,7 @@ export default function RetroCalendarPanel({ now }) {
           <span className="desktop-widgets__retro-cal-month">{monthName}</span>
         </div>
         <div className="desktop-widgets__retro-cal-dow-row" aria-hidden>
-          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((letter, i) => (
+          {DOW.map((letter, i) => (
             <span key={`${letter}-${i}`} className="desktop-widgets__retro-cal-dow-cell">
               {letter}
             </span>
