@@ -59,7 +59,7 @@ import './DesktopWidgets.css'
 
 const SD_LAT = 32.72
 const SD_LON = -117.16
-const LAYOUT_KEY = 'desktop-widget-layout-v4'
+const LAYOUT_KEY = 'desktop-widget-layout-v5'
 
 function formatLocationLabel(raw) {
   if (!raw || typeof raw !== 'string') return 'Local'
@@ -128,24 +128,24 @@ function formatTrackTime(sec) {
 }
 
 /**
- * Hero desktop (compact): left column clock → calendar; weather + knot beside calendar; tall photo under left stack.
- * Right: two square photos, then music → notes + color wheel → year dots. Positions derived from CELL and default grids.
+ * Hero desktop (extra-compact): clock 7×3, calendar/weather 4×4, knot 3×3; tall photo left; right stack 4×4 photos.
+ * Grids match STATIC_SIZES in widgetLayoutShared (clock gh=3, calendar/weather 4×4, etc.).
  */
-const RX = 960
+const RX = 880
 const DEFAULT_LAYOUT = {
   clock: { x: 20, y: 56, ...defaultStaticGrid('clock') },
-  calendar: { x: 20, y: 56 + 4 * CELL, ...defaultStaticGrid('calendar') },
-  weather: { x: 20 + 5 * CELL, y: 56 + 4 * CELL, ...defaultStaticGrid('weather') },
-  knotWidget: { x: 20 + 5 * CELL, y: 56 + 4 * CELL + 5 * CELL, ...defaultStaticGrid('knotWidget') },
-  photoA: { x: 20, y: 56 + 4 * CELL + 5 * CELL + 12, gridW: 5, gridH: 10 },
-  photoB: { x: RX, y: 56, gridW: 5, gridH: 5 },
-  photoC: { x: RX + 5 * CELL, y: 56, gridW: 5, gridH: 5 },
-  music: { x: RX, y: 56 + 5 * CELL + 8, ...defaultStaticGrid('music') },
-  notesChecklist: { x: RX, y: 56 + 5 * CELL + 8 + 3 * CELL + 8, ...defaultStaticGrid('notesChecklist') },
-  bgControls: { x: RX + 5 * CELL, y: 56 + 5 * CELL + 8 + 3 * CELL + 8, ...defaultStaticGrid('bgControls') },
+  calendar: { x: 20, y: 56 + 3 * CELL, ...defaultStaticGrid('calendar') },
+  weather: { x: 20 + 4 * CELL, y: 56 + 3 * CELL, ...defaultStaticGrid('weather') },
+  knotWidget: { x: 20 + 4 * CELL, y: 56 + 3 * CELL + 4 * CELL, ...defaultStaticGrid('knotWidget') },
+  photoA: { x: 20, y: 56 + 3 * CELL + 4 * CELL + 10, gridW: 4, gridH: 9 },
+  photoB: { x: RX, y: 56, gridW: 4, gridH: 4 },
+  photoC: { x: RX + 4 * CELL, y: 56, gridW: 4, gridH: 4 },
+  music: { x: RX, y: 56 + 4 * CELL + 8, ...defaultStaticGrid('music') },
+  notesChecklist: { x: RX, y: 56 + 4 * CELL + 8 + 3 * CELL + 8, ...defaultStaticGrid('notesChecklist') },
+  bgControls: { x: RX + 4 * CELL, y: 56 + 4 * CELL + 8 + 3 * CELL + 8, ...defaultStaticGrid('bgControls') },
   yearProgress: {
-    x: RX + 5 * CELL + 12,
-    y: 56 + 5 * CELL + 8 + 3 * CELL + 8 + 4 * CELL + 8,
+    x: RX,
+    y: 56 + 4 * CELL + 8 + 3 * CELL + 8 + 4 * CELL + 8,
     ...defaultStaticGrid('yearProgress'),
   },
 }
