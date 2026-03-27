@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Wifi, Battery, Circle, Moon, Search, Maximize2, Minimize2, Lock, ChevronRight } from 'lucide-react'
+import { Wifi, Maximize2, Minimize2, Lock, ChevronRight } from 'lucide-react'
 import './SystemTray.css'
 
 const WIFI_KNOWN = [
@@ -7,7 +7,7 @@ const WIFI_KNOWN = [
   { id: 'cox', name: 'CoxWiFi', secured: false, connected: false },
 ]
 
-export default function SystemTray({ nightMode, onNightModeToggle, isCapturing, onScreenshot, onFullScreenToggle, isFullscreen }) {
+export default function SystemTray({ onFullScreenToggle, isFullscreen }) {
   const [showWifi, setShowWifi] = useState(false)
   const [wifiOn, setWifiOn] = useState(true)
   const [now, setNow] = useState(() => new Date())
@@ -27,9 +27,6 @@ export default function SystemTray({ nightMode, onNightModeToggle, isCapturing, 
 
   return (
     <div className="system-tray system-tray--mac">
-      <button type="button" className="system-tray__icon-btn" aria-label="Battery">
-        <Battery size={14} strokeWidth={2} />
-      </button>
       <div className="system-tray__dropdown-wrap">
         <button
           type="button"
@@ -84,24 +81,6 @@ export default function SystemTray({ nightMode, onNightModeToggle, isCapturing, 
           </>
         )}
       </div>
-      <button
-        type="button"
-        className={`system-tray__icon-btn system-tray__screenshot-btn ${isCapturing ? 'system-tray__screenshot-btn--active' : ''}`}
-        aria-label="Screenshot"
-        title="Screenshot"
-        onClick={onScreenshot}
-      >
-        <Circle size={12} fill={isCapturing ? '#ff3b30' : 'currentColor'} stroke="none" />
-      </button>
-      <button
-        type="button"
-        className="system-tray__icon-btn"
-        aria-label="Night mode"
-        onClick={onNightModeToggle}
-        title={nightMode ? 'Light mode' : 'Dark mode'}
-      >
-        <Moon size={14} strokeWidth={2} />
-      </button>
       {onFullScreenToggle && (
         <button
           type="button"
@@ -113,9 +92,6 @@ export default function SystemTray({ nightMode, onNightModeToggle, isCapturing, 
           {isFullscreen ? <Minimize2 size={14} strokeWidth={2} /> : <Maximize2 size={14} strokeWidth={2} />}
         </button>
       )}
-      <button type="button" className="system-tray__icon-btn" aria-label="Search">
-        <Search size={14} strokeWidth={2} />
-      </button>
       <span className="system-tray__clock system-tray__clock--plain" aria-live="polite">
         {clockStr}
       </span>

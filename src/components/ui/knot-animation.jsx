@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useLayoutEffect } from 'react'
 
 const W = 80
 const H = 40
@@ -30,8 +30,36 @@ const cross = (a, b) => ({
 
 export function KnotAnimation({ color = true, speedA = 0.04, speedB = 0.02 }) {
   const [frame, setFrame] = useState([])
+  const [scale, setScale] = useState(1)
+  const [natural, setNatural] = useState({ w: 80, h: 40 })
   const aRef = useRef(0)
   const bRef = useRef(0)
+  const outerRef = useRef(null)
+  const preRef = useRef(null)
+
+  useLayoutEffect(() => {
+    const outer = outerRef.current
+    if (!outer) return
+
+    const run = () => {
+      const pre = preRef.current
+      if (!pre) return
+      const pw = pre.offsetWidth
+      const ph = pre.offsetHeight
+      if (pw < 2 || ph < 2) return
+      setNatural({ w: pw, h: ph })
+      const s = Math.min(1, (outer.clientWidth * 0.96) / pw, (outer.clientHeight * 0.96) / ph)
+      setScale(Number.isFinite(s) && s > 0 ? s : 1)
+    }
+
+    const ro = new ResizeObserver(run)
+    ro.observe(outer)
+    const id = window.requestAnimationFrame(() => window.requestAnimationFrame(run))
+    return () => {
+      window.cancelAnimationFrame(id)
+      ro.disconnect()
+    }
+  }, [frame.length])
 
   useEffect(() => {
     const screen = Array(W * H).fill(' ')
@@ -136,5 +164,25 @@ export function KnotAnimation({ color = true, speedA = 0.04, speedB = 0.02 }) {
     return () => clearInterval(id)
   }, [color, speedA, speedB])
 
-  return <pre className="desktop-widgets__knot-pre">{frame}</pre>
+  return (
+    <div ref={outerRef} className="desktop-widgets__knot-scale-outer">
+      <div
+        className="desktop-widgets__knot-scale-holder"
+        style={{
+          width: natural.w * scale,
+          height: natural.h * scale,
+        }}
+      >
+        <pre
+          ref={preRef}
+          className="desktop-widgets__knot-pre"
+          style={{
+            transform: `translate(-50%, -50%) scale(${scale})`,
+          }}
+        >
+          {frame}
+        </pre>
+      </div>
+    </div>
+  )
 }

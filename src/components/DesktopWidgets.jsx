@@ -51,7 +51,7 @@ import { getDesktopIconRects } from '../lib/widgetOverlapGeometry'
 import {
   fetchWeatherImperial,
   buildWeatherNextHint,
-  formatSunriseSunsetLine,
+  formatSunriseSunsetCompact,
 } from '../lib/openWeather'
 import RetroCalendarPanel from './desktop/RetroCalendarPanel'
 import { DoItNowClockWidget } from './desktop/QuoteClockPanel'
@@ -142,41 +142,83 @@ const DEFAULT_LAYOUT = {
   photoC: { x: 860, y: 56, gridW: 8, gridH: 7 },
 }
 
-/** One dot per day: dim = elapsed, bright = remaining; footer year + days left. */
+const YEAR_WEEKS = 52
+
+/** 52 dots = weeks in the year; click footer left to toggle month mode (dots = days in month). */
 function YearProgressWidget({ now }) {
-  const { year, totalDays, dayOfYear, daysLeft } = useMemo(() => {
+  const [mode, setMode] = useState('year')
+
+  const yearMode = useMemo(() => {
     const y = now.getFullYear()
     const start = new Date(y, 0, 1)
     const end = new Date(y + 1, 0, 1)
     const total = Math.round((end - start) / 86400000)
     const dof = Math.min(total, Math.max(0, Math.floor((now - start) / 86400000)))
-    return { year: y, totalDays: total, dayOfYear: dof, daysLeft: total - dof }
+    const pastCompleteWeeks = Math.min(YEAR_WEEKS, Math.floor(dof / 7))
+    const weeksLeft = Math.max(0, YEAR_WEEKS - pastCompleteWeeks)
+    return { year: y, pastCompleteWeeks, weeksLeft }
   }, [now])
 
+  const monthMode = useMemo(() => {
+    const y = now.getFullYear()
+    const m = now.getMonth()
+    const daysInMonth = new Date(y, m + 1, 0).getDate()
+    const dayOfMonth = now.getDate()
+    const monthLabel = now.toLocaleString(undefined, { month: 'long' })
+    const pastDaysBeforeToday = dayOfMonth - 1
+    const daysLeft = Math.max(0, daysInMonth - dayOfMonth + 1)
+    return { daysInMonth, pastDaysBeforeToday, daysLeft, monthLabel }
+  }, [now])
+
+  const ariaLabel =
+    mode === 'year'
+      ? `Year ${yearMode.year}, ${yearMode.weeksLeft} weeks remaining`
+      : `${monthMode.monthLabel}, ${monthMode.daysLeft} days remaining in this month`
+
   return (
-    <div
-      className="desktop-widgets__year-widget desktop-widgets__year-widget--days"
-      role="img"
-      aria-label={`Year ${year}, ${daysLeft} days remaining in this year`}
-    >
+    <div className="desktop-widgets__year-widget" role="img" aria-label={ariaLabel}>
       <div className="desktop-widgets__year-dots-wrap">
-        <div className="desktop-widgets__year-dots-grid desktop-widgets__year-dots-grid--days" aria-hidden>
-          {Array.from({ length: totalDays }, (_, i) => (
-            <span
-              key={i}
-              className={
-                i < dayOfYear
-                  ? 'desktop-widgets__year-dot desktop-widgets__year-dot--past'
-                  : 'desktop-widgets__year-dot desktop-widgets__year-dot--left'
-              }
-            />
-          ))}
+        <div
+          className={
+            mode === 'year'
+              ? 'desktop-widgets__year-dots-grid desktop-widgets__year-dots-grid--weeks'
+              : 'desktop-widgets__year-dots-grid desktop-widgets__year-dots-grid--month'
+          }
+          aria-hidden
+        >
+          {mode === 'year'
+            ? Array.from({ length: YEAR_WEEKS }, (_, i) => (
+                <span
+                  key={i}
+                  className={
+                    i < yearMode.pastCompleteWeeks
+                      ? 'desktop-widgets__year-dot desktop-widgets__year-dot--past'
+                      : 'desktop-widgets__year-dot desktop-widgets__year-dot--left'
+                  }
+                />
+              ))
+            : Array.from({ length: monthMode.daysInMonth }, (_, i) => (
+                <span
+                  key={i}
+                  className={
+                    i < monthMode.pastDaysBeforeToday
+                      ? 'desktop-widgets__year-dot desktop-widgets__year-dot--past'
+                      : 'desktop-widgets__year-dot desktop-widgets__year-dot--left'
+                  }
+                />
+              ))}
         </div>
       </div>
       <div className="desktop-widgets__year-footer">
-        <span>{year}</span>
+        <button
+          type="button"
+          className="desktop-widgets__year-footer-toggle"
+          onClick={() => setMode((m) => (m === 'year' ? 'month' : 'year'))}
+        >
+          {mode === 'year' ? yearMode.year : monthMode.monthLabel}
+        </button>
         <span>
-          {daysLeft} days left
+          {mode === 'year' ? `${yearMode.weeksLeft} weeks left` : `${monthMode.daysLeft} days left`}
         </span>
       </div>
     </div>
@@ -752,10 +794,17 @@ export default function DesktopWidgets({
     return formatLocationLabel(geo || api || userLoc.label || '')
   }, [userLoc.status, userLoc.label, weather.locationLabel])
 
-  const weatherSunLine = useMemo(
-    () => (weather.status === 'ready' ? formatSunriseSunsetLine(weather.sunrise, weather.sunset) : ''),
+  const weatherSunCompact = useMemo(
+    () => (weather.status === 'ready' ? formatSunriseSunsetCompact(weather.sunrise, weather.sunset) : ''),
     [weather.status, weather.sunrise, weather.sunset],
   )
+
+  const weatherCurrentLabel = useMemo(() => {
+    if (weather.status !== 'ready') return '—'
+    const desc = (weather.description || '').trim()
+    if (desc) return desc.split(/\s+/)[0]
+    return (weather.weatherMain || '—').toString()
+  }, [weather.status, weather.description, weather.weatherMain])
 
   const cardClass = (id, extra) =>
     `desktop-widgets__card ${extra}${resizingWidgetId === id ? ' desktop-widgets__card--resizing' : ''}`.trim()
@@ -845,11 +894,6 @@ export default function DesktopWidgets({
                       : '—'}
                   </span>
                 </p>
-                {weatherSunLine ? (
-                  <p className="desktop-widgets__weather-compact__row desktop-widgets__weather-compact__row--body">
-                    <span className="desktop-widgets__weather-compact__grey">{weatherSunLine}</span>
-                  </p>
-                ) : null}
                 <p className="desktop-widgets__weather-compact__row desktop-widgets__weather-compact__row--icon">
                   <span className="desktop-widgets__weather-compact__icon">
                     <WeatherGlyph
@@ -858,20 +902,26 @@ export default function DesktopWidgets({
                       description={weather.description}
                     />
                   </span>
-                  <span className="desktop-widgets__weather-compact__white">
-                    {weatherNext.conditionWord}
+                  <span className="desktop-widgets__weather-compact__weather-primary">
+                    <span className="desktop-widgets__weather-compact__white">{weatherCurrentLabel}</span>
+                    {weatherSunCompact ? (
+                      <span className="desktop-widgets__weather-compact__grey desktop-widgets__weather-compact__sun-inline">
+                        {' '}
+                        {weatherSunCompact}
+                      </span>
+                    ) : null}
                   </span>
-                  <span className="desktop-widgets__weather-compact__grey"> next</span>
                 </p>
-                <p className="desktop-widgets__weather-compact__row desktop-widgets__weather-compact__row--body desktop-widgets__weather-compact__row--horizon">
-                  <span className="desktop-widgets__weather-compact__grey">{weatherNext.horizon}</span>
-                  {weather.sameConditionHint ? (
-                    <span className="desktop-widgets__weather-compact__grey">
-                      {' · '}
-                      {weather.sameConditionHint}
-                    </span>
-                  ) : null}
+                <p className="desktop-widgets__weather-compact__row desktop-widgets__weather-compact__row--body">
+                  <span className="desktop-widgets__weather-compact__grey">Next </span>
+                  <span className="desktop-widgets__weather-compact__white">{weatherNext.conditionWord}</span>
+                  <span className="desktop-widgets__weather-compact__grey"> · {weatherNext.horizon}</span>
                 </p>
+                {weather.sameConditionHint ? (
+                  <p className="desktop-widgets__weather-compact__row desktop-widgets__weather-compact__row--body desktop-widgets__weather-compact__row--horizon">
+                    <span className="desktop-widgets__weather-compact__grey">{weather.sameConditionHint}</span>
+                  </p>
+                ) : null}
               </div>
             ) : null}
           </div>

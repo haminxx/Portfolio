@@ -52,10 +52,6 @@ export default function MenuBar({
   onTurnOff,
   onRestart,
   onSleep,
-  nightMode,
-  onNightModeToggle,
-  isCapturing,
-  onScreenshot,
   onNewTab,
   onCloseTab,
   onReload,
@@ -220,10 +216,6 @@ export default function MenuBar({
         </div>
         <div className="menu-bar__right menu-bar__invert">
           <SystemTray
-            nightMode={nightMode ?? true}
-            onNightModeToggle={onNightModeToggle ?? (() => {})}
-            isCapturing={isCapturing ?? false}
-            onScreenshot={onScreenshot ?? (() => {})}
             onFullScreenToggle={onFullScreenToggle}
             isFullscreen={isFullscreen ?? false}
           />

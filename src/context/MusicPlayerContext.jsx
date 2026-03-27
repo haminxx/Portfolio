@@ -74,13 +74,6 @@ export function MusicPlayerProvider({ children }) {
   const providerMountTimeRef = useRef(Date.now())
   const allowEarlyPlayRef = useRef(false)
 
-  useEffect(() => {
-    const t = window.setTimeout(() => {
-      allowEarlyPlayRef.current = true
-    }, 2000)
-    return () => window.clearTimeout(t)
-  }, [])
-
   const currentTrack = queue[currentIndex] ?? null
   queueRef.current = queue
   currentIndexRef.current = currentIndex
@@ -119,6 +112,15 @@ export function MusicPlayerProvider({ children }) {
     setTimeout(tryPlay, 80)
     setTimeout(tryPlay, 320)
   }, [])
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      allowEarlyPlayRef.current = true
+      const p = playerRef.current
+      if (p?.playVideo) kickPlayback(p)
+    }, 2000)
+    return () => window.clearTimeout(t)
+  }, [kickPlayback])
 
   const kickPlaybackMaybeDelayed = useCallback(
     (p) => {
