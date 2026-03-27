@@ -135,13 +135,13 @@ export default function ChromeLanding({ onReboot }) {
     const hasDadnme = next.some((i) => i.type === 'shortcut' && i.appKey === 'dadnme')
     const hasTetris = next.some((i) => i.type === 'shortcut' && i.appKey === 'tetris')
     if (!hasDoom) {
-      next = [...next, { id: 'doom-shortcut', type: 'shortcut', name: 'DOOM', appKey: 'doom', parentId: null, x: 24, y: 40 }]
+      next = [...next, { id: 'doom-shortcut', type: 'shortcut', name: 'DOOM', appKey: 'doom', parentId: null, x: 24, y: 520 }]
     }
     if (!hasDadnme) {
-      next = [...next, { id: 'dadnme-shortcut', type: 'shortcut', name: "Dad 'n Me", appKey: 'dadnme', parentId: null, x: 120, y: 40 }]
+      next = [...next, { id: 'dadnme-shortcut', type: 'shortcut', name: "Dad 'n Me", appKey: 'dadnme', parentId: null, x: 120, y: 520 }]
     }
     if (!hasTetris) {
-      next = [...next, { id: 'tetris-shortcut', type: 'shortcut', name: 'Tetris', appKey: 'tetris', parentId: null, x: 216, y: 40 }]
+      next = [...next, { id: 'tetris-shortcut', type: 'shortcut', name: 'Tetris', appKey: 'tetris', parentId: null, x: 216, y: 520 }]
     }
     if (!hasDoom || !hasDadnme || !hasTetris || removedFolder) {
       saveDesktopItems(next)
@@ -352,6 +352,36 @@ export default function ChromeLanding({ onReboot }) {
     document.addEventListener('fullscreenchange', handler)
     handler()
     return () => document.removeEventListener('fullscreenchange', handler)
+  }, [])
+
+  /** Request fullscreen on load; browsers often require a gesture, so retry after first pointer. */
+  useEffect(() => {
+    const el = document.documentElement
+    const requestFs = () => {
+      if (document.fullscreenElement) return
+      try {
+        const p = el.requestFullscreen?.()
+        if (p && typeof p.catch === 'function') p.catch(() => {})
+      } catch {
+        // ignore
+      }
+      try {
+        if (typeof el.webkitRequestFullscreen === 'function') el.webkitRequestFullscreen()
+      } catch {
+        // ignore
+      }
+    }
+    requestFs()
+    const t = window.setTimeout(requestFs, 400)
+    const onFirstPointer = () => {
+      requestFs()
+      window.removeEventListener('pointerdown', onFirstPointer)
+    }
+    window.addEventListener('pointerdown', onFirstPointer, { passive: true })
+    return () => {
+      window.clearTimeout(t)
+      window.removeEventListener('pointerdown', onFirstPointer)
+    }
   }, [])
 
   const handleFullScreenToggle = useCallback(() => {

@@ -20,16 +20,16 @@ export const STATIC_WIDGET_IDS = [
 /** Widgets whose layout gridW/gridH are forced equal (square footprint). */
 export const SQUARE_WIDGET_IDS = ['weather', 'calendar']
 
-/** Default pixel footprints (snapped to CELL grid). Extra-compact to match the hero screenshot proportions. */
+/** Default pixel footprints (snapped to CELL grid). Matches hero reference: compact left cluster, wider music row. */
 export const STATIC_SIZES = {
   calendar: { w: 160, h: 160 },
   clock: { w: 280, h: 120 },
   weather: { w: 160, h: 160 },
-  music: { w: 200, h: 120 },
-  bgControls: { w: 160, h: 120 },
-  notesChecklist: { w: 160, h: 160 },
+  music: { w: 280, h: 120 },
+  bgControls: { w: 160, h: 160 },
+  notesChecklist: { w: 200, h: 160 },
   knotWidget: { w: 120, h: 120 },
-  yearProgress: { w: 200, h: 120 },
+  yearProgress: { w: 240, h: 120 },
 }
 
 /** Widgets that always use default footprint (no corner resize). */
