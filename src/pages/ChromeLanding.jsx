@@ -5,13 +5,13 @@ import ChromeWindow from '../components/ChromeWindow'
 import ChromeHome from '../components/ChromeHome'
 import ChromeContextMenu from '../components/ChromeContextMenu'
 import Desktop from '../components/Desktop'
+import DesktopFolderSheet from '../components/DesktopFolderSheet'
 import {
   LazyInstagramWindow,
   LazyAboutPage,
   LazyProjectPage,
   LazyContactPage,
   LazySocialProfileWindow,
-  LazyFolderWindow,
   LazyMapWindow,
   LazyDoomWindow,
   LazyDadNMeWindow,
@@ -57,6 +57,8 @@ const APP_ICONS = {
 const HOME_TAB = { id: 'home', title: 'Home', type: 'home' }
 const DESKTOP_ITEMS_KEY = 'desktop-items'
 const DOCK_ORDER_KEY = 'dock-order'
+const GLASS_FOLDER_ID = 'seed-desktop-glass-folder'
+const GLASS_FOLDER_FLAG = 'portfolio-glass-folder-v1'
 
 function loadDesktopItems() {
   try {
@@ -141,7 +143,28 @@ export default function ChromeLanding({ onReboot }) {
     if (!hasTetris) {
       next = [...next, { id: 'tetris-shortcut', type: 'shortcut', name: 'Tetris', appKey: 'tetris', parentId: null, x: 216, y: 40 }]
     }
-    if (!hasDoom || !hasDadnme || !hasTetris) saveDesktopItems(next)
+    if (!next.some((i) => i.id === GLASS_FOLDER_ID) && !localStorage.getItem(GLASS_FOLDER_FLAG)) {
+      next = [
+        ...next,
+        { id: GLASS_FOLDER_ID, type: 'folder', name: 'Folder', parentId: null, x: 40, y: 420 },
+      ]
+      try {
+        localStorage.setItem(GLASS_FOLDER_FLAG, '1')
+      } catch {
+        // ignore
+      }
+    } else if (next.some((i) => i.id === GLASS_FOLDER_ID)) {
+      try {
+        localStorage.setItem(GLASS_FOLDER_FLAG, '1')
+      } catch {
+        // ignore
+      }
+    }
+    const folderAdded =
+      !loaded.some((i) => i.id === GLASS_FOLDER_ID) && next.some((i) => i.id === GLASS_FOLDER_ID)
+    if (!hasDoom || !hasDadnme || !hasTetris || folderAdded) {
+      saveDesktopItems(next)
+    }
     return next
   })
   const [openFolderId, setOpenFolderId] = useState(null)
@@ -433,16 +456,14 @@ export default function ChromeLanding({ onReboot }) {
         openAppWindows={openAppWindows}
       />
       {openFolderId && (
-        <Suspense fallback={null}>
-          <LazyFolderWindow
-            folderId={openFolderId}
-            folderName={desktopItems.find((i) => i.id === openFolderId)?.name ?? 'Folder'}
-            desktopItems={desktopItems}
-            onItemsChange={setDesktopItems}
-            onClose={() => setOpenFolderId(null)}
-            onOpenFolder={handleOpenFolder}
-          />
-        </Suspense>
+        <DesktopFolderSheet
+          folderId={openFolderId}
+          folderName={desktopItems.find((i) => i.id === openFolderId)?.name ?? 'Folder'}
+          desktopItems={desktopItems}
+          onClose={() => setOpenFolderId(null)}
+          onOpenFolder={handleOpenFolder}
+          onOpenApp={openAppTab}
+        />
       )}
       {[
         ...openAppWindows

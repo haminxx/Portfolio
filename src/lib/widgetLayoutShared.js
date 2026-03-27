@@ -13,15 +13,19 @@ export const STATIC_WIDGET_IDS = [
   'music',
   'bgControls',
   'notesChecklist',
+  'knotWidget',
+  'yearProgress',
 ]
 
 export const STATIC_SIZES = {
-  calendar: { w: 320, h: 180 },
+  calendar: { w: 340, h: 200 },
   clock: { w: 440, h: 200 },
-  weather: { w: 280, h: 280 },
+  weather: { w: 520, h: 200 },
   music: { w: 312, h: 136 },
   bgControls: { w: 160, h: 160 },
   notesChecklist: { w: 200, h: 200 },
+  knotWidget: { w: 200, h: 160 },
+  yearProgress: { w: 300, h: 128 },
 }
 
 /** Widgets that always use default footprint (no corner resize). */

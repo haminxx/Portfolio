@@ -21,10 +21,12 @@ const LAYOUT_KEY = 'desktop-widget-layout'
 const DEFAULT_LAYOUT = {
   calendar: { x: 20, y: 56, ...defaultStaticGrid('calendar') },
   clock: { x: 240, y: 56, ...defaultStaticGrid('clock') },
-  weather: { x: 20, y: 300, ...defaultStaticGrid('weather') },
+  weather: { x: 20, y: 280, ...defaultStaticGrid('weather') },
   music: { x: 240, y: 300, ...defaultStaticGrid('music') },
   bgControls: { x: 1000, y: 420, ...defaultStaticGrid('bgControls') },
   notesChecklist: { x: 480, y: 300, ...defaultStaticGrid('notesChecklist') },
+  knotWidget: { x: 700, y: 56, ...defaultStaticGrid('knotWidget') },
+  yearProgress: { x: 700, y: 240, ...defaultStaticGrid('yearProgress') },
   photoA: { x: 24, y: 260, gridW: 8, gridH: 12 },
   photoB: { x: 400, y: 56, gridW: 6, gridH: 8 },
   photoC: { x: 860, y: 56, gridW: 8, gridH: 7 },

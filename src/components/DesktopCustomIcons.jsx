@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
-import { Folder, FileText, Gamepad2 } from 'lucide-react'
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
+import { FileText, Gamepad2 } from 'lucide-react'
+import { DesktopIconGlyph } from './DesktopIconGlyph'
 import './DesktopCustomIcons.css'
 import {
   DESKTOP_ICON_WIDTH as ICON_WIDTH,
@@ -26,6 +27,17 @@ export default function DesktopCustomIcons({
   const [dropTargetId, setDropTargetId] = useState(null)
   const [draggingIds, setDraggingIds] = useState(() => [])
   const rootItems = desktopItems.filter((i) => !i.parentId)
+
+  const childrenByParent = useMemo(() => {
+    const m = new Map()
+    for (const i of desktopItems) {
+      if (!i.parentId) continue
+      const list = m.get(i.parentId)
+      if (list) list.push(i)
+      else m.set(i.parentId, [i])
+    }
+    return m
+  }, [desktopItems])
 
   const desktopItemsRef = useRef(desktopItems)
   useEffect(() => {
@@ -280,10 +292,9 @@ export default function DesktopCustomIcons({
     <div className="desktop-custom-icons">
       {rootItems.map((item) => {
         const isFolder = item.type === 'folder'
-        const isShortcut = item.type === 'shortcut'
-        const Icon = isFolder ? Folder : isShortcut ? Gamepad2 : FileText
         const isDropTarget = dropTargetId === item.id
         const isDragging = draggingIds.includes(item.id)
+        const folderKids = isFolder ? (childrenByParent.get(item.id) ?? []).slice(0, 3) : []
 
         return (
           <div
@@ -297,29 +308,26 @@ export default function DesktopCustomIcons({
             onContextMenu={(e) => onIconContextMenu?.(e, item)}
           >
             <span className="desktop-custom-icons__icon">
-              {isShortcut && item.appKey === 'doom' ? (
-                <img
-                  src="/dock-icons/doom.png"
-                  alt="DOOM"
-                  className="desktop-custom-icons__icon-img"
-                  draggable={false}
-                />
-              ) : isShortcut && item.appKey === 'dadnme' ? (
-                <img
-                  src="/dock-icons/dadnme.png"
-                  alt="Dad n Me"
-                  className="desktop-custom-icons__icon-img desktop-custom-icons__icon-img--rounded-square"
-                  draggable={false}
-                />
-              ) : isShortcut && item.appKey === 'tetris' ? (
-                <img
-                  src="/dock-icons/tetris.png"
-                  alt="Tetris"
-                  className="desktop-custom-icons__icon-img desktop-custom-icons__icon-img--rounded-square"
-                  draggable={false}
-                />
+              {isFolder ? (
+                <span className="desktop-glass-folder" aria-hidden>
+                  <span className="desktop-glass-folder__back" />
+                  <span className="desktop-glass-folder__papers">
+                    {[0, 1, 2].map((slot) => (
+                      <span key={slot} className={`desktop-glass-folder__paper desktop-glass-folder__paper--${slot}`}>
+                        {folderKids[slot] ? (
+                          <span className="desktop-glass-folder__paper-icon">
+                            <DesktopIconGlyph item={folderKids[slot]} size={20} />
+                          </span>
+                        ) : (
+                          <span className="desktop-glass-folder__paper-lines" />
+                        )}
+                      </span>
+                    ))}
+                  </span>
+                  <span className="desktop-glass-folder__glass" />
+                </span>
               ) : (
-                <Icon size={40} strokeWidth={1.5} />
+                <DesktopIconGlyph item={item} size={40} />
               )}
             </span>
             {renamingId === item.id ? (

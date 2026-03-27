@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef, useId, useLayoutEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react'
 import {
   Play,
   Pause,
@@ -40,6 +40,9 @@ import {
 import PhotoWidgetImportModal from './PhotoWidgetImportModal'
 import { DESKTOP_SAFE_TOP } from '../desktopConstants'
 import { getDesktopIconRects } from '../lib/widgetOverlapGeometry'
+import { fetchWeatherImperial } from '../lib/openWeather'
+import DottedGradientCloud from './DottedGradientCloud'
+import { KnotAnimation } from './ui/knot-animation'
 import './DesktopWidgets.css'
 
 const SD_LAT = 32.72
@@ -56,41 +59,6 @@ function buildMonthCells(year, monthIndex) {
   for (let d = 1; d <= daysInMonth; d += 1) cells.push(d)
   while (cells.length % 7 !== 0) cells.push(null)
   return cells
-}
-
-/** Halftone-style cloud for square weather widget (SVG pattern + vertical fade). */
-function HalftoneCloudGraphic({ className = '' }) {
-  const uid = useId().replace(/:/g, '')
-  const pid = `htp-${uid}`
-  const gid = `htg-${uid}`
-  const mid = `htm-${uid}`
-  const clipId = `htc-${uid}`
-  return (
-    <svg className={className} viewBox="0 0 200 120" aria-hidden>
-      <defs>
-        <pattern id={pid} width="6" height="6" patternUnits="userSpaceOnUse">
-          <circle cx="3" cy="3" r="1.05" fill="#ffffff" />
-        </pattern>
-        <linearGradient id={gid} x1="0" y1="120" x2="0" y2="0" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
-          <stop offset="45%" stopColor="#ffffff" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.06" />
-        </linearGradient>
-        <mask id={mid}>
-          <rect width="200" height="120" fill={`url(#${gid})`} />
-        </mask>
-        <clipPath id={clipId}>
-          <circle cx="72" cy="68" r="30" />
-          <circle cx="108" cy="64" r="34" />
-          <circle cx="140" cy="70" r="26" />
-          <rect x="48" y="66" width="104" height="36" rx="18" />
-        </clipPath>
-      </defs>
-      <g clipPath={`url(#${clipId})`}>
-        <rect width="200" height="120" fill={`url(#${pid})`} mask={`url(#${mid})`} />
-      </g>
-    </svg>
-  )
 }
 
 /** Slate + cream calendar; current month only (from `now`). Right column height tracks left column. */
@@ -231,21 +199,6 @@ function QuoteTimeWidget({ date }) {
   )
 }
 
-function buildPrecipHeadline(hourly) {
-  if (!hourly?.length) {
-    return { textBefore: 'Loading forecast…', bold: '', textAfter: '' }
-  }
-  const p0 = typeof hourly[0]?.precipProb === 'number' ? hourly[0].precipProb : 0
-  const p1 = typeof hourly[1]?.precipProb === 'number' ? hourly[1].precipProb : 0
-  if (p0 < 18 && p1 < 18) {
-    return { textBefore: 'No rain is expected in the next ', bold: '2 hours', textAfter: '.' }
-  }
-  if (p0 >= 45 || p1 >= 45) {
-    return { textBefore: 'Rain likely in the next ', bold: '2 hours', textAfter: '.' }
-  }
-  return { textBefore: 'Stay aware — chance of rain in the next ', bold: 'few hours', textAfter: '.' }
-}
-
 function formatTrackTime(sec) {
   if (sec == null || !Number.isFinite(sec) || sec < 0) return '0:00'
   const m = Math.floor(sec / 60)
@@ -256,13 +209,60 @@ function formatTrackTime(sec) {
 const DEFAULT_LAYOUT = {
   calendar: { x: 20, y: 56, ...defaultStaticGrid('calendar') },
   clock: { x: 240, y: 56, ...defaultStaticGrid('clock') },
-  weather: { x: 20, y: 300, ...defaultStaticGrid('weather') },
+  weather: { x: 20, y: 280, ...defaultStaticGrid('weather') },
   music: { x: 240, y: 300, ...defaultStaticGrid('music') },
   bgControls: { x: 1000, y: 420, ...defaultStaticGrid('bgControls') },
   notesChecklist: { x: 480, y: 300, ...defaultStaticGrid('notesChecklist') },
+  knotWidget: { x: 700, y: 56, ...defaultStaticGrid('knotWidget') },
+  yearProgress: { x: 700, y: 240, ...defaultStaticGrid('yearProgress') },
   photoA: { x: 24, y: 260, gridW: 8, gridH: 12 },
   photoB: { x: 400, y: 56, gridW: 6, gridH: 8 },
   photoC: { x: 860, y: 56, gridW: 8, gridH: 7 },
+}
+
+/** 52 dots = weeks; click toggles calendar year vs graduation timeline (Oct 2024 → Oct 2026). */
+function YearProgressWidget({ now }) {
+  const [mode, setMode] = useState('year')
+  const { filled, pct, label } = useMemo(() => {
+    if (mode === 'grad') {
+      const start = new Date(2024, 9, 1).getTime()
+      const end = new Date(2026, 9, 1).getTime()
+      const t = Math.max(0, Math.min(1, (now.getTime() - start) / (end - start)))
+      return {
+        filled: Math.min(52, Math.round(t * 52)),
+        pct: Math.round(t * 100),
+        label: 'Graduation',
+      }
+    }
+    const y = now.getFullYear()
+    const start = new Date(y, 0, 1).getTime()
+    const end = new Date(y + 1, 0, 1).getTime()
+    const t = Math.max(0, Math.min(1, (now.getTime() - start) / (end - start)))
+    return {
+      filled: Math.min(52, Math.round(t * 52)),
+      pct: Math.round(t * 100),
+      label: 'Year',
+    }
+  }, [now, mode])
+
+  return (
+    <button
+      type="button"
+      className="desktop-widgets__year-widget"
+      onClick={() => setMode((m) => (m === 'year' ? 'grad' : 'year'))}
+      aria-label={`${label} progress ${pct} percent, click to switch view`}
+    >
+      <div className="desktop-widgets__year-widget-head">
+        <span className="desktop-widgets__year-widget-title">{label}</span>
+        <span className="desktop-widgets__year-widget-pct">{pct}%</span>
+      </div>
+      <div className="desktop-widgets__year-dots-grid" aria-hidden>
+        {Array.from({ length: 52 }, (_, i) => (
+          <span key={i} className={i < filled ? 'desktop-widgets__year-dot desktop-widgets__year-dot--on' : 'desktop-widgets__year-dot'} />
+        ))}
+      </div>
+    </button>
+  )
 }
 
 function rectsOverlap(a, b) {
@@ -353,24 +353,6 @@ function saveLayout(layout) {
   }
 }
 
-function weatherCodeToShortLabel(code) {
-  if (code == null || Number.isNaN(code)) return 'Weather'
-  const c = code
-  if (c === 0) return 'Clear'
-  if (c === 1 || c === 2) return 'Mainly clear'
-  if (c === 3) return 'Overcast'
-  if (c === 45 || c === 48) return 'Fog'
-  if (c >= 51 && c <= 55) return 'Drizzle'
-  if (c === 56 || c === 57) return 'Freezing drizzle'
-  if (c >= 61 && c <= 65) return 'Rain'
-  if (c === 66 || c === 67) return 'Freezing rain'
-  if (c >= 71 && c <= 77) return 'Snow'
-  if (c >= 80 && c <= 82) return 'Rain showers'
-  if (c >= 85 && c <= 86) return 'Snow showers'
-  if (c >= 95) return 'Thunderstorm'
-  return 'Weather'
-}
-
 /** Defaults match desktop hero layout: helmet (large), motion bike (tall), WORK HARD (square). Indices 0-based into gallery manifest. */
 const DEFAULT_PHOTO_WIDGET = {
   photoA: { galleryIndex: 34, cropPadding: 0 },
@@ -394,11 +376,13 @@ export default function DesktopWidgets({
   const [now, setNow] = useState(() => new Date())
   const [weather, setWeather] = useState({
     status: 'idle',
-    current: null,
+    temp: null,
+    feelsLike: null,
+    description: '',
+    locationLabel: '',
     hourly: [],
-    dailyMax: null,
-    dailyMin: null,
     error: null,
+    source: '',
   })
   const [userLoc, setUserLoc] = useState({
     status: 'pending',
@@ -570,65 +554,27 @@ export default function DesktopWidgets({
   const loadWeather = useCallback(async (lat, lon) => {
     setWeather((w) => ({ ...w, status: 'loading', error: null }))
     try {
-      const url = new URL('https://api.open-meteo.com/v1/forecast')
-      url.searchParams.set('latitude', String(lat))
-      url.searchParams.set('longitude', String(lon))
-      url.searchParams.set('current', 'temperature_2m,weather_code')
-      url.searchParams.set('hourly', 'temperature_2m,weather_code,precipitation_probability')
-      url.searchParams.set('daily', 'temperature_2m_max,temperature_2m_min')
-      url.searchParams.set('forecast_days', '2')
-      url.searchParams.set('timezone', 'auto')
-      const res = await fetch(url.toString())
-      if (!res.ok) throw new Error('forecast failed')
-      const data = await res.json()
-      const cur = data.current
-      const temp = cur?.temperature_2m
-      const code = cur?.weather_code ?? cur?.weathercode
-      if (temp == null && code == null) throw new Error('no current data')
-
-      const hourlyTimes = data.hourly?.time ?? []
-      const hourlyTemp = data.hourly?.temperature_2m ?? []
-      const hourlyCode = data.hourly?.weather_code ?? []
-      const hourlyPrecipProb = data.hourly?.precipitation_probability ?? []
-      const curTime = cur?.time
-      let startIdx = 0
-      if (hourlyTimes.length) {
-        if (curTime) {
-          const at = hourlyTimes.findIndex((t) => t >= curTime)
-          startIdx = at >= 0 ? at : Math.max(0, hourlyTimes.length - 6)
-        }
-      }
-      const hourly = []
-      for (let i = 0; i < 6; i++) {
-        const j = startIdx + i
-        if (j >= hourlyTimes.length) break
-        hourly.push({
-          time: hourlyTimes[j],
-          temp: hourlyTemp[j],
-          code: hourlyCode[j],
-          precipProb: hourlyPrecipProb[j] ?? null,
-        })
-      }
-
-      const dailyMax = data.daily?.temperature_2m_max?.[0] ?? null
-      const dailyMin = data.daily?.temperature_2m_min?.[0] ?? null
-
+      const data = await fetchWeatherImperial(lat, lon)
       setWeather({
         status: 'ready',
-        current: { temp, code },
-        hourly,
-        dailyMax,
-        dailyMin,
+        temp: data.temp,
+        feelsLike: data.feelsLike,
+        description: data.description,
+        locationLabel: data.locationLabel,
+        hourly: data.hourly,
         error: null,
+        source: data.source,
       })
     } catch (e) {
       setWeather({
         status: 'error',
-        current: null,
+        temp: null,
+        feelsLike: null,
+        description: '',
+        locationLabel: '',
         hourly: [],
-        dailyMax: null,
-        dailyMin: null,
         error: e?.message || 'unavailable',
+        source: '',
       })
     }
   }, [])
@@ -916,68 +862,70 @@ export default function DesktopWidgets({
         className={cardClass('weather', 'desktop-widgets__card--weather desktop-widgets__card--has-drag-strip')}
         style={cardStyle('weather')}
       >
-        <div className="desktop-widgets__glass-chrome desktop-widgets__weather-square-wrap">
+        <div className="desktop-widgets__weather-landscape">
           {weather.status === 'loading' && (
-            <div className="desktop-widgets__weather-square desktop-widgets__weather-square--loading">
-              <p className="desktop-widgets__weather-square__status">Loading…</p>
-            </div>
+            <p className="desktop-widgets__weather-landscape__status">Loading weather…</p>
           )}
           {weather.status === 'error' && (
-            <div className="desktop-widgets__weather-square desktop-widgets__weather-square--loading">
-              <p className="desktop-widgets__weather-square__status">{weather.error}</p>
+            <div className="desktop-widgets__weather-landscape__status-wrap">
+              <p className="desktop-widgets__weather-landscape__status">{weather.error}</p>
+              <p className="desktop-widgets__weather-landscape__hint">
+                Add VITE_OPENWEATHER_API_KEY for OpenWeather, or allow location for Open-Meteo fallback.
+              </p>
             </div>
           )}
-          {weather.status === 'ready' && weather.current ? (
-            <div className="desktop-widgets__weather-square">
-              <div className="desktop-widgets__weather-square__header">
-                <span className="desktop-widgets__weather-square__temp-now">
-                  {weather.current.temp != null && Number.isFinite(weather.current.temp)
-                    ? Math.round(weather.current.temp)
-                    : '—'}
-                  °
-                </span>
-                <p className="desktop-widgets__weather-square__blurb">
-                  {(() => {
-                    const h = buildPrecipHeadline(weather.hourly)
-                    return (
-                      <>
-                        {h.textBefore}
-                        {h.bold ? <strong>{h.bold}</strong> : null}
-                        {h.textAfter}
-                      </>
-                    )
-                  })()}
-                </p>
-              </div>
-              <div className="desktop-widgets__weather-square__graphic">
-                <HalftoneCloudGraphic className="desktop-widgets__weather-square__cloud" />
-              </div>
-              {weather.hourly?.length > 0 ? (
-                <div className="desktop-widgets__weather-square__hourly">
-                  {weather.hourly.slice(0, 4).map((slot, idx) => {
-                    const t = slot.time ? new Date(slot.time) : null
-                    const timeLabel = t
-                      ? t.toLocaleTimeString('en-GB', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: false,
-                        })
-                      : '—'
-                    return (
-                      <div
-                        key={slot.time ?? idx}
-                        className={`desktop-widgets__weather-square__hour-col${idx < 3 ? ' desktop-widgets__weather-square__hour-col--divider' : ''}`}
-                      >
-                        <span className="desktop-widgets__weather-square__hour-time">{timeLabel}</span>
-                        <span className="desktop-widgets__weather-square__hour-temp">
-                          {slot.temp != null && Number.isFinite(slot.temp) ? `${Math.round(slot.temp)}°` : '—'}
-                        </span>
-                      </div>
-                    )
-                  })}
+          {weather.status === 'ready' ? (
+            <>
+              <div className="desktop-widgets__weather-landscape__grid">
+                <div className="desktop-widgets__weather-landscape__temp-col">
+                  <span className="desktop-widgets__weather-landscape__temp-big">
+                    {weather.temp != null && Number.isFinite(weather.temp) ? Math.round(weather.temp) : '—'}°F
+                  </span>
                 </div>
-              ) : null}
-            </div>
+                <div className="desktop-widgets__weather-landscape__cloud-col">
+                  <DottedGradientCloud className="desktop-widgets__weather-landscape__cloud" />
+                </div>
+                <div className="desktop-widgets__weather-landscape__meta-col">
+                  <p className="desktop-widgets__weather-landscape__line">
+                    <span className="desktop-widgets__weather-landscape__muted">now in </span>
+                    <span className="desktop-widgets__weather-landscape__strong">
+                      {weather.locationLabel || userLoc.label || 'Local'}
+                    </span>
+                  </p>
+                  <p className="desktop-widgets__weather-landscape__line">
+                    <span className="desktop-widgets__weather-landscape__muted">feels like </span>
+                    <span className="desktop-widgets__weather-landscape__strong">
+                      {weather.feelsLike != null && Number.isFinite(weather.feelsLike)
+                        ? `${Math.round(weather.feelsLike)}°F`
+                        : '—'}
+                    </span>
+                  </p>
+                  <p className="desktop-widgets__weather-landscape__desc">{weather.description}</p>
+                  {weather.hourly?.length > 0 ? (
+                    <ul className="desktop-widgets__weather-landscape__hourly">
+                      {weather.hourly.slice(0, 6).map((slot, idx) => {
+                        const t = slot.time ? new Date(slot.time) : null
+                        const timeLabel = t
+                          ? t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+                          : '—'
+                        return (
+                          <li key={slot.time ?? idx} className="desktop-widgets__weather-landscape__hour-row">
+                            <span className="desktop-widgets__weather-landscape__hour-t">{timeLabel}</span>
+                            <span className="desktop-widgets__weather-landscape__hour-v">
+                              {slot.temp != null && Number.isFinite(slot.temp) ? `${Math.round(slot.temp)}°F` : '—'}
+                            </span>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  ) : null}
+                </div>
+              </div>
+              <div className="desktop-widgets__weather-landscape__marks">
+                <span>Created by Christian Lee</span>
+                <span>Portfolio Weather Widget</span>
+              </div>
+            </>
           ) : null}
         </div>
         <button
@@ -1233,12 +1181,56 @@ export default function DesktopWidgets({
         />
       </div>
 
+      <div
+        className={cardClass('knotWidget', 'desktop-widgets__card--knot desktop-widgets__card--has-drag-strip')}
+        style={cardStyle('knotWidget')}
+      >
+        <div className="desktop-widgets__knot-shell">
+          <KnotAnimation color speedA={0.045} speedB={0.022} />
+        </div>
+        <button
+          type="button"
+          className="desktop-widgets__drag-strip"
+          aria-label="Move knot widget"
+          onPointerDown={(e) => handleGripPointerDown(e, 'knotWidget')}
+        >
+          <GripVertical size={14} strokeWidth={2} />
+        </button>
+        <button
+          type="button"
+          className="desktop-widgets__widget-resize-handle"
+          aria-label="Resize knot widget"
+          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'knotWidget')}
+        />
+      </div>
+
+      <div
+        className={cardClass('yearProgress', 'desktop-widgets__card--year desktop-widgets__card--has-drag-strip')}
+        style={cardStyle('yearProgress')}
+      >
+        <YearProgressWidget now={now} />
+        <button
+          type="button"
+          className="desktop-widgets__drag-strip"
+          aria-label="Move year progress widget"
+          onPointerDown={(e) => handleGripPointerDown(e, 'yearProgress')}
+        >
+          <GripVertical size={14} strokeWidth={2} />
+        </button>
+        <button
+          type="button"
+          className="desktop-widgets__widget-resize-handle"
+          aria-label="Resize year progress widget"
+          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'yearProgress')}
+        />
+      </div>
+
       {photoIds.map((pid) => {
         const pdata = photoData[pid]
         return (
           <div
             key={pid}
-            className={cardClass(pid, 'desktop-widgets__card--photo desktop-widgets__card--has-drag-strip')}
+            className={cardClass(pid, 'desktop-widgets__card--photo')}
             style={cardStyle(pid)}
           >
             <div className="desktop-widgets__photo-body">
@@ -1258,6 +1250,14 @@ export default function DesktopWidgets({
               <div className="desktop-widgets__photo-overlay desktop-widgets__blend">
                 <button
                   type="button"
+                  className="desktop-widgets__grip desktop-widgets__photo-drag-grip"
+                  aria-label={`Move ${pid} widget`}
+                  onPointerDown={(e) => handleGripPointerDown(e, pid)}
+                >
+                  <GripVertical size={14} strokeWidth={2} />
+                </button>
+                <button
+                  type="button"
                   className="desktop-widgets__sync-trigger"
                   aria-label="Import from Photos gallery"
                   onPointerDown={(e) => e.stopPropagation()}
@@ -1272,15 +1272,7 @@ export default function DesktopWidgets({
             </div>
             <button
               type="button"
-              className="desktop-widgets__drag-strip"
-              aria-label={`Move ${pid} widget`}
-              onPointerDown={(e) => handleGripPointerDown(e, pid)}
-            >
-              <GripVertical size={14} strokeWidth={2} />
-            </button>
-            <button
-              type="button"
-              className="desktop-widgets__widget-resize-handle"
+              className="desktop-widgets__widget-resize-handle desktop-widgets__photo-resize-handle"
               aria-label="Resize photo widget"
               onPointerDown={(e) => handleWidgetResizePointerDown(e, pid)}
             />
