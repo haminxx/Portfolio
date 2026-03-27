@@ -59,7 +59,7 @@ import './DesktopWidgets.css'
 
 const SD_LAT = 32.72
 const SD_LON = -117.16
-const LAYOUT_KEY = 'desktop-widget-layout-v3'
+const LAYOUT_KEY = 'desktop-widget-layout-v4'
 
 function formatLocationLabel(raw) {
   if (!raw || typeof raw !== 'string') return 'Local'
@@ -127,19 +127,27 @@ function formatTrackTime(sec) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-/** Hero desktop: clock + calendar (left column), weather + knot; tall photo left; photos + stack right; year bottom-right. Uses CELL from layout for stacking math. */
+/**
+ * Hero desktop (compact): left column clock → calendar; weather + knot beside calendar; tall photo under left stack.
+ * Right: two square photos, then music → notes + color wheel → year dots. Positions derived from CELL and default grids.
+ */
+const RX = 960
 const DEFAULT_LAYOUT = {
   clock: { x: 20, y: 56, ...defaultStaticGrid('clock') },
-  calendar: { x: 20, y: 56 + 5 * CELL, ...defaultStaticGrid('calendar') },
-  weather: { x: 20 + 7 * CELL, y: 56 + 5 * CELL, ...defaultStaticGrid('weather') },
-  knotWidget: { x: 20 + 7 * CELL, y: 56 + 5 * CELL + 7 * CELL, ...defaultStaticGrid('knotWidget') },
-  photoA: { x: 20, y: 56 + 5 * CELL + 7 * CELL + 20, gridW: 7, gridH: 12 },
-  photoB: { x: 1000, y: 56, gridW: 6, gridH: 8 },
-  photoC: { x: 1000 + 6 * CELL, y: 56, gridW: 8, gridH: 7 },
-  music: { x: 1000, y: 56 + 8 * CELL + 8, ...defaultStaticGrid('music') },
-  notesChecklist: { x: 1000, y: 56 + 8 * CELL + 8 + 4 * CELL, ...defaultStaticGrid('notesChecklist') },
-  bgControls: { x: 1000 + 5 * CELL, y: 56 + 8 * CELL + 8 + 4 * CELL, ...defaultStaticGrid('bgControls') },
-  yearProgress: { x: 1000 + 5 * CELL + 20, y: 56 + 8 * CELL + 8 + 4 * CELL + 5 * CELL + 8, ...defaultStaticGrid('yearProgress') },
+  calendar: { x: 20, y: 56 + 4 * CELL, ...defaultStaticGrid('calendar') },
+  weather: { x: 20 + 5 * CELL, y: 56 + 4 * CELL, ...defaultStaticGrid('weather') },
+  knotWidget: { x: 20 + 5 * CELL, y: 56 + 4 * CELL + 5 * CELL, ...defaultStaticGrid('knotWidget') },
+  photoA: { x: 20, y: 56 + 4 * CELL + 5 * CELL + 12, gridW: 5, gridH: 10 },
+  photoB: { x: RX, y: 56, gridW: 5, gridH: 5 },
+  photoC: { x: RX + 5 * CELL, y: 56, gridW: 5, gridH: 5 },
+  music: { x: RX, y: 56 + 5 * CELL + 8, ...defaultStaticGrid('music') },
+  notesChecklist: { x: RX, y: 56 + 5 * CELL + 8 + 3 * CELL + 8, ...defaultStaticGrid('notesChecklist') },
+  bgControls: { x: RX + 5 * CELL, y: 56 + 5 * CELL + 8 + 3 * CELL + 8, ...defaultStaticGrid('bgControls') },
+  yearProgress: {
+    x: RX + 5 * CELL + 12,
+    y: 56 + 5 * CELL + 8 + 3 * CELL + 8 + 4 * CELL + 8,
+    ...defaultStaticGrid('yearProgress'),
+  },
 }
 
 const YEAR_WEEKS = 52
