@@ -59,7 +59,7 @@ import './DesktopWidgets.css'
 
 const SD_LAT = 32.72
 const SD_LON = -117.16
-const LAYOUT_KEY = 'desktop-widget-layout-v7'
+const LAYOUT_KEY = 'desktop-widget-layout-v8'
 
 function formatLocationLabel(raw) {
   if (!raw || typeof raw !== 'string') return 'Local'
@@ -128,22 +128,21 @@ function formatTrackTime(sec) {
 }
 
 /**
- * Hero reference: weather right of clock; knot right of date; smaller photos so layout stays stable.
- * Top-right photos 4×4 each; left hero photo 5×8.
+ * Hero reference: compact ~120px tiles, weather beside clock, date + knot row; tall left photo; 3×3 top-right tiles.
  */
 const RX = 900
-const TOP_PHOTO_ROWS = 4
+const TOP_PHOTO_ROWS = 3
 const DEFAULT_LAYOUT = {
   clock: { x: 20, y: 56, ...defaultStaticGrid('clock') },
-  weather: { x: 20 + 7 * CELL, y: 56, ...defaultStaticGrid('weather') },
+  weather: { x: 20 + 6 * CELL, y: 56, ...defaultStaticGrid('weather') },
   calendar: { x: 20, y: 56 + 3 * CELL, ...defaultStaticGrid('calendar') },
-  knotWidget: { x: 20 + 4 * CELL, y: 56 + 3 * CELL, ...defaultStaticGrid('knotWidget') },
-  photoA: { x: 20, y: 56 + 3 * CELL + 4 * CELL + 10, gridW: 5, gridH: 8 },
-  photoB: { x: RX, y: 56, gridW: 4, gridH: 4 },
-  photoC: { x: RX + 4 * CELL, y: 56, gridW: 4, gridH: 4 },
+  knotWidget: { x: 20 + 3 * CELL, y: 56 + 3 * CELL, ...defaultStaticGrid('knotWidget') },
+  photoA: { x: 20, y: 56 + 3 * CELL + 3 * CELL + 10, gridW: 4, gridH: 6 },
+  photoB: { x: RX, y: 56, gridW: 3, gridH: 3 },
+  photoC: { x: RX + 3 * CELL, y: 56, gridW: 3, gridH: 3 },
   music: { x: RX, y: 56 + TOP_PHOTO_ROWS * CELL + 8, ...defaultStaticGrid('music') },
   notesChecklist: { x: RX, y: 56 + TOP_PHOTO_ROWS * CELL + 8 + 3 * CELL + 8, ...defaultStaticGrid('notesChecklist') },
-  bgControls: { x: RX + 5 * CELL, y: 56 + TOP_PHOTO_ROWS * CELL + 8 + 3 * CELL + 8, ...defaultStaticGrid('bgControls') },
+  bgControls: { x: RX + 4 * CELL, y: 56 + TOP_PHOTO_ROWS * CELL + 8 + 3 * CELL + 8, ...defaultStaticGrid('bgControls') },
   yearProgress: {
     x: RX,
     y: 56 + TOP_PHOTO_ROWS * CELL + 8 + 3 * CELL + 8 + 4 * CELL + 8,

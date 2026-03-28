@@ -348,10 +348,15 @@ export default function ChromeLanding({ onReboot }) {
   }, [])
 
   useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement)
+    const handler = () =>
+      setIsFullscreen(!!(document.fullscreenElement || document.webkitFullscreenElement))
     document.addEventListener('fullscreenchange', handler)
+    document.addEventListener('webkitfullscreenchange', handler)
     handler()
-    return () => document.removeEventListener('fullscreenchange', handler)
+    return () => {
+      document.removeEventListener('fullscreenchange', handler)
+      document.removeEventListener('webkitfullscreenchange', handler)
+    }
   }, [])
 
   /**
@@ -361,7 +366,7 @@ export default function ChromeLanding({ onReboot }) {
   useEffect(() => {
     const el = document.documentElement
     const tryFullscreen = (e) => {
-      if (document.fullscreenElement) return
+      if (document.fullscreenElement || document.webkitFullscreenElement) return
       if (e && !e.isTrusted) return
       try {
         const p = el.requestFullscreen?.()
@@ -379,15 +384,19 @@ export default function ChromeLanding({ onReboot }) {
       tryFullscreen(e)
       window.removeEventListener('pointerdown', onFirstPointer)
     }
-    window.addEventListener('pointerdown', onFirstPointer, { passive: true })
-    return () => window.removeEventListener('pointerdown', onFirstPointer)
+    window.addEventListener('pointerdown', onFirstPointer, { capture: true, passive: true })
+    return () => window.removeEventListener('pointerdown', onFirstPointer, { capture: true })
   }, [])
 
   const handleFullScreenToggle = useCallback(() => {
-    if (document.fullscreenElement) {
-      document.exitFullscreen?.()
+    const doc = document
+    const el = doc.documentElement
+    if (doc.fullscreenElement || doc.webkitFullscreenElement) {
+      doc.exitFullscreen?.()
+      doc.webkitExitFullscreen?.()
     } else {
-      document.documentElement.requestFullscreen?.()
+      el.requestFullscreen?.()
+      el.webkitRequestFullscreen?.()
     }
   }, [])
 
