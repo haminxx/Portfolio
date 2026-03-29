@@ -16,9 +16,6 @@
 
 .menu-bar__mac {
   pointer-events: auto;
-}
-
-.menu-bar__mac.menu-bar__mac {
   border-radius: 8px;
 }
 
