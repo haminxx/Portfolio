@@ -1,5 +1,11 @@
+import { useDesktopBackground } from '../../context/DesktopBackgroundContext'
+
 /** Hands-only clock as the “O” in NOW (no ring). */
-export function QuoteAnalogClockO({ date, secondHandColor = '#ff2d2d' }) {
+export function QuoteAnalogClockO({
+  date,
+  accentColor = '#ffffff',
+  secondHandColor,
+}) {
   const h = (date.getHours() % 12) + date.getMinutes() / 60 + date.getSeconds() / 3600
   const hourDeg = h * 30
   const minDeg = date.getMinutes() * 6 + date.getSeconds() * 0.1
@@ -10,6 +16,7 @@ export function QuoteAnalogClockO({ date, secondHandColor = '#ff2d2d' }) {
     second: '2-digit',
     hour12: true,
   })
+  const sec = secondHandColor ?? accentColor
 
   return (
     <span className="desktop-widgets__quote-o-wrap" role="timer" aria-live="polite" aria-label={`Time ${label}`}>
@@ -20,7 +27,7 @@ export function QuoteAnalogClockO({ date, secondHandColor = '#ff2d2d' }) {
             y1="0"
             x2="0"
             y2="-26"
-            stroke="#fff"
+            stroke={accentColor}
             strokeWidth="5"
             strokeLinecap="round"
             transform={`rotate(${hourDeg})`}
@@ -30,7 +37,7 @@ export function QuoteAnalogClockO({ date, secondHandColor = '#ff2d2d' }) {
             y1="0"
             x2="0"
             y2="-36"
-            stroke="#fff"
+            stroke={accentColor}
             strokeWidth="3"
             strokeLinecap="round"
             transform={`rotate(${minDeg})`}
@@ -40,25 +47,27 @@ export function QuoteAnalogClockO({ date, secondHandColor = '#ff2d2d' }) {
             y1="0"
             x2="0"
             y2="-40"
-            stroke={secondHandColor}
+            stroke={sec}
             strokeWidth="1.35"
             strokeLinecap="round"
             transform={`rotate(${secDeg})`}
           />
-          <circle cx="0" cy="0" r="4" fill="#fff" />
+          <circle cx="0" cy="0" r="4" fill={accentColor} />
         </g>
       </svg>
     </span>
   )
 }
 
-/** Desktop “DO IT NOW” line with clock as O. */
+/** Desktop “DO IT NOW” line with clock as O; color follows desktop color widget (accent / color2). */
 export function DoItNowClockWidget({ date }) {
+  const { color2 } = useDesktopBackground()
+
   return (
-    <div className="desktop-widgets__quote-widget">
+    <div className="desktop-widgets__quote-widget" style={{ color: color2 }}>
       <p className="desktop-widgets__quote-line desktop-widgets__quote-line--now-only">
         <span className="desktop-widgets__quote-now-prefix">DO IT N</span>
-        <QuoteAnalogClockO date={date} />
+        <QuoteAnalogClockO date={date} accentColor={color2} />
         <span className="desktop-widgets__quote-now-suffix">W</span>
       </p>
     </div>

@@ -156,7 +156,7 @@
 .desktop-widgets__quote-widget {
   font-family: 'Montserrat', system-ui, sans-serif;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--portfolio-accent, #ffffff);
   text-align: center;
   line-height: 1.05;
   letter-spacing: -0.03em;
@@ -198,7 +198,7 @@
   height: 2.05em;
   vertical-align: middle;
   margin: 0 0.04em;
-  color: #fff;
+  color: inherit;
 }
 
 .desktop-widgets__quote-o-svg {

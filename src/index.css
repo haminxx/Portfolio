@@ -6,12 +6,36 @@
   --color-foreground: #f4f4f5;
   --color-primary: #e4e4e7;
   --color-primary-foreground: #18181b;
+  --color-secondary: #27272a;
+  --color-secondary-foreground: #f4f4f5;
+  --color-muted: rgba(255, 255, 255, 0.06);
   --color-accent: rgba(255, 255, 255, 0.12);
+  --color-accent-foreground: #f4f4f5;
   --color-muted-foreground: rgba(255, 255, 255, 0.55);
+  --color-border: rgba(255, 255, 255, 0.12);
+  --color-input: rgba(255, 255, 255, 0.14);
   --color-ring: rgba(255, 255, 255, 0.35);
   --color-popover: #141414;
-  --color-input: rgba(255, 255, 255, 0.14);
+  --color-destructive: #dc2626;
   --color-destructive-foreground: #fafafa;
+}
+
+@keyframes menuFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* macOS menu bar contact panel grid (Tailwind arbitrary opacity) */
+.bg-grid-white-5 {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
 :root {

@@ -1,52 +1,8 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import SystemTray from './SystemTray'
+import MacOSMenuBar from '@/components/ui/mac-os-menu-bar'
 import { useLanguage } from '../context/LanguageContext'
 import './MenuBar.css'
-
-const MENUS = [
-  { id: 'file', labelKey: 'menuBar.file', items: [
-    { id: 'newTab', labelKey: 'menuBar.newTab' },
-    { id: 'newWindow', labelKey: 'menuBar.newWindow' },
-    { id: 'open', labelKey: 'menuBar.open' },
-    { type: 'divider' },
-    { id: 'closeTab', labelKey: 'menuBar.closeTab' },
-    { id: 'quit', labelKey: 'menuBar.quit' },
-  ]},
-  { id: 'edit', labelKey: 'menuBar.edit', items: [
-    { id: 'undo', labelKey: 'menuBar.undo' },
-    { id: 'redo', labelKey: 'menuBar.redo' },
-    { type: 'divider' },
-    { id: 'cut', labelKey: 'menuBar.cut' },
-    { id: 'copy', labelKey: 'menuBar.copy' },
-    { id: 'paste', labelKey: 'menuBar.paste' },
-  ]},
-  { id: 'view', labelKey: 'menuBar.view', items: [
-    { id: 'reload', labelKey: 'menuBar.reload' },
-    { id: 'zoomIn', labelKey: 'menuBar.zoomIn' },
-    { id: 'zoomOut', labelKey: 'menuBar.zoomOut' },
-    { type: 'divider' },
-    { id: 'fullScreen', labelKey: 'menuBar.fullScreen' },
-  ]},
-  { id: 'go', labelKey: 'menuBar.go', items: [
-    { id: 'back', labelKey: 'menuBar.back' },
-    { id: 'forward', labelKey: 'menuBar.forward' },
-    { id: 'home', labelKey: 'menuBar.home' },
-  ]},
-  { id: 'window', labelKey: 'menuBar.window', items: [
-    { id: 'minimize', labelKey: 'menuBar.minimize' },
-    { id: 'zoom', labelKey: 'menuBar.zoom' },
-    { id: 'bringAll', labelKey: 'menuBar.bringAll' },
-  ]},
-  { id: 'help', labelKey: 'menuBar.help', items: [
-    { id: 'portfolioHelp', labelKey: 'menuBar.portfolioHelp' },
-  ]},
-]
-
-const CNL_ITEMS = [
-  { id: 'sleep', labelKey: 'menuBar.sleep' },
-  { id: 'restart', labelKey: 'menuBar.restart' },
-  { id: 'turnOff', labelKey: 'menuBar.turnOff' },
-]
 
 export default function MenuBar({
   onTurnOff,
@@ -56,171 +12,165 @@ export default function MenuBar({
   onCloseTab,
   onReload,
   onGoHome,
+  onBack,
+  onForward,
   onMinimize,
   onZoom,
   onFullScreenToggle,
   isFullscreen,
 }) {
   const { t } = useLanguage()
-  const [openMenu, setOpenMenu] = useState(null)
-  const [openCnl, setOpenCnl] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
-  const barRef = useRef(null)
-  const leaveTimeoutRef = useRef(null)
 
-  const handleMenuEnter = (menuId) => {
-    if (leaveTimeoutRef.current) {
-      clearTimeout(leaveTimeoutRef.current)
-      leaveTimeoutRef.current = null
-    }
-    setOpenCnl(false)
-    setOpenMenu(menuId)
-  }
+  const appleMenuItems = useMemo(
+    () => [
+      { label: t('menuBar.portfolioHelp'), action: 'portfolio-help' },
+      { type: 'separator' },
+      { label: t('menuBar.sleep'), action: 'sleep' },
+      { label: t('menuBar.restart'), action: 'restart' },
+      { label: t('menuBar.turnOff'), action: 'turn-off' },
+    ],
+    [t],
+  )
 
-  const handleMenuLeave = () => {
-    leaveTimeoutRef.current = setTimeout(() => {
-      setOpenMenu(null)
-      setOpenCnl(false)
-    }, 150)
-  }
+  const menus = useMemo(
+    () => [
+      {
+        label: t('menuBar.file'),
+        items: [
+          { label: t('menuBar.newTab'), action: 'new-tab', shortcut: '⌘T' },
+          { label: t('menuBar.newWindow'), action: 'new-window', shortcut: '⌘N' },
+          { label: t('menuBar.open'), action: 'open', shortcut: '⌘O' },
+          { type: 'separator' },
+          { label: t('menuBar.closeTab'), action: 'close-tab', shortcut: '⌘W' },
+          { label: t('menuBar.quit'), action: 'quit', shortcut: '⌘Q' },
+        ],
+      },
+      {
+        label: t('menuBar.edit'),
+        items: [
+          { label: t('menuBar.undo'), action: 'undo', shortcut: '⌘Z' },
+          { label: t('menuBar.redo'), action: 'redo', shortcut: '⇧⌘Z' },
+          { type: 'separator' },
+          { label: t('menuBar.cut'), action: 'cut', shortcut: '⌘X' },
+          { label: t('menuBar.copy'), action: 'copy', shortcut: '⌘C' },
+          { label: t('menuBar.paste'), action: 'paste', shortcut: '⌘V' },
+        ],
+      },
+      {
+        label: t('menuBar.view'),
+        items: [
+          { label: t('menuBar.reload'), action: 'reload', shortcut: '⌘R' },
+          { label: t('menuBar.zoomIn'), action: 'zoom-in' },
+          { label: t('menuBar.zoomOut'), action: 'zoom-out' },
+          { type: 'separator' },
+          {
+            label: isFullscreen ? t('menuBar.exitFullScreen') : t('menuBar.fullScreen'),
+            action: 'fullscreen',
+            shortcut: '⌃⌘F',
+          },
+        ],
+      },
+      {
+        label: t('menuBar.go'),
+        items: [
+          { label: t('menuBar.back'), action: 'back', shortcut: '⌘[' },
+          { label: t('menuBar.forward'), action: 'forward', shortcut: '⌘]' },
+          { label: t('menuBar.home'), action: 'home', shortcut: '⌥⌘H' },
+        ],
+      },
+      {
+        label: t('menuBar.window'),
+        items: [
+          { label: t('menuBar.minimize'), action: 'minimize', shortcut: '⌘M' },
+          { label: t('menuBar.zoom'), action: 'zoom' },
+          { label: t('menuBar.bringAll'), action: 'bring-all' },
+        ],
+      },
+      {
+        label: t('menuBar.help'),
+        items: [{ label: t('menuBar.portfolioHelp'), action: 'portfolio-help' }],
+      },
+    ],
+    [t, isFullscreen],
+  )
 
-  const handleCnlEnter = () => {
-    if (leaveTimeoutRef.current) {
-      clearTimeout(leaveTimeoutRef.current)
-      leaveTimeoutRef.current = null
-    }
-    setOpenMenu(null)
-    setOpenCnl(true)
-  }
-
-  const handleCnlLeave = () => {
-    leaveTimeoutRef.current = setTimeout(() => setOpenCnl(false), 150)
-  }
-
-  const handleCnlItem = (id) => {
-    setOpenCnl(false)
-    if (id === 'turnOff') onTurnOff?.()
-    else if (id === 'restart') onRestart?.()
-    else if (id === 'sleep') onSleep?.()
-  }
-
-  const handleDropdownEnter = () => {
-    if (leaveTimeoutRef.current) {
-      clearTimeout(leaveTimeoutRef.current)
-      leaveTimeoutRef.current = null
-    }
-  }
-
-  const handleDropdownLeave = () => {
-    leaveTimeoutRef.current = setTimeout(() => {
-      setOpenMenu(null)
-      setOpenCnl(false)
-    }, 150)
-  }
-
-  const handleMenuItem = (item) => {
-    if (item.type === 'divider') return
-    setOpenMenu(null)
-    switch (item.id) {
-      case 'newTab': onNewTab?.(); break
-      case 'closeTab': onCloseTab?.(); break
-      case 'reload': onReload?.(); break
-      case 'home': onGoHome?.(); break
-      case 'minimize': onMinimize?.(); break
-      case 'zoom': onZoom?.(); break
-      case 'portfolioHelp': setShowHelp(true); break
-      case 'fullScreen': onFullScreenToggle?.(); break
-      default: break
-    }
-  }
-
-  useEffect(() => () => {
-    if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current)
-  }, [])
+  const handleMenuAction = useCallback(
+    (action) => {
+      switch (action) {
+        case 'new-tab':
+          onNewTab?.()
+          break
+        case 'close-tab':
+          onCloseTab?.()
+          break
+        case 'reload':
+          onReload?.()
+          break
+        case 'home':
+          onGoHome?.()
+          break
+        case 'back':
+          onBack?.()
+          break
+        case 'forward':
+          onForward?.()
+          break
+        case 'minimize':
+          onMinimize?.()
+          break
+        case 'zoom':
+          onZoom?.()
+          break
+        case 'fullscreen':
+          onFullScreenToggle?.()
+          break
+        case 'portfolio-help':
+          setShowHelp(true)
+          break
+        case 'sleep':
+          onSleep?.()
+          break
+        case 'restart':
+          onRestart?.()
+          break
+        case 'turn-off':
+        case 'quit':
+          onTurnOff?.()
+          break
+        default:
+          break
+      }
+    },
+    [
+      onNewTab,
+      onCloseTab,
+      onReload,
+      onGoHome,
+      onBack,
+      onForward,
+      onMinimize,
+      onZoom,
+      onFullScreenToggle,
+      onSleep,
+      onRestart,
+      onTurnOff,
+    ],
+  )
 
   return (
     <>
-      <header className="menu-bar" ref={barRef}>
-        <div className="menu-bar__glass" aria-hidden />
-        <div className="menu-bar__content">
-        <div className="menu-bar__left">
-          <div
-            className="menu-bar__cnl-wrap"
-            onMouseEnter={handleCnlEnter}
-            onMouseLeave={handleCnlLeave}
-          >
-            <button
-              type="button"
-              className={`menu-bar__logo menu-bar__logo--btn menu-bar__invert ${openCnl ? 'menu-bar__logo--open' : ''}`}
-              aria-expanded={openCnl}
-            >
-              CNL
-            </button>
-            {openCnl && (
-              <div
-                className="menu-bar__dropdown menu-bar__dropdown--cnl"
-                onMouseEnter={handleDropdownEnter}
-                onMouseLeave={handleDropdownLeave}
-              >
-                {CNL_ITEMS.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className="menu-bar__item"
-                    onClick={() => handleCnlItem(item.id)}
-                  >
-                    {t(item.labelKey)}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          {MENUS.map((menu) => (
-            <div
-              key={menu.id}
-              className="menu-bar__menu-wrap"
-              onMouseEnter={() => handleMenuEnter(menu.id)}
-              onMouseLeave={handleMenuLeave}
-            >
-              <button
-                type="button"
-                className={`menu-bar__menu-trigger menu-bar__invert ${openMenu === menu.id ? 'menu-bar__menu-trigger--open' : ''}`}
-                aria-expanded={openMenu === menu.id}
-              >
-                {t(menu.labelKey)}
-              </button>
-              {openMenu === menu.id && (
-                <div
-                  className="menu-bar__dropdown"
-                  onMouseEnter={handleDropdownEnter}
-                  onMouseLeave={handleDropdownLeave}
-                >
-                  {menu.items.map((item, i) =>
-                    item.type === 'divider' ? (
-                      <div key={`${menu.id}-div-${i}`} className="menu-bar__divider" />
-                    ) : (
-                      <button
-                        key={`${menu.id}-${item.id}`}
-                        type="button"
-                        className="menu-bar__item"
-                        onClick={() => handleMenuItem(item)}
-                      >
-                        {item.id === 'fullScreen' && isFullscreen ? t('menuBar.exitFullScreen') : t(item.labelKey)}
-                      </button>
-                    )
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-        <div className="menu-bar__right menu-bar__invert">
-          <SystemTray
-            onFullScreenToggle={onFullScreenToggle}
-            isFullscreen={isFullscreen ?? false}
-          />
-        </div>
-        </div>
+      <header className="menu-bar">
+        <MacOSMenuBar
+          appName={t('apps.chrome')}
+          menus={menus}
+          appleMenuItems={appleMenuItems}
+          onMenuAction={handleMenuAction}
+          className="menu-bar__mac h-full min-w-0 w-full"
+          rightSlot={
+            <SystemTray onFullScreenToggle={onFullScreenToggle} isFullscreen={isFullscreen ?? false} />
+          }
+        />
       </header>
       {showHelp && (
         <div
@@ -239,9 +189,7 @@ export default function MenuBar({
               ×
             </button>
             <h2 className="menu-bar__help-title">{t('menuBar.portfolioHelp')}</h2>
-            <p className="menu-bar__help-text">
-              {t('menuBar.helpText')}
-            </p>
+            <p className="menu-bar__help-text">{t('menuBar.helpText')}</p>
           </div>
         </div>
       )}

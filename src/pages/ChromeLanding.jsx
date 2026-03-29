@@ -452,6 +452,8 @@ export default function ChromeLanding({ onReboot }) {
         onCloseTab={() => closeTab(activeTabId)}
         onReload={handleRefresh}
         onGoHome={goHome}
+        onBack={handleBack}
+        onForward={handleForward}
         onMinimize={setMinimized}
         onZoom={toggleMaximize}
         onFullScreenToggle={handleFullScreenToggle}

@@ -1,9 +1,5 @@
-import './ContactPage.css'
+import { AnimatedContactPage } from '@/components/ui/animated-contact-page'
 
 export default function ContactPage() {
-  return (
-    <div className="contact-page contact-page--placeholder">
-      <p className="contact-page__coming-soon">Coming soon</p>
-    </div>
-  )
+  return <AnimatedContactPage />
 }

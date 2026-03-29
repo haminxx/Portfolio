@@ -1,5 +1,5 @@
-import './AboutPage.css'
+import AboutSection from '@/components/ui/about-section'
 
 export default function AboutPage() {
-  return <div className="about-page about-page--empty" aria-label="About" />
+  return <AboutSection />
 }
