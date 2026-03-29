@@ -9,8 +9,8 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   build: {
-    // No manualChunks: Vite 8 (Rolldown) + custom vendor splits for react / motion / firebase
-    // produced cross-chunk bindings where `new` on a component/class threw "is not a constructor".
+    // Stay on Vite 7 + Rollup for production: Vite 8’s Rolldown bundler has shipped React interop
+    // bugs (“is not a constructor” / invalid element type) with this app’s dependency graph.
     rollupOptions: {},
   },
   resolve: {
