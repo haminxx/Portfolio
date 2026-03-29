@@ -14,8 +14,8 @@ export default defineConfig({
         manualChunks(id) {
           if (!id.includes('node_modules')) return undefined
           if (id.includes('firebase')) return 'vendor-firebase'
-          if (id.includes('@paper-design')) return 'vendor-shaders'
-          if (id.includes('leaflet')) return 'vendor-leaflet'
+          // Do not split leaflet/react-leaflet or @paper-design into isolated vendor chunks:
+          // Rolldown + shared react stubs can yield "is not a constructor" at runtime.
           if (id.includes('framer-motion')) return 'vendor-motion'
           if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/')) return 'vendor-react'
           return undefined
