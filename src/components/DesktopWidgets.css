@@ -190,6 +190,18 @@
   margin-left: -0.14em;
 }
 
+.desktop-widgets__quote-widget--do-it-now {
+  color: var(--portfolio-on-accent, #0a0a0c);
+}
+
+.desktop-widgets__quote-now-o {
+  flex-shrink: 0;
+  display: inline-block;
+  min-width: 0.55em;
+  text-align: center;
+  margin: 0 0.04em;
+}
+
 .desktop-widgets__quote-o-wrap {
   display: inline-flex;
   align-items: center;

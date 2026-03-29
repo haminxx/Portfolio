@@ -852,7 +852,7 @@ export default function DesktopWidgets({
       <div className={cardClass('clock', 'desktop-widgets__card--clock')} style={cardStyle('clock')}>
         <div className="desktop-widgets__card-chrome desktop-widgets__quote-widget-shell desktop-widgets__blend">
           <WidgetDragGrip id="clock" label="Move clock widget" onDown={handleGripPointerDown} />
-          <DoItNowClockWidget date={now} />
+          <DoItNowClockWidget />
         </div>
         <button
           type="button"

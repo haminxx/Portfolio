@@ -106,6 +106,9 @@ function getDomainForTab(tab) {
   if (shortcut) {
     if (tab.type === 'linkedin') return 'linkedin.com/in/christian-j-l'
     if (tab.type === 'github') return 'github.com/haminxx'
+    if (tab.type === 'about') return 'portfolio.local/about'
+    if (tab.type === 'project') return 'portfolio.local/project'
+    if (tab.type === 'contact') return 'portfolio.local/contact'
     return `${tab.type}.local`
   }
   return getDomainForApp(tab.type)
@@ -193,8 +196,44 @@ export default function ChromeLanding({ onReboot }) {
   const handleOpenFolder = useCallback((id) => setOpenFolderId(id), [])
   const handleStartRename = useCallback((id) => setStartRenameId(id), [])
 
+  const chromeNavStacksRef = useRef(
+    new Map([['home', { entries: [{ type: 'home', title: 'Home' }], index: 0 }]]),
+  )
+  const chromeNavReplayRef = useRef(false)
+
+  const pushChromeNav = useCallback((tabId, type, title) => {
+    if (chromeNavReplayRef.current) return
+    let state = chromeNavStacksRef.current.get(tabId)
+    if (!state) {
+      chromeNavStacksRef.current.set(tabId, { entries: [{ type, title }], index: 0 })
+      return
+    }
+    const { entries, index } = state
+    const last = entries[index]
+    if (last && last.type === type && last.title === title) return
+    const nextEntries = entries.slice(0, index + 1)
+    nextEntries.push({ type, title })
+    state.entries = nextEntries
+    state.index = nextEntries.length - 1
+  }, [])
+
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0]
   const currentDomain = getDomainForTab(activeTab)
+
+  useEffect(() => {
+    const tab = tabs.find((t) => t.id === activeTabId)
+    if (!tab) return
+    if (!chromeNavStacksRef.current.has(activeTabId)) {
+      chromeNavStacksRef.current.set(activeTabId, {
+        entries: [{ type: tab.type, title: tab.title }],
+        index: 0,
+      })
+    }
+  }, [activeTabId, tabs])
+
+  const chromeNavState = chromeNavStacksRef.current.get(activeTabId)
+  const canGoBack = chromeNavState ? chromeNavState.index > 0 : false
+  const canGoForward = chromeNavState ? chromeNavState.index < chromeNavState.entries.length - 1 : false
 
   const openAppTab = useCallback((appKey) => {
     const app = APPS[appKey]
@@ -253,22 +292,30 @@ export default function ChromeLanding({ onReboot }) {
     })
   }, [chromeMinimized])
 
-  const navigateToShortcut = useCallback((shortcutType) => {
-    const shortcut = SHORTCUTS.find((s) => s.type === shortcutType)
-    if (!shortcut) return
-    setTabs((prev) =>
-      prev.map((t) =>
-        t.id === activeTabId ? { ...t, type: shortcutType, title: shortcut.label } : t
+  const navigateToShortcut = useCallback(
+    (shortcutType) => {
+      const shortcut = SHORTCUTS.find((s) => s.type === shortcutType)
+      if (!shortcut) return
+      pushChromeNav(activeTabId, shortcutType, shortcut.label)
+      setTabs((prev) =>
+        prev.map((t) =>
+          t.id === activeTabId ? { ...t, type: shortcutType, title: shortcut.label } : t
+        )
       )
-    )
-    setChromeMinimized(false)
-  }, [activeTabId])
+      setChromeMinimized(false)
+    },
+    [activeTabId, pushChromeNav]
+  )
 
   const openShortcutTab = useCallback((shortcutType) => {
     const shortcut = SHORTCUTS.find((s) => s.type === shortcutType)
     if (!shortcut) return
     const id = `${shortcutType}-${Date.now()}`
     const newTab = { id, title: shortcut.label, type: shortcutType }
+    chromeNavStacksRef.current.set(id, {
+      entries: [{ type: shortcutType, title: shortcut.label }],
+      index: 0,
+    })
     setTabs((prev) => [...prev, newTab])
     setActiveTabId(id)
     setChromeMinimized(false)
@@ -279,45 +326,59 @@ export default function ChromeLanding({ onReboot }) {
     setTabs(newTabs)
   }, [])
   const closeTab = useCallback((id) => {
+    chromeNavStacksRef.current.delete(id)
     const willBeEmpty = tabs.filter((t) => t.id !== id).length === 0
     setTabs((prev) => {
       const next = prev.filter((t) => t.id !== id)
+      if (!next.length) {
+        chromeNavStacksRef.current.clear()
+        chromeNavStacksRef.current.set('home', {
+          entries: [{ type: 'home', title: 'Home' }],
+          index: 0,
+        })
+      }
       if (activeTabId === id && next.length) setActiveTabId(next[0].id)
-      else if (activeTabId === id) setActiveTabId('home')
+      else if (activeTabId === id && !next.length) setActiveTabId('home')
       return next.length ? next : [HOME_TAB]
     })
     if (willBeEmpty) setChromeMinimized(true)
   }, [activeTabId, tabs])
 
   const goHome = useCallback(() => {
+    const id = activeTabId
+    const tab = tabs.find((t) => t.id === id)
+    if (!tab) return
+    pushChromeNav(id, 'home', 'Home')
     setTabs((prev) =>
-      prev.map((tab) =>
-        tab.type === 'about' ? { ...tab, type: 'home', title: 'Home' } : tab,
-      ),
+      prev.map((t) => (t.id === id ? { ...t, type: 'home', title: 'Home' } : t)),
     )
-    setActiveTabId('home')
-  }, [])
+  }, [activeTabId, tabs, pushChromeNav])
 
-  const tabHistoryRef = useRef([])
-  const historyIndexRef = useRef(-1)
   const handleBack = useCallback(() => {
-    if (historyIndexRef.current > 0) {
-      historyIndexRef.current--
-      const prevId = tabHistoryRef.current[historyIndexRef.current]
-      if (prevId && tabs.some((t) => t.id === prevId)) setActiveTabId(prevId)
-    } else {
-      window.location.reload()
-    }
-  }, [tabs])
+    const id = activeTabId
+    const state = chromeNavStacksRef.current.get(id)
+    if (!state || state.index <= 0) return
+    state.index -= 1
+    const { type, title } = state.entries[state.index]
+    chromeNavReplayRef.current = true
+    setTabs((prev) => prev.map((t) => (t.id === id ? { ...t, type, title } : t)))
+    queueMicrotask(() => {
+      chromeNavReplayRef.current = false
+    })
+  }, [activeTabId])
+
   const handleForward = useCallback(() => {
-    if (historyIndexRef.current < tabHistoryRef.current.length - 1) {
-      historyIndexRef.current++
-      const nextId = tabHistoryRef.current[historyIndexRef.current]
-      if (nextId && tabs.some((t) => t.id === nextId)) setActiveTabId(nextId)
-    } else {
-      window.location.reload()
-    }
-  }, [tabs])
+    const id = activeTabId
+    const state = chromeNavStacksRef.current.get(id)
+    if (!state || state.index >= state.entries.length - 1) return
+    state.index += 1
+    const { type, title } = state.entries[state.index]
+    chromeNavReplayRef.current = true
+    setTabs((prev) => prev.map((t) => (t.id === id ? { ...t, type, title } : t)))
+    queueMicrotask(() => {
+      chromeNavReplayRef.current = false
+    })
+  }, [activeTabId])
   const iframeRefreshKeyRef = useRef(0)
   const handleRefresh = useCallback(() => {
     setChromeRefreshing(true)
@@ -327,20 +388,12 @@ export default function ChromeLanding({ onReboot }) {
     }, 400)
   }, [])
 
-  useEffect(() => {
-    const idx = tabHistoryRef.current.findIndex((id) => id === activeTabId)
-    if (idx >= 0) {
-      historyIndexRef.current = idx
-    } else {
-      const newHistory = tabHistoryRef.current.slice(0, historyIndexRef.current + 1)
-      newHistory.push(activeTabId)
-      tabHistoryRef.current = newHistory
-      historyIndexRef.current = newHistory.length - 1
-    }
-  }, [activeTabId])
-
   const openNewHomeTab = useCallback(() => {
     const homeTab = { id: `home-${Date.now()}`, title: 'Home', type: 'home' }
+    chromeNavStacksRef.current.set(homeTab.id, {
+      entries: [{ type: 'home', title: 'Home' }],
+      index: 0,
+    })
     setTabs((prev) => [...prev, homeTab])
     setActiveTabId(homeTab.id)
     setChromeMinimized(false)
@@ -529,6 +582,8 @@ export default function ChromeLanding({ onReboot }) {
                 onMaximize={toggleMaximize}
                 onMinimize={setMinimized}
                 onWindowClose={setMinimized}
+                canGoBack={canGoBack}
+                canGoForward={canGoForward}
               />
               <div
                 className="chrome-landing__content"

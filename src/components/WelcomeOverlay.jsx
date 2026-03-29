@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AppleHelloEnglishEffect } from '@/components/ui/apple-hello-effect'
+import { VisitorNameReveal } from '@/components/ui/visitor-name-reveal'
 import { useDesktopBackground } from '../context/DesktopBackgroundContext'
+import { useMusicPlayer } from '../context/MusicPlayerContext'
 import './WelcomeOverlay.css'
 
 const DesktopShaderBackground = lazy(() => import('./ui/DesktopShaderBackground'))
@@ -36,6 +38,7 @@ function tryEnterFullscreen() {
  */
 export default function WelcomeOverlay({ onComplete }) {
   const { color2 } = useDesktopBackground()
+  const { unlockAutoplay } = useMusicPlayer()
   const [phase, setPhase] = useState('hello')
   const [visitorName, setVisitorName] = useState('')
   const [inputValue, setInputValue] = useState('')
@@ -70,11 +73,12 @@ export default function WelcomeOverlay({ onComplete }) {
   useEffect(() => {
     if (phase !== 'greeting') return undefined
     const t = setTimeout(() => {
+      unlockAutoplay()
       tryEnterFullscreen()
       setPhase('exit')
     }, 2000)
     return () => clearTimeout(t)
-  }, [phase])
+  }, [phase, unlockAutoplay])
 
   const handleExitComplete = useCallback(() => {
     if (finishedRef.current) return
@@ -93,6 +97,9 @@ export default function WelcomeOverlay({ onComplete }) {
     const t = setTimeout(handleExitComplete, 780)
     return () => clearTimeout(t)
   }, [phase, handleExitComplete])
+
+  const helloSvgClass =
+    'welcome-overlay__hello-svg text-white drop-shadow-sm [color:rgba(255,255,255,0.95)]'
 
   return (
     <motion.div
@@ -113,7 +120,7 @@ export default function WelcomeOverlay({ onComplete }) {
           {phase === 'hello' && (
             <motion.div
               key="hello"
-              className="welcome-overlay__stack"
+              className="welcome-overlay__stack welcome-overlay__stack--hello"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -121,7 +128,7 @@ export default function WelcomeOverlay({ onComplete }) {
             >
               <AppleHelloEnglishEffect
                 speed={1.1}
-                className="welcome-overlay__hello-svg text-white drop-shadow-sm"
+                className={helloSvgClass}
                 style={{ color: 'rgba(255,255,255,0.95)' }}
                 onAnimationComplete={handleHelloDone}
               />
@@ -131,21 +138,34 @@ export default function WelcomeOverlay({ onComplete }) {
           {phase === 'name' && (
             <motion.div
               key="name"
-              className="welcome-overlay__stack"
+              className="welcome-overlay__stack welcome-overlay__stack--name"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.4 }}
             >
-              <p className="welcome-overlay__prompt mb-3 text-center text-base text-zinc-400 md:text-lg">
+              <motion.div
+                className="welcome-overlay__hello-block"
+                initial={{ y: 28, opacity: 0.85 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <AppleHelloEnglishEffect
+                  drawn
+                  speed={1}
+                  className={`${helloSvgClass} welcome-overlay__hello-svg--compact`}
+                  style={{ color: 'rgba(255,255,255,0.95)' }}
+                />
+                <motion.div
+                  className="welcome-overlay__hello-underline"
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
+                />
+              </motion.div>
+              <p className="welcome-overlay__prompt mb-1 text-center text-base text-zinc-400 md:text-lg">
                 What&apos;s your name?
               </p>
-              <motion.div
-                className="welcome-overlay__underline mb-8 h-0.5 w-full max-w-[min(18rem,85vw)] origin-left bg-zinc-500/80"
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
-              />
               <form onSubmit={handleNameSubmit} className="flex w-full max-w-md flex-col items-center gap-4">
                 <input
                   type="text"
@@ -168,29 +188,35 @@ export default function WelcomeOverlay({ onComplete }) {
           {(phase === 'greeting' || phase === 'exit') && (
             <motion.div
               key="greeting"
-              className="welcome-overlay__stack welcome-overlay__greeting"
+              className="welcome-overlay__stack welcome-overlay__greeting-split"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.45 }}
+              transition={{ duration: 0.35 }}
             >
-              <motion.p
-                className="welcome-overlay__hello-label text-2xl font-light text-white/90 md:text-3xl"
-                initial={{ opacity: 0, y: 6 }}
+              <motion.div
+                className="welcome-overlay__name-reveal-wrap"
+                initial={{ opacity: 0, y: -18 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
+                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
               >
-                Hello,
-              </motion.p>
-              <motion.p
-                className="welcome-overlay__name mt-2 text-4xl font-semibold tracking-tight text-white md:text-6xl"
-                style={{ color: color2 }}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                <VisitorNameReveal name={visitorName} accentColor={color2} />
+              </motion.div>
+              <motion.div
+                className="welcome-overlay__name-outro"
+                initial={{ opacity: 1 }}
+                animate={{ opacity: 0 }}
+                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.06 }}
               >
-                {visitorName}
-              </motion.p>
+                <AppleHelloEnglishEffect
+                  drawn
+                  speed={1}
+                  className={`${helloSvgClass} welcome-overlay__hello-svg--compact`}
+                  style={{ color: 'rgba(255,255,255,0.95)' }}
+                />
+                <div className="welcome-overlay__hello-underline" style={{ transform: 'scaleX(1)' }} />
+                <p className="welcome-overlay__prompt--ghost">What&apos;s your name?</p>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>

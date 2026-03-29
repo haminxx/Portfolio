@@ -20,6 +20,8 @@ export default function ChromeFrame({
   onMaximize,
   onWindowClose,
   isMaximized = false,
+  canGoBack = true,
+  canGoForward = true,
 }) {
   return (
     <header className="chrome-frame">
@@ -70,6 +72,8 @@ export default function ChromeFrame({
           onBack={onBack}
           onForward={onForward}
           onRefresh={onRefresh}
+          canGoBack={canGoBack}
+          canGoForward={canGoForward}
         />
       </div>
     </header>

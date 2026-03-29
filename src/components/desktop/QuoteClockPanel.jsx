@@ -1,6 +1,4 @@
-import { useDesktopBackground } from '../../context/DesktopBackgroundContext'
-
-/** Hands-only clock as the “O” in NOW (no ring). */
+/** Hands-only clock as the “O” in NOW (no ring). — folder quote only */
 export function QuoteAnalogClockO({
   date,
   accentColor = '#ffffff',
@@ -59,15 +57,15 @@ export function QuoteAnalogClockO({
   )
 }
 
-/** Desktop “DO IT NOW” line with clock as O; color follows desktop color widget (accent / color2). */
-export function DoItNowClockWidget({ date }) {
-  const { color2 } = useDesktopBackground()
-
+/** Desktop “DO IT NOW” — static O; text color is on-accent (contrast vs selected color2). */
+export function DoItNowClockWidget() {
   return (
-    <div className="desktop-widgets__quote-widget" style={{ color: color2 }}>
+    <div className="desktop-widgets__quote-widget desktop-widgets__quote-widget--do-it-now">
       <p className="desktop-widgets__quote-line desktop-widgets__quote-line--now-only">
         <span className="desktop-widgets__quote-now-prefix">DO IT N</span>
-        <QuoteAnalogClockO date={date} accentColor={color2} />
+        <span className="desktop-widgets__quote-now-o" aria-hidden>
+          O
+        </span>
         <span className="desktop-widgets__quote-now-suffix">W</span>
       </p>
     </div>

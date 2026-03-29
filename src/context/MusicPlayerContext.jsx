@@ -36,6 +36,14 @@ function loadYouTubeIframeApi() {
 
 const HOST_ID = 'yt-music-hidden-player'
 
+function readWelcomeCompleteForMusic() {
+  try {
+    return localStorage.getItem('portfolio_welcome_done_v1') === '1'
+  } catch {
+    return true
+  }
+}
+
 /** Default desktop playlist; first track matches YouTube Music link (Mu4HVN2-IRc). */
 const STARTER_PLAYLIST = [
   {
@@ -73,6 +81,8 @@ export function MusicPlayerProvider({ children }) {
   /** Autoplay waits until 2s after first mount so the user “enters” the screen first. */
   const providerMountTimeRef = useRef(Date.now())
   const allowEarlyPlayRef = useRef(false)
+  /** No automatic playback until welcome flow finishes (or returning visitor). */
+  const autoplayUnlockedRef = useRef(readWelcomeCompleteForMusic())
 
   const currentTrack = queue[currentIndex] ?? null
   queueRef.current = queue
@@ -114,21 +124,32 @@ export function MusicPlayerProvider({ children }) {
   }, [])
 
   useEffect(() => {
+    if (!autoplayUnlockedRef.current) return undefined
+    allowEarlyPlayRef.current = true
     const t = window.setTimeout(() => {
-      allowEarlyPlayRef.current = true
       const p = playerRef.current
       if (p?.playVideo) kickPlayback(p)
     }, 2000)
     return () => window.clearTimeout(t)
   }, [kickPlayback])
 
+  const unlockAutoplay = useCallback(() => {
+    autoplayUnlockedRef.current = true
+    allowEarlyPlayRef.current = true
+    const p = playerRef.current
+    if (p?.playVideo) kickPlayback(p)
+  }, [kickPlayback])
+
   const kickPlaybackMaybeDelayed = useCallback(
     (p) => {
+      if (!autoplayUnlockedRef.current) return
       if (!p?.playVideo) return
       const elapsed = Date.now() - providerMountTimeRef.current
       const wait = Math.max(0, 2000 - elapsed)
       if (wait <= 0) kickPlayback(p)
-      else setTimeout(() => kickPlayback(p), wait)
+      else setTimeout(() => {
+        if (autoplayUnlockedRef.current) kickPlayback(p)
+      }, wait)
     },
     [kickPlayback],
   )
@@ -213,7 +234,7 @@ export function MusicPlayerProvider({ children }) {
               setIsPlaying(false)
               clearProgressTimer()
             } else if (e.data === YT.PlayerState.CUED) {
-              if (!allowEarlyPlayRef.current) return
+              if (!allowEarlyPlayRef.current || !autoplayUnlockedRef.current) return
               try {
                 p?.playVideo?.()
               } catch {
@@ -404,6 +425,7 @@ export function MusicPlayerProvider({ children }) {
       next,
       prev,
       seekTo,
+      unlockAutoplay,
     }),
     [
       currentTrack,
@@ -421,6 +443,7 @@ export function MusicPlayerProvider({ children }) {
       next,
       prev,
       seekTo,
+      unlockAutoplay,
     ]
   )
 
@@ -450,6 +473,7 @@ export function useMusicPlayer() {
       next: () => {},
       prev: () => {},
       seekTo: () => {},
+      unlockAutoplay: () => {},
     }
   }
   return ctx

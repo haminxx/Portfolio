@@ -26,8 +26,13 @@
   border-radius: 4px;
 }
 
-.address-bar__btn:hover {
+.address-bar__btn:hover:not(:disabled) {
   background: rgba(0, 0, 0, 0.06);
+}
+
+.address-bar__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .address-bar__url {
