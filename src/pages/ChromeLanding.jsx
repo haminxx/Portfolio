@@ -118,7 +118,16 @@ function getUrlForTab(tab) {
   return app?.url ?? null
 }
 
+function readWelcomeCompleted() {
+  try {
+    return localStorage.getItem('portfolio_welcome_done_v1') === '1'
+  } catch {
+    return true
+  }
+}
+
 export default function ChromeLanding({ onReboot }) {
+  const [welcomeDone, setWelcomeDone] = useState(readWelcomeCompleted)
   const [tabs, setTabs] = useState([HOME_TAB])
   const [activeTabId, setActiveTabId] = useState('home')
   const [chromeMaximized, setChromeMaximized] = useState(false)
