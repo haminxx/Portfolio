@@ -35,7 +35,19 @@ import { SHORTCUTS } from '../config/shortcuts'
 import { useLanguage } from '../context/LanguageContext'
 import { MusicPlayerProvider } from '../context/MusicPlayerContext'
 import { DesktopBackgroundProvider } from '../context/DesktopBackgroundContext'
-import { Globe, Image, Film, Images, Video, ShoppingBag, Settings, Map, Folder, StickyNote, LayoutGrid } from 'lucide-react'
+import {
+  Globe,
+  Image,
+  Film,
+  Images,
+  Video,
+  ShoppingBag,
+  Settings,
+  Map as MapIcon,
+  Folder,
+  StickyNote,
+  LayoutGrid,
+} from 'lucide-react'
 import './ChromeLanding.css'
 
 const APP_ICONS = {
@@ -47,7 +59,7 @@ const APP_ICONS = {
   facetime: Video,
   appStore: ShoppingBag,
   settings: Settings,
-  map: Map,
+  map: MapIcon,
   youtubeMusic: Film,
   notes: StickyNote,
   tetris: LayoutGrid,
