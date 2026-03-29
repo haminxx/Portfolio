@@ -9,19 +9,9 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (!id.includes('node_modules')) return undefined
-          if (id.includes('firebase')) return 'vendor-firebase'
-          // Do not split leaflet/react-leaflet or @paper-design into isolated vendor chunks:
-          // Rolldown + shared react stubs can yield "is not a constructor" at runtime.
-          if (id.includes('framer-motion')) return 'vendor-motion'
-          if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/')) return 'vendor-react'
-          return undefined
-        },
-      },
-    },
+    // No manualChunks: Vite 8 (Rolldown) + custom vendor splits for react / motion / firebase
+    // produced cross-chunk bindings where `new` on a component/class threw "is not a constructor".
+    rollupOptions: {},
   },
   resolve: {
     alias: {
