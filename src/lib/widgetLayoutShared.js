@@ -8,7 +8,6 @@ export const GRID_MAX = 16
 
 export const STATIC_WIDGET_IDS = [
   'calendar',
-  'clock',
   'weather',
   'music',
   'bgControls',
@@ -23,7 +22,6 @@ export const SQUARE_WIDGET_IDS = ['weather', 'calendar']
 /** Default pixel footprints (snapped to CELL grid). Tight ~120px squares where possible. */
 export const STATIC_SIZES = {
   calendar: { w: 120, h: 120 },
-  clock: { w: 240, h: 120 },
   weather: { w: 120, h: 120 },
   music: { w: 240, h: 120 },
   bgControls: { w: 120, h: 120 },

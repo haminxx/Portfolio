@@ -129,15 +129,45 @@
   overflow: hidden;
 }
 
-.desktop-widgets__card--clock {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
+.desktop-widgets__widget-dark-panel {
+  background: #000000;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-sizing: border-box;
+  mix-blend-mode: normal;
+  isolation: isolate;
+}
+
+.desktop-widgets__calendar-widget-body.desktop-widgets__widget-dark-panel {
+  padding: 10px 10px 12px;
+}
+
+.desktop-widgets__knot-shell.desktop-widgets__widget-dark-panel {
+  padding: 8px 6px;
+}
+
+.desktop-widgets__notes-inner.desktop-widgets__notes-dark {
+  flex: 1;
   min-height: 0;
-  padding-left: 0;
-  padding-right: 0;
-  padding-bottom: 0;
-  overflow: hidden;
+  overflow: auto;
+  padding: 10px 12px 12px;
+}
+
+.desktop-widgets__notes-dark .desktop-widgets__notes-text {
+  color: rgba(241, 240, 232, 0.95);
+}
+
+.desktop-widgets__notes-dark .desktop-widgets__notes-text--done {
+  color: rgba(241, 240, 232, 0.45);
+}
+
+.desktop-widgets__notes-dark .desktop-widgets__muted,
+.desktop-widgets__notes-dark .desktop-widgets__muted--small {
+  color: rgba(241, 240, 232, 0.55);
+}
+
+.desktop-widgets__notes-dark .desktop-widgets__notes-check-label input[type='checkbox'] {
+  accent-color: #c4c4c4;
 }
 
 .desktop-widgets__quote-widget-shell {
@@ -218,15 +248,6 @@
   height: 100%;
   display: block;
   overflow: visible;
-}
-
-.desktop-widgets__card--clock .desktop-widgets__quote-widget-shell {
-  container-type: size;
-}
-
-.desktop-widgets__card--clock .desktop-widgets__widget-drag-grip,
-.desktop-widgets__card--clock .desktop-widgets__widget-resize-handle {
-  z-index: 45;
 }
 
 .desktop-widgets__retro-cal {
@@ -584,20 +605,16 @@
   color: currentColor;
 }
 
-/* Calendar: no outer fill; slate panel is only inside .retro-cal */
+/* Calendar body: black panel + inner retro-cal */
 .desktop-widgets__calendar-widget-body {
   width: 100%;
   height: 100%;
   min-height: 0;
   flex: 1;
   box-sizing: border-box;
-  padding: 0;
-  background: transparent;
-  border-radius: inherit;
   display: flex;
   align-items: stretch;
   justify-content: stretch;
-  mix-blend-mode: normal;
 }
 
 .desktop-widgets__bg-controls-head {
@@ -1021,21 +1038,6 @@
   background: #080809;
   border: 2px solid #1c1c1e;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-}
-
-.desktop-widgets__ipod-screen-bezel {
-  display: none;
-}
-
-.desktop-widgets__ipod-screen-glass {
-  position: absolute;
-  inset: -8px;
-  background-size: cover;
-  background-position: center;
-  filter: blur(26px) saturate(1.35);
-  opacity: 0.5;
-  transform: scale(1.12);
-  pointer-events: none;
 }
 
 .desktop-widgets__ipod-screen-content {
@@ -2140,19 +2142,20 @@
   aspect-ratio: 1;
   margin: 0 auto;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .desktop-widgets__year-dot--on {
   background: #f1f0e8;
 }
 
+/* Elapsed time: light; remaining: dark */
 .desktop-widgets__year-dot--past {
-  background: rgba(255, 255, 255, 0.22);
+  background: #f1f0e8;
 }
 
 .desktop-widgets__year-dot--left {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .desktop-widgets__photo-overlay .desktop-widgets__photo-drag-grip {

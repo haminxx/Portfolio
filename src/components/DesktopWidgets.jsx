@@ -53,7 +53,6 @@ import {
   buildWeatherNextHint,
 } from '../lib/openWeather'
 import RetroCalendarPanel from './desktop/RetroCalendarPanel'
-import { DoItNowClockWidget } from './desktop/QuoteClockPanel'
 import { KnotAnimation } from './ui/knot-animation'
 import './DesktopWidgets.css'
 
@@ -128,16 +127,15 @@ function formatTrackTime(sec) {
 }
 
 /**
- * Hero reference: compact ~120px tiles, weather beside clock, date + knot row; tall left photo; 3×3 top-right tiles.
+ * Hero reference: compact ~120px tiles (weather, calendar, knot on top row); tall left photo; 3×3 top-right tiles.
  */
 const RX = 900
 const TOP_PHOTO_ROWS = 3
 const DEFAULT_LAYOUT = {
-  clock: { x: 20, y: 56, ...defaultStaticGrid('clock') },
-  weather: { x: 20 + 6 * CELL, y: 56, ...defaultStaticGrid('weather') },
-  calendar: { x: 20, y: 56 + 3 * CELL, ...defaultStaticGrid('calendar') },
-  knotWidget: { x: 20 + 3 * CELL, y: 56 + 3 * CELL, ...defaultStaticGrid('knotWidget') },
-  photoA: { x: 20, y: 56 + 3 * CELL + 3 * CELL + 10, gridW: 4, gridH: 6 },
+  weather: { x: 20, y: 56, ...defaultStaticGrid('weather') },
+  calendar: { x: 20 + 3 * CELL, y: 56, ...defaultStaticGrid('calendar') },
+  knotWidget: { x: 20 + 6 * CELL, y: 56, ...defaultStaticGrid('knotWidget') },
+  photoA: { x: 20, y: 56 + 3 * CELL + 10, gridW: 4, gridH: 6 },
   photoB: { x: RX, y: 56, gridW: 3, gridH: 3 },
   photoC: { x: RX + 3 * CELL, y: 56, gridW: 3, gridH: 3 },
   music: { x: RX, y: 56 + TOP_PHOTO_ROWS * CELL + 8, ...defaultStaticGrid('music') },
@@ -837,7 +835,7 @@ export default function DesktopWidgets({
       <div className={cardClass('calendar', 'desktop-widgets__card--calendar')} style={cardStyle('calendar')}>
         <div className="desktop-widgets__card-chrome">
           <WidgetDragGrip id="calendar" label="Move calendar widget" onDown={handleGripPointerDown} />
-          <div className="desktop-widgets__calendar-widget-body">
+          <div className="desktop-widgets__calendar-widget-body desktop-widgets__widget-dark-panel">
             <RetroCalendarPanel now={now} variant="compact" weekdayAccentColor={knotFg} />
           </div>
         </div>
@@ -846,19 +844,6 @@ export default function DesktopWidgets({
           className="desktop-widgets__widget-resize-handle"
           aria-label="Resize calendar widget"
           onPointerDown={(e) => handleWidgetResizePointerDown(e, 'calendar')}
-        />
-      </div>
-
-      <div className={cardClass('clock', 'desktop-widgets__card--clock')} style={cardStyle('clock')}>
-        <div className="desktop-widgets__card-chrome desktop-widgets__quote-widget-shell desktop-widgets__blend">
-          <WidgetDragGrip id="clock" label="Move clock widget" onDown={handleGripPointerDown} />
-          <DoItNowClockWidget />
-        </div>
-        <button
-          type="button"
-          className="desktop-widgets__widget-resize-handle"
-          aria-label="Resize clock widget"
-          onPointerDown={(e) => handleWidgetResizePointerDown(e, 'clock')}
         />
       </div>
 
@@ -973,15 +958,6 @@ export default function DesktopWidgets({
             <div className="desktop-widgets__ipod-screen">
               {currentTrack ? (
                 <>
-                  <div className="desktop-widgets__no-blend">
-                    <div className="desktop-widgets__ipod-screen-bezel" />
-                    <div
-                      className="desktop-widgets__ipod-screen-glass"
-                      style={{
-                        backgroundImage: `url(${currentTrack.thumbnail})`,
-                      }}
-                    />
-                  </div>
                   <div className="desktop-widgets__ipod-screen-content">
                     <img
                       src={currentTrack.thumbnail}
@@ -1099,7 +1075,7 @@ export default function DesktopWidgets({
       <div className={cardClass('notesChecklist', 'desktop-widgets__card--notes')} style={cardStyle('notesChecklist')}>
         <div className="desktop-widgets__card-chrome">
           <WidgetDragGrip id="notesChecklist" label="Move notes widget" onDown={handleGripPointerDown} />
-          <div className="desktop-widgets__blend desktop-widgets__notes-inner">
+          <div className="desktop-widgets__notes-inner desktop-widgets__widget-dark-panel desktop-widgets__notes-dark">
           {!notesStore.pinnedNoteId ? (
             <p className="desktop-widgets__adaptive desktop-widgets__muted desktop-widgets__muted--small">
               Open Notes and pin a note for this list.
@@ -1139,7 +1115,10 @@ export default function DesktopWidgets({
       <div className={cardClass('knotWidget', 'desktop-widgets__card--knot')} style={cardStyle('knotWidget')}>
         <div className="desktop-widgets__card-chrome">
           <WidgetDragGrip id="knotWidget" label="Move knot widget" onDown={handleGripPointerDown} />
-          <div className="desktop-widgets__knot-shell" style={{ color: knotFg }}>
+          <div
+            className="desktop-widgets__knot-shell desktop-widgets__widget-dark-panel"
+            style={{ color: knotFg }}
+          >
             <KnotAnimation color={false} speedA={0.045} speedB={0.022} />
           </div>
         </div>
