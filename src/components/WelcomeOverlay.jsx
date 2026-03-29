@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AppleHelloEnglishEffect } from '@/components/ui/apple-hello-effect'
-import { AppleNameEffect } from '@/components/ui/apple-name-effect'
+import { DynamicCursiveText } from '@/components/ui/dynamic-cursive-text'
 import { useDesktopBackground } from '../context/DesktopBackgroundContext'
 import { useMusicPlayer } from '../context/MusicPlayerContext'
 import './WelcomeOverlay.css'
@@ -34,7 +34,7 @@ function tryEnterFullscreen() {
 
 /**
  * Full-screen welcome: Apple-style "hello" stroke, underline, lift, name field with underbar,
- * then SVG stroke name (AppleNameEffect), fade out + fullscreen + desktop.
+ * then path-based cursive name (DynamicCursiveText), fade out + fullscreen + desktop.
  */
 export default function WelcomeOverlay({ onComplete }) {
   const { color2 } = useDesktopBackground()
@@ -266,9 +266,9 @@ export default function WelcomeOverlay({ onComplete }) {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.4 }}
             >
-              <AppleNameEffect
+              <DynamicCursiveText
                 key={visitorName}
-                name={visitorName}
+                text={visitorName.trim() || 'friend'}
                 speed={1}
                 style={{ color: color2 }}
                 className="welcome-overlay__name-stroke drop-shadow-sm"
