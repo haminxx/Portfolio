@@ -1,0 +1,93 @@
+.welcome-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.welcome-overlay__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.welcome-overlay__bg-fallback {
+  position: absolute;
+  inset: 0;
+  background: #121018;
+}
+
+.welcome-overlay__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: 40vh;
+  width: 100%;
+  max-width: 42rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+  box-sizing: border-box;
+}
+
+.welcome-overlay__stack {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome-overlay__greeting {
+  text-align: center;
+}
+
+.welcome-overlay__input {
+  width: 100%;
+  border: none;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.25);
+  background: transparent;
+  padding: 0.75rem 0.25rem;
+  font-size: clamp(1.25rem, 4vw, 1.75rem);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.welcome-overlay__input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.welcome-overlay__input:focus {
+  border-bottom-color: rgba(255, 255, 255, 0.55);
+}
+
+.welcome-overlay__submit {
+  margin-top: 0.5rem;
+  cursor: pointer;
+  border-radius: 9999px;
+  border: 2px solid;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0.5rem 1.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.welcome-overlay__submit:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+.welcome-overlay__submit:active {
+  transform: translateY(0);
+}

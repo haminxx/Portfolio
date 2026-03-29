@@ -27,6 +27,7 @@ import {
   LazyLinkedInProfileCard,
 } from './chromeLazyComponents'
 import MenuBar from '../components/MenuBar'
+import WelcomeOverlay from '../components/WelcomeOverlay'
 import Dock from '../components/Dock'
 import AppWindow from '../components/AppWindow'
 import { APPS, getDomainForApp } from '../config/apps'
@@ -431,6 +432,7 @@ export default function ChromeLanding({ onReboot }) {
     <MusicPlayerProvider>
     <DesktopBackgroundProvider>
     <div className="chrome-landing">
+      {!welcomeDone && <WelcomeOverlay onComplete={() => setWelcomeDone(true)} />}
       <Desktop
         onOpenApp={openAppTab}
         sortBy={sortBy}
