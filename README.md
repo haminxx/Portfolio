@@ -48,7 +48,7 @@ Release retention is **not** configured in `firebase.json` (Firebase stores it o
 
 1. [Firebase Console](https://console.firebase.google.com) → your project → **Build** → **Hosting** → select your site.
 2. In **Release history**, open the menu (**⋮**) → **Release storage settings**.
-3. Set **releases to keep** to **2** (or another small number) and save. Older releases are scheduled for deletion, oldest first.
+3. Set **releases to keep** to **5** (max) and save—enough history to roll back a few bad deploys without keeping excessive snapshots. Older releases beyond that limit are scheduled for deletion, oldest first.
 
 If **`npm run deploy`** fails with **HTTP 429** (*Hosting storage quota exceeded*), delete older releases manually from the same Release history (you cannot delete the release currently serving live), wait a few minutes, then deploy again.
 
