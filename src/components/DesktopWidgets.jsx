@@ -60,6 +60,7 @@ import './DesktopWidgets.css'
 const SD_LAT = 32.72
 const SD_LON = -117.16
 const LAYOUT_KEY = 'desktop-widget-layout-v9'
+const LAYOUT_KEY_PREV = 'desktop-widget-layout-v8'
 
 function formatLocationLabel(raw) {
   if (!raw || typeof raw !== 'string') return 'Local'
@@ -259,7 +260,18 @@ function loadLayout(photoIdList) {
     }
   }
   try {
-    const raw = localStorage.getItem(LAYOUT_KEY)
+    let raw = localStorage.getItem(LAYOUT_KEY)
+    if (!raw) {
+      const legacy = localStorage.getItem(LAYOUT_KEY_PREV)
+      if (legacy) {
+        try {
+          localStorage.setItem(LAYOUT_KEY, legacy)
+          raw = legacy
+        } catch {
+          raw = legacy
+        }
+      }
+    }
     if (raw) {
       const parsed = JSON.parse(raw)
       for (const id of ids) {
