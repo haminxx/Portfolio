@@ -41,3 +41,17 @@ The project is set up for Firebase Hosting (build output: `dist`, SPA rewrites f
    npm run deploy
    ```
    This builds the app and deploys to Firebase Hosting.
+
+### Hosting storage (Spark / free tier)
+
+Release retention is **not** configured in `firebase.json` (Firebase stores it on each **channel**; the CLI does not apply a `retainedReleases` field from that file). To cap how many old deploys are kept and reduce storage use:
+
+1. [Firebase Console](https://console.firebase.google.com) → your project → **Build** → **Hosting** → select your site.
+2. In **Release history**, open the menu (**⋮**) → **Release storage settings**.
+3. Set **releases to keep** to **2** (or another small number) and save. Older releases are scheduled for deletion, oldest first.
+
+If **`npm run deploy`** fails with **HTTP 429** (*Hosting storage quota exceeded*), delete older releases manually from the same Release history (you cannot delete the release currently serving live), wait a few minutes, then deploy again.
+
+### Optional: smaller bundles
+
+Hosting quota is driven mainly by **how many release snapshots** you retain, not only one build’s size. To inspect chunk sizes locally: `npx vite-bundle-visualizer` (or add a Rollup visualizer plugin) and consider lazy-loading heavy routes.
