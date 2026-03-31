@@ -356,9 +356,12 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
                 transformOrigin: 'center center',
                 zIndex: Math.round(scale * 10),
                 opacity: isDraggingTile ? 0.42 : 1,
-                transition: isDraggingTile
-                  ? 'opacity 0.15s ease'
-                  : 'opacity 0.2s ease',
+                transition:
+                  draggingId && !isDraggingTile
+                    ? 'left 0.2s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease'
+                    : isDraggingTile
+                      ? 'opacity 0.15s ease'
+                      : 'opacity 0.2s ease',
               }}
             >
               <img

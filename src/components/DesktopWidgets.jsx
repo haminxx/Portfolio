@@ -38,6 +38,7 @@ import {
   getWidgetRectFromEntry,
   SQUARE_WIDGET_IDS,
   snapSquareLayoutEntry,
+  defaultLayoutSnapshot,
 } from '../lib/widgetLayoutShared'
 import {
   loadPhotoWidgetIdList,
@@ -58,7 +59,7 @@ import './DesktopWidgets.css'
 
 const SD_LAT = 32.72
 const SD_LON = -117.16
-const LAYOUT_KEY = 'desktop-widget-layout-v8'
+const LAYOUT_KEY = 'desktop-widget-layout-v9'
 
 function formatLocationLabel(raw) {
   if (!raw || typeof raw !== 'string') return 'Local'
@@ -126,32 +127,16 @@ function formatTrackTime(sec) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-/**
- * Hero reference: compact ~120px tiles (weather, calendar, knot on top row); tall left photo; 3×3 top-right tiles.
- */
-const RX = 900
-const TOP_PHOTO_ROWS = 3
-const DEFAULT_LAYOUT = {
-  weather: { x: 20, y: 56, ...defaultStaticGrid('weather') },
-  calendar: { x: 20 + 3 * CELL, y: 56, ...defaultStaticGrid('calendar') },
-  knotWidget: { x: 20 + 6 * CELL, y: 56, ...defaultStaticGrid('knotWidget') },
-  photoA: { x: 20, y: 56 + 3 * CELL + 10, gridW: 4, gridH: 6 },
-  photoB: { x: RX, y: 56, gridW: 3, gridH: 3 },
-  photoC: { x: RX + 3 * CELL, y: 56, gridW: 3, gridH: 3 },
-  music: { x: RX, y: 56 + TOP_PHOTO_ROWS * CELL + 8, ...defaultStaticGrid('music') },
-  notesChecklist: { x: RX, y: 56 + TOP_PHOTO_ROWS * CELL + 8 + 3 * CELL + 8, ...defaultStaticGrid('notesChecklist') },
-  bgControls: { x: RX + 4 * CELL, y: 56 + TOP_PHOTO_ROWS * CELL + 8 + 3 * CELL + 8, ...defaultStaticGrid('bgControls') },
-  yearProgress: {
-    x: RX,
-    y: 56 + TOP_PHOTO_ROWS * CELL + 8 + 3 * CELL + 8 + 4 * CELL + 8,
-    ...defaultStaticGrid('yearProgress'),
-  },
+function getDefaultLayout() {
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 1440
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 900
+  return defaultLayoutSnapshot(vw, vh)
 }
 
 const YEAR_WEEKS = 52
 
 /** 52 dots = weeks in the year; click footer left to toggle month mode (dots = days in month). */
-function YearProgressWidget({ now }) {
+function YearProgressWidget({ now, accentBackground }) {
   const [mode, setMode] = useState('year')
 
   const yearMode = useMemo(() => {
@@ -182,7 +167,12 @@ function YearProgressWidget({ now }) {
       : `${monthMode.monthLabel}, ${monthMode.daysLeft} days remaining in this month`
 
   return (
-    <div className="desktop-widgets__year-widget" role="img" aria-label={ariaLabel}>
+    <div
+      className="desktop-widgets__year-widget"
+      role="img"
+      aria-label={ariaLabel}
+      style={accentBackground ? { background: accentBackground } : undefined}
+    >
       <div className="desktop-widgets__year-dots-wrap">
         <div
           className={
@@ -252,6 +242,7 @@ function hasOverlapWithAny(movingId, pos, layoutMap, desktopItems, widgetIds) {
 }
 
 function loadLayout(photoIdList) {
+  const DEFAULT_LAYOUT = getDefaultLayout()
   const ids = [...STATIC_WIDGET_IDS, ...photoIdList]
   const out = {}
   for (const id of STATIC_WIDGET_IDS) {
@@ -393,6 +384,7 @@ export default function DesktopWidgets({
     setSpeed: setBgSpeed,
   } = useDesktopBackground()
   const knotFg = useMemo(() => hexRgbInvert(bgColor2), [bgColor2])
+  const defaultLayout = useMemo(() => getDefaultLayout(), [])
 
   const onMeshColorsFromWheel = useCallback(
     (colors) => {
@@ -574,7 +566,7 @@ export default function DesktopWidgets({
     const el = containerRef.current
     if (!el) return { x, y }
     const rect = el.getBoundingClientRect()
-    const entry = layoutMap[id] || DEFAULT_LAYOUT[id]
+    const entry = layoutMap[id] || defaultLayout[id]
     const { w, h } = getBoxSizeForWidget(id, entry)
     const maxX = Math.max(0, rect.width - w)
     const minY = DESKTOP_SAFE_TOP
@@ -583,7 +575,7 @@ export default function DesktopWidgets({
       x: Math.max(0, Math.min(maxX, x)),
       y: Math.max(minY, Math.min(maxY, y)),
     }
-  }, [])
+  }, [defaultLayout])
 
   /** Pick the valid position closest to the drop point (not top-left scan order). */
   const nudgeToFreeSpot = useCallback(
@@ -686,7 +678,7 @@ export default function DesktopWidgets({
       window.addEventListener('pointerup', onUp)
       window.addEventListener('pointercancel', onUp)
     },
-    [layout, clampPos, nudgeToFreeSpot, desktopItems, widgetIds],
+    [layout, clampPos, nudgeToFreeSpot, desktopItems, widgetIds, defaultLayout],
   )
 
   const handleWidgetResizePointerDown = useCallback(
@@ -695,7 +687,7 @@ export default function DesktopWidgets({
       if (NON_RESIZABLE_WIDGET_IDS.includes(wid)) return
       e.stopPropagation()
       e.preventDefault()
-      const entry = layout[wid] || DEFAULT_LAYOUT[wid]
+      const entry = layout[wid] || defaultLayout[wid]
       const origW = clampGrid(entry.gridW)
       const origH = clampGrid(entry.gridH)
       const origS = SQUARE_WIDGET_IDS.includes(wid) ? clampGrid(Math.min(origW, origH)) : null
@@ -731,7 +723,7 @@ export default function DesktopWidgets({
           nextH = clampGrid(d.origH + Math.round((ev.clientY - d.startY) / CELL))
         }
         setLayout((prev) => {
-          const base = { ...(prev[d.wid] || DEFAULT_LAYOUT[d.wid]), gridW: nextW, gridH: nextH }
+          const base = { ...(prev[d.wid] || defaultLayout[d.wid]), gridW: nextW, gridH: nextH }
           const pos = clampPos(d.wid, base.x, base.y, { ...prev, [d.wid]: base })
           return { ...prev, [d.wid]: { ...base, ...pos } }
         })
@@ -766,7 +758,7 @@ export default function DesktopWidgets({
       window.addEventListener('pointerup', onUp)
       window.addEventListener('pointercancel', onUp)
     },
-    [layout, clampPos, nudgeToFreeSpot, desktopItems, widgetIds],
+    [layout, clampPos, nudgeToFreeSpot, desktopItems, widgetIds, defaultLayout],
   )
 
   const handlePhotoApply = useCallback((pid, state) => {
@@ -811,7 +803,7 @@ export default function DesktopWidgets({
     `desktop-widgets__card ${extra}${resizingWidgetId === id ? ' desktop-widgets__card--resizing' : ''}`.trim()
 
   const cardStyle = (id) => {
-    const p = layout[id] || DEFAULT_LAYOUT[id]
+    const p = layout[id] || defaultLayout[id]
     const { w, h } = getBoxSizeForWidget(id, p)
     return {
       left: p.x,
@@ -823,7 +815,18 @@ export default function DesktopWidgets({
   }
 
   return (
-    <div ref={containerRef} className="desktop-widgets" aria-hidden>
+    <div
+      ref={containerRef}
+      className="desktop-widgets"
+      aria-hidden
+      style={
+        knotFg
+          ? {
+              '--widget-accent-invert': knotFg,
+            }
+          : undefined
+      }
+    >
       {photoImportFor && (
         <PhotoWidgetImportModal
           lastState={photoData[photoImportFor]}
@@ -835,8 +838,13 @@ export default function DesktopWidgets({
       <div className={cardClass('calendar', 'desktop-widgets__card--calendar')} style={cardStyle('calendar')}>
         <div className="desktop-widgets__card-chrome">
           <WidgetDragGrip id="calendar" label="Move calendar widget" onDown={handleGripPointerDown} />
-          <div className="desktop-widgets__calendar-widget-body desktop-widgets__widget-dark-panel">
-            <RetroCalendarPanel now={now} variant="compact" weekdayAccentColor={knotFg} />
+          <div className="desktop-widgets__calendar-widget-body desktop-widgets__tile-inner">
+            <RetroCalendarPanel
+              now={now}
+              variant="compact"
+              weekdayAccentColor={knotFg}
+              dayAccentColor={knotFg}
+            />
           </div>
         </div>
         <button
@@ -1075,7 +1083,7 @@ export default function DesktopWidgets({
       <div className={cardClass('notesChecklist', 'desktop-widgets__card--notes')} style={cardStyle('notesChecklist')}>
         <div className="desktop-widgets__card-chrome">
           <WidgetDragGrip id="notesChecklist" label="Move notes widget" onDown={handleGripPointerDown} />
-          <div className="desktop-widgets__notes-inner desktop-widgets__widget-dark-panel desktop-widgets__notes-dark">
+          <div className="desktop-widgets__notes-inner desktop-widgets__notes-plain">
           {!notesStore.pinnedNoteId ? (
             <p className="desktop-widgets__adaptive desktop-widgets__muted desktop-widgets__muted--small">
               Open Notes and pin a note for this list.
@@ -1133,7 +1141,7 @@ export default function DesktopWidgets({
       <div className={cardClass('yearProgress', 'desktop-widgets__card--year')} style={cardStyle('yearProgress')}>
         <div className="desktop-widgets__card-chrome">
           <WidgetDragGrip id="yearProgress" label="Move year progress widget" onDown={handleGripPointerDown} />
-          <YearProgressWidget now={now} />
+          <YearProgressWidget now={now} accentBackground={bgColor2} />
         </div>
         <button
           type="button"

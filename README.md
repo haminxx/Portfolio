@@ -21,6 +21,7 @@ For GitHub, YouTube, Instagram, and LinkedIn integrations, see [docs/API_KEYS_SE
 
 - `npm run build`
 - `npm run preview` to preview the build.
+- Desktop widget layout is stored as `desktop-widget-layout-v9` in localStorage; default positions scale with viewport width/height. Clear site data to apply fresh defaults.
 
 ## Firebase Hosting
 

@@ -129,45 +129,27 @@
   overflow: hidden;
 }
 
-.desktop-widgets__widget-dark-panel {
-  background: #000000;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Transparent inner chrome (no black panel); optional bg wheel still uses its own square. */
+.desktop-widgets__tile-inner {
+  background: transparent;
+  border: none;
   box-sizing: border-box;
   mix-blend-mode: normal;
-  isolation: isolate;
 }
 
-.desktop-widgets__calendar-widget-body.desktop-widgets__widget-dark-panel {
+.desktop-widgets__calendar-widget-body.desktop-widgets__tile-inner {
   padding: 10px 10px 12px;
 }
 
-.desktop-widgets__knot-shell.desktop-widgets__widget-dark-panel {
+.desktop-widgets__knot-shell.desktop-widgets__tile-inner {
   padding: 8px 6px;
 }
 
-.desktop-widgets__notes-inner.desktop-widgets__notes-dark {
+.desktop-widgets__notes-inner.desktop-widgets__notes-plain {
   flex: 1;
   min-height: 0;
   overflow: auto;
   padding: 10px 12px 12px;
-}
-
-.desktop-widgets__notes-dark .desktop-widgets__notes-text {
-  color: rgba(241, 240, 232, 0.95);
-}
-
-.desktop-widgets__notes-dark .desktop-widgets__notes-text--done {
-  color: rgba(241, 240, 232, 0.45);
-}
-
-.desktop-widgets__notes-dark .desktop-widgets__muted,
-.desktop-widgets__notes-dark .desktop-widgets__muted--small {
-  color: rgba(241, 240, 232, 0.55);
-}
-
-.desktop-widgets__notes-dark .desktop-widgets__notes-check-label input[type='checkbox'] {
-  accent-color: #c4c4c4;
 }
 
 /* Folder modal quote clock — analog “O” only */
@@ -349,7 +331,7 @@
   font-size: clamp(0.85rem, 5.5cqw + 0.35rem, 2.1rem);
   font-weight: 800;
   letter-spacing: 0.1em;
-  color: #f1f0e8;
+  color: var(--portfolio-chrome-fg, #f5f5f7);
   line-height: 1.15;
 }
 
@@ -358,7 +340,7 @@
   font-weight: 800;
   line-height: 0.88;
   font-variant-numeric: tabular-nums;
-  color: #f1f0e8;
+  color: var(--portfolio-chrome-fg, #f5f5f7);
 }
 
 .desktop-widgets__card--calendar .desktop-widgets__calendar-widget-body {
@@ -1296,8 +1278,8 @@
   flex: 1;
   box-sizing: border-box;
   padding: 14px 16px 16px;
-  background: #000000;
-  border-radius: 22px;
+  background: transparent;
+  border-radius: 0;
   font-family: 'Montserrat', system-ui, sans-serif;
   display: flex;
   flex-direction: column;
@@ -1362,7 +1344,7 @@
 .desktop-widgets__weather-compact__status {
   margin: 0;
   font-size: 12px;
-  color: #757575;
+  color: var(--portfolio-chrome-muted, rgba(245, 245, 247, 0.62));
   text-align: center;
 }
 
@@ -1451,13 +1433,12 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  background: #000000;
   border-radius: 16px;
   text-align: left;
   padding: 12px 12px 12px;
   font: inherit;
-  color: #f1f0e8;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--portfolio-on-accent, #0a0a0c);
+  border: 1px solid color-mix(in srgb, var(--portfolio-on-accent, #0a0a0c) 22%, transparent);
   box-sizing: border-box;
 }
 
@@ -1521,12 +1502,13 @@
   align-items: baseline;
   margin-top: 8px;
   padding-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid color-mix(in srgb, var(--portfolio-on-accent, #0a0a0c) 25%, transparent);
   font-family: ui-monospace, 'Cascadia Code', 'Roboto Mono', Menlo, monospace;
   font-weight: 300;
   font-size: clamp(0.62rem, 2.4cqw, 0.78rem);
   letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--portfolio-on-accent, #0a0a0c);
+  opacity: 0.92;
 }
 
 .desktop-widgets__year-footer-toggle {
@@ -1539,13 +1521,13 @@
   padding: 0;
   text-align: left;
   text-decoration: underline;
-  text-decoration-color: rgba(255, 255, 255, 0.25);
+  text-decoration-color: color-mix(in srgb, var(--portfolio-on-accent, #0a0a0c) 28%, transparent);
   text-underline-offset: 2px;
 }
 
 .desktop-widgets__year-footer-toggle:hover {
-  color: #fff;
-  text-decoration-color: rgba(255, 255, 255, 0.45);
+  opacity: 1;
+  text-decoration-color: color-mix(in srgb, var(--portfolio-on-accent, #0a0a0c) 45%, transparent);
 }
 
 .desktop-widgets__year-dot {
@@ -1554,20 +1536,20 @@
   aspect-ratio: 1;
   margin: 0 auto;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
+  background: color-mix(in srgb, var(--portfolio-on-accent, #0a0a0c) 18%, transparent);
 }
 
 .desktop-widgets__year-dot--on {
-  background: #f1f0e8;
+  background: var(--portfolio-on-accent, #0a0a0c);
 }
 
-/* Elapsed time: light; remaining: dark */
+/* Elapsed: solid on-accent; remaining: faint */
 .desktop-widgets__year-dot--past {
-  background: #f1f0e8;
+  background: var(--portfolio-on-accent, #0a0a0c);
 }
 
 .desktop-widgets__year-dot--left {
-  background: rgba(255, 255, 255, 0.14);
+  background: color-mix(in srgb, var(--portfolio-on-accent, #0a0a0c) 28%, transparent);
 }
 
 .desktop-widgets__photo-overlay .desktop-widgets__photo-drag-grip {

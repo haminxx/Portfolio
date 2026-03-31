@@ -99,3 +99,43 @@ export function collectWidgetIdsFromLayout(layout) {
   }
   return [...ids]
 }
+
+/** Reference design width; RX was ~62.5% of this for the right column. */
+const REFERENCE_VIEWPORT_W = 1440
+
+/**
+ * Default widget positions/sizes scaled to viewport so laptop vs large monitor keep similar layout ratios.
+ */
+export function defaultLayoutSnapshot(viewportW, viewportH) {
+  const w = Math.max(640, Math.min(Number(viewportW) || REFERENCE_VIEWPORT_W, 4096))
+  const h = Math.max(480, Math.min(Number(viewportH) || 900, 4096))
+  const RX = Math.round(Math.max(280, (w * 900) / REFERENCE_VIEWPORT_W))
+  const topY = Math.min(56, Math.max(40, Math.round(h * 0.06)))
+  const TOP_PHOTO_ROWS = 3
+  const rowGap = 8
+  const blockGap = 8
+  return {
+    weather: { x: 20, y: topY, ...defaultStaticGrid('weather') },
+    calendar: { x: 20 + 3 * CELL, y: topY, ...defaultStaticGrid('calendar') },
+    knotWidget: { x: 20 + 6 * CELL, y: topY, ...defaultStaticGrid('knotWidget') },
+    photoA: { x: 20, y: topY + 3 * CELL + 10, gridW: 4, gridH: 6 },
+    photoB: { x: RX, y: topY, gridW: 3, gridH: 3 },
+    photoC: { x: RX + 3 * CELL, y: topY, gridW: 3, gridH: 3 },
+    music: { x: RX, y: topY + TOP_PHOTO_ROWS * CELL + rowGap, ...defaultStaticGrid('music') },
+    notesChecklist: {
+      x: RX,
+      y: topY + TOP_PHOTO_ROWS * CELL + rowGap + 3 * CELL + blockGap,
+      ...defaultStaticGrid('notesChecklist'),
+    },
+    bgControls: {
+      x: RX + 4 * CELL,
+      y: topY + TOP_PHOTO_ROWS * CELL + rowGap + 3 * CELL + blockGap,
+      ...defaultStaticGrid('bgControls'),
+    },
+    yearProgress: {
+      x: RX,
+      y: topY + TOP_PHOTO_ROWS * CELL + rowGap + 3 * CELL + blockGap + 4 * CELL + blockGap,
+      ...defaultStaticGrid('yearProgress'),
+    },
+  }
+}

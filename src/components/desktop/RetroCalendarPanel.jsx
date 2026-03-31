@@ -14,7 +14,13 @@ export function buildMonthCells(year, monthIndex) {
 const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
 /** `compact` = square summary; `full` = two-column month grid (folder modal). */
-export default function RetroCalendarPanel({ now, variant = 'full', weekdayAccentColor }) {
+export default function RetroCalendarPanel({
+  now,
+  variant = 'full',
+  weekdayAccentColor,
+  /** Compact variant: big day number (defaults to weekday accent). */
+  dayAccentColor,
+}) {
   const y = now.getFullYear()
   const m = now.getMonth()
   const cells = useMemo(() => buildMonthCells(y, m), [y, m])
@@ -52,7 +58,12 @@ export default function RetroCalendarPanel({ now, variant = 'full', weekdayAccen
         >
           {dowToday} {monthShort}
         </div>
-        <div className="desktop-widgets__retro-cal-compact-day">{dayToday}</div>
+        <div
+          className="desktop-widgets__retro-cal-compact-day"
+          style={dayAccentColor || weekdayAccentColor ? { color: dayAccentColor || weekdayAccentColor } : undefined}
+        >
+          {dayToday}
+        </div>
       </div>
     )
   }
