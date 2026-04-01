@@ -269,7 +269,7 @@ function loadLayout(photoIdList) {
   try {
     let raw = localStorage.getItem(LAYOUT_KEY)
     if (!raw) {
-      const fallbacks = [LAYOUT_KEY_PREV, 'desktop-widget-layout-v9']
+      const fallbacks = [LAYOUT_KEY_PREV, 'desktop-widget-layout-v10', 'desktop-widget-layout-v9']
       for (const key of fallbacks) {
         const legacy = localStorage.getItem(key)
         if (!legacy) continue

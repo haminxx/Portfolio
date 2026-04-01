@@ -58,6 +58,12 @@
   margin-top: clamp(0.5rem, 4vh, 2.5rem);
 }
 
+.welcome-overlay__stack--hello-only {
+  margin-top: clamp(1rem, 8vh, 4rem);
+  min-height: 32vh;
+  justify-content: center;
+}
+
 .welcome-overlay__name-entry {
   width: 100%;
   max-width: min(22rem, 92vw);
