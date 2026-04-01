@@ -40,3 +40,24 @@ export function widgetSurfaceFromAccent(accentHex) {
   if (isNearBlackAccent(accentHex)) return '#000000'
   return hexRgbInvert(accentHex)
 }
+
+/** `hex` as `rgba(r,g,b,a)`. */
+export function hexToRgba(hex, alpha) {
+  const { r, g, b } = hexToRgb(hex)
+  const a = Math.max(0, Math.min(1, Number(alpha) || 0))
+  return `rgba(${r},${g},${b},${a})`
+}
+
+/**
+ * CSS custom properties for liquid-glass panels: tint from mesh accent (color2) + depth from logical surface.
+ */
+export function liquidGlassVars(accentHex, surfaceHex) {
+  return {
+    '--liquid-tint-a': hexToRgba(accentHex, 0.42),
+    '--liquid-tint-b': hexToRgba(surfaceHex, 0.38),
+    '--liquid-tint-c': isNearBlackAccent(accentHex)
+      ? 'rgba(12,12,16,0.72)'
+      : hexToRgba(surfaceHex, 0.22),
+    '--liquid-edge': hexToRgba(accentHex, 0.55),
+  }
+}

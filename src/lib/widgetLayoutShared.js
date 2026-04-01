@@ -103,39 +103,59 @@ export function collectWidgetIdsFromLayout(layout) {
 /** Reference design width; RX was ~62.5% of this for the right column. */
 const REFERENCE_VIEWPORT_W = 1440
 
+/** Bump when default geometry changes (keep DesktopWidgets + widgetOverlapGeometry in sync). */
+export const WIDGET_LAYOUT_STORAGE_KEY = 'desktop-widget-layout-v10'
+export const WIDGET_LAYOUT_STORAGE_KEY_PREV = 'desktop-widget-layout-v9'
+
 /**
  * Default widget positions/sizes scaled to viewport so laptop vs large monitor keep similar layout ratios.
+ * Left: tall photo; middle column: calendar, knot, notes, weather; year under photo. Right: photos + music + controls.
  */
 export function defaultLayoutSnapshot(viewportW, viewportH) {
   const w = Math.max(640, Math.min(Number(viewportW) || REFERENCE_VIEWPORT_W, 4096))
   const h = Math.max(480, Math.min(Number(viewportH) || 900, 4096))
   const RX = Math.round(Math.max(280, (w * 900) / REFERENCE_VIEWPORT_W))
   const topY = Math.min(56, Math.max(40, Math.round(h * 0.06)))
+  const gap = 8
+  const leftX = 20
+  const photoGridW = 4
+  /** Stack: calendar(3) + knot(3) + notes(4) + weather(3) rows */
+  const photoGridH = 13
+  const col2X = leftX + photoGridW * CELL + gap
+
+  let y = topY
+  const calendar = { x: col2X, y, ...defaultStaticGrid('calendar') }
+  y += 3 * CELL
+  const knotWidget = { x: col2X, y, ...defaultStaticGrid('knotWidget') }
+  y += 3 * CELL
+  const notesChecklist = { x: col2X, y, ...defaultStaticGrid('notesChecklist') }
+  y += 4 * CELL
+  const weather = { x: col2X, y, ...defaultStaticGrid('weather') }
+
+  const photoA = { x: leftX, y: topY, gridW: photoGridW, gridH: photoGridH }
+  const yearY = topY + photoGridH * CELL + gap
+  const yearProgress = { x: leftX, y: yearY, ...defaultStaticGrid('yearProgress') }
+
   const TOP_PHOTO_ROWS = 3
   const rowGap = 8
   const blockGap = 8
+  const musicY = topY + TOP_PHOTO_ROWS * CELL + rowGap
+  const lowerY = musicY + 3 * CELL + blockGap
+
   return {
-    weather: { x: 20, y: topY, ...defaultStaticGrid('weather') },
-    calendar: { x: 20 + 3 * CELL, y: topY, ...defaultStaticGrid('calendar') },
-    knotWidget: { x: 20 + 6 * CELL, y: topY, ...defaultStaticGrid('knotWidget') },
-    photoA: { x: 20, y: topY + 3 * CELL + 10, gridW: 4, gridH: 6 },
+    calendar,
+    weather,
+    knotWidget,
+    notesChecklist,
+    photoA,
+    yearProgress,
     photoB: { x: RX, y: topY, gridW: 3, gridH: 3 },
     photoC: { x: RX + 3 * CELL, y: topY, gridW: 3, gridH: 3 },
-    music: { x: RX, y: topY + TOP_PHOTO_ROWS * CELL + rowGap, ...defaultStaticGrid('music') },
-    notesChecklist: {
-      x: RX,
-      y: topY + TOP_PHOTO_ROWS * CELL + rowGap + 3 * CELL + blockGap,
-      ...defaultStaticGrid('notesChecklist'),
-    },
+    music: { x: RX, y: musicY, ...defaultStaticGrid('music') },
     bgControls: {
       x: RX + 4 * CELL,
-      y: topY + TOP_PHOTO_ROWS * CELL + rowGap + 3 * CELL + blockGap,
+      y: lowerY,
       ...defaultStaticGrid('bgControls'),
-    },
-    yearProgress: {
-      x: RX,
-      y: topY + TOP_PHOTO_ROWS * CELL + rowGap + 3 * CELL + blockGap + 4 * CELL + blockGap,
-      ...defaultStaticGrid('yearProgress'),
     },
   }
 }

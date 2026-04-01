@@ -40,6 +40,8 @@ import {
   SQUARE_WIDGET_IDS,
   snapSquareLayoutEntry,
   defaultLayoutSnapshot,
+  WIDGET_LAYOUT_STORAGE_KEY,
+  WIDGET_LAYOUT_STORAGE_KEY_PREV,
 } from '../lib/widgetLayoutShared'
 import {
   loadPhotoWidgetIdList,
@@ -56,13 +58,19 @@ import {
 } from '../lib/openWeather'
 import RetroCalendarPanel from './desktop/RetroCalendarPanel'
 import { KnotAnimation } from './ui/knot-animation'
-import { hexRgbInvert, widgetSurfaceFromAccent, foregroundOnSolid, isNearBlackAccent } from '../lib/colorUtils'
+import {
+  hexRgbInvert,
+  widgetSurfaceFromAccent,
+  foregroundOnSolid,
+  isNearBlackAccent,
+  liquidGlassVars,
+} from '../lib/colorUtils'
 import './DesktopWidgets.css'
 
 const SD_LAT = 32.72
 const SD_LON = -117.16
-const LAYOUT_KEY = 'desktop-widget-layout-v9'
-const LAYOUT_KEY_PREV = 'desktop-widget-layout-v8'
+const LAYOUT_KEY = WIDGET_LAYOUT_STORAGE_KEY
+const LAYOUT_KEY_PREV = WIDGET_LAYOUT_STORAGE_KEY_PREV
 
 function formatLocationLabel(raw) {
   if (!raw || typeof raw !== 'string') return 'Local'
@@ -132,7 +140,7 @@ function getDefaultLayout() {
 const YEAR_WEEKS = 52
 
 /** 52 dots = weeks in the year; click footer left to toggle month mode (dots = days in month). */
-function YearProgressWidget({ now, accentBackground, surfaceForeground }) {
+function YearProgressWidget({ now, surfaceForeground, liquidGlass }) {
   const [mode, setMode] = useState('year')
 
   const yearMode = useMemo(() => {
@@ -164,18 +172,14 @@ function YearProgressWidget({ now, accentBackground, surfaceForeground }) {
 
   return (
     <div
-      className="desktop-widgets__year-widget"
+      className="desktop-widgets__year-widget desktop-widgets__year-widget--liquid"
       role="img"
       aria-label={ariaLabel}
-      style={
-        accentBackground
-          ? {
-              background: accentBackground,
-              color: surfaceForeground,
-              '--portfolio-on-accent': surfaceForeground,
-            }
-          : undefined
-      }
+      style={{
+        ...liquidGlass,
+        color: surfaceForeground,
+        '--portfolio-on-accent': surfaceForeground,
+      }}
     >
       <div className="desktop-widgets__year-dots-wrap">
         <div
@@ -413,6 +417,7 @@ export default function DesktopWidgets({
     if (weatherOnBlackSurface) return undefined
     return widgetSurfaceFg === '#0a0a0c' ? 'rgba(10,10,14,0.55)' : 'rgba(245,245,247,0.62)'
   }, [weatherOnBlackSurface, widgetSurfaceFg])
+  const liquidGlass = useMemo(() => liquidGlassVars(bgColor2, widgetSurfaceBg), [bgColor2, widgetSurfaceBg])
   const defaultLayout = useMemo(() => getDefaultLayout(), [])
 
   const onMeshColorsFromWheel = useCallback(
@@ -890,13 +895,13 @@ export default function DesktopWidgets({
         <div className="desktop-widgets__card-chrome">
           <WidgetDragGrip id="weather" label="Move weather widget" onDown={handleGripPointerDown} />
           <div
-            className="desktop-widgets__weather-compact"
+            className="desktop-widgets__weather-compact desktop-widgets__weather-compact--liquid"
             style={{
-              background: widgetSurfaceBg,
               borderRadius: 22,
               color: weatherEmphasisFg,
               '--widget-accent-invert': weatherEmphasisFg,
               ...(weatherMutedFg ? { '--weather-muted': weatherMutedFg } : {}),
+              ...liquidGlass,
             }}
           >
             {weather.status === 'loading' && (
@@ -1181,11 +1186,7 @@ export default function DesktopWidgets({
       <div className={cardClass('yearProgress', 'desktop-widgets__card--year')} style={cardStyle('yearProgress')}>
         <div className="desktop-widgets__card-chrome">
           <WidgetDragGrip id="yearProgress" label="Move year progress widget" onDown={handleGripPointerDown} />
-          <YearProgressWidget
-            now={now}
-            accentBackground={widgetSurfaceBg}
-            surfaceForeground={widgetSurfaceFg}
-          />
+          <YearProgressWidget now={now} surfaceForeground={widgetSurfaceFg} liquidGlass={liquidGlass} />
         </div>
         <button
           type="button"
