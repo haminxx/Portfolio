@@ -108,21 +108,21 @@ const REF_LAYOUT_H = 900
  * Owner-tuned defaults at REF_LAYOUT_W × REF_LAYOUT_H; positions scale with viewport, grid sizes stay fixed.
  */
 const OWNER_LAYOUT_TEMPLATE = {
-  bgControls: { x: 924, y: 379, gridW: 3, gridH: 3 },
+  bgControls: { x: 924, y: 432, gridW: 3, gridH: 3 },
   calendar: { x: 284, y: 41, gridW: 3, gridH: 3 },
   knotWidget: { x: 292, y: 163, gridW: 3, gridH: 3 },
-  music: { x: 1056, y: 360, gridW: 9, gridH: 3 },
+  music: { x: 1056, y: 412, gridW: 9, gridH: 3 },
   notesChecklist: { x: 282, y: 288, gridW: 5, gridH: 4 },
   photoA: { x: 2, y: 38, gridW: 7, gridH: 10 },
   photoB: { x: 788, y: 40, gridW: 6, gridH: 8 },
   photoC: { x: 1040, y: 40, gridW: 10, gridH: 8 },
-  weather: { x: 762, y: 366, gridW: 4, gridH: 4 },
-  yearProgress: { x: 0, y: 438, gridW: 7, gridH: 3 },
+  weather: { x: 762, y: 418, gridW: 4, gridH: 4 },
+  yearProgress: { x: 0, y: 490, gridW: 7, gridH: 3 },
 }
 
 /** Bump when default geometry changes (keep DesktopWidgets + widgetOverlapGeometry in sync). */
-export const WIDGET_LAYOUT_STORAGE_KEY = 'desktop-widget-layout-v12'
-export const WIDGET_LAYOUT_STORAGE_KEY_PREV = 'desktop-widget-layout-v11'
+export const WIDGET_LAYOUT_STORAGE_KEY = 'desktop-widget-layout-v13'
+export const WIDGET_LAYOUT_STORAGE_KEY_PREV = 'desktop-widget-layout-v12'
 
 function scaleOwnerLayout(viewportW, viewportH) {
   const w = Math.max(640, Math.min(Number(viewportW) || REF_LAYOUT_W, 4096))

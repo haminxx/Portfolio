@@ -16,21 +16,6 @@ function WelcomeBackground() {
   )
 }
 
-function tryEnterFullscreen() {
-  const el = document.documentElement
-  try {
-    const p = el.requestFullscreen?.()
-    if (p && typeof p.catch === 'function') p.catch(() => {})
-  } catch {
-    /* ignore */
-  }
-  try {
-    if (typeof el.webkitRequestFullscreen === 'function') el.webkitRequestFullscreen()
-  } catch {
-    /* ignore */
-  }
-}
-
 /**
  * Full-screen welcome: Apple-style "hello" stroke draw, then fade to desktop.
  */
@@ -42,7 +27,6 @@ export default function WelcomeOverlay({ onComplete }) {
 
   const goExit = useCallback(() => {
     unlockAutoplay()
-    tryEnterFullscreen()
     setPhase('exit')
   }, [unlockAutoplay])
 

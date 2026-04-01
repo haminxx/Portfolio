@@ -212,6 +212,113 @@ app.get('/api/maps/route', async (req, res) => {
   }
 })
 
+const NOTION_TOKEN = process.env.NOTION_TOKEN
+const NOTION_CALENDAR_DATABASE_ID = process.env.NOTION_CALENDAR_DATABASE_ID?.trim()
+const NOTION_DATE_PROPERTY = process.env.NOTION_DATE_PROPERTY || 'Date'
+const NOTION_API_VERSION = '2022-06-28'
+
+async function notionPost(path, body) {
+  const r = await fetch(`https://api.notion.com/v1${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${NOTION_TOKEN}`,
+      'Notion-Version': NOTION_API_VERSION,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+  const text = await r.text()
+  let data
+  try {
+    data = JSON.parse(text)
+  } catch {
+    data = { message: text }
+  }
+  if (!r.ok) {
+    const err = new Error(data.message || r.statusText || 'Notion API error')
+    err.status = r.status
+    err.body = data
+    throw err
+  }
+  return data
+}
+
+function notionExtractTitle(properties) {
+  for (const p of Object.values(properties || {})) {
+    if (p?.type === 'title' && Array.isArray(p.title)) {
+      return p.title.map((t) => t.plain_text).join('').trim() || 'Untitled'
+    }
+  }
+  return 'Untitled'
+}
+
+function notionPageToEvent(page, datePropertyName) {
+  const props = page.properties || {}
+  const dp = props[datePropertyName]
+  if (dp?.type !== 'date' || !dp.date?.start) return null
+  const { start, end } = dp.date
+  return {
+    id: page.id,
+    title: notionExtractTitle(props),
+    start,
+    end: end || start,
+    allDay: !String(start).includes('T'),
+  }
+}
+
+/**
+ * Query a Notion database for rows whose Date property overlaps the requested range.
+ * Set NOTION_TOKEN (integration secret) and NOTION_CALENDAR_DATABASE_ID (database with a Date property).
+ * Optional NOTION_DATE_PROPERTY (default "Date") must match your database column name.
+ */
+app.get('/api/notion/calendar', async (req, res) => {
+  const start = req.query.start
+  const end = req.query.end
+  if (!start || !end) {
+    return res.status(400).json({ error: 'Missing start and end query params (ISO strings)' })
+  }
+  if (!NOTION_TOKEN || !NOTION_CALENDAR_DATABASE_ID) {
+    return res.json({
+      configured: false,
+      events: [],
+      message: 'Notion is not configured on the server.',
+    })
+  }
+  const startDay = String(start).includes('T') ? String(start).slice(0, 10) : String(start)
+  const endDay = String(end).includes('T') ? String(end).slice(0, 10) : String(end)
+  try {
+    const events = []
+    let cursor
+    do {
+      const body = {
+        filter: {
+          and: [
+            { property: NOTION_DATE_PROPERTY, date: { on_or_after: startDay } },
+            { property: NOTION_DATE_PROPERTY, date: { on_or_before: endDay } },
+          ],
+        },
+        page_size: 100,
+        ...(cursor ? { start_cursor: cursor } : {}),
+      }
+      const data = await notionPost(`/databases/${NOTION_CALENDAR_DATABASE_ID}/query`, body)
+      for (const page of data.results || []) {
+        const ev = notionPageToEvent(page, NOTION_DATE_PROPERTY)
+        if (ev) events.push(ev)
+      }
+      cursor = data.has_more ? data.next_cursor : undefined
+    } while (cursor)
+
+    return res.json({ configured: true, events })
+  } catch (e) {
+    console.error('Notion calendar:', e.body || e.message)
+    return res.status(e.status >= 400 && e.status < 600 ? e.status : 500).json({
+      configured: true,
+      events: [],
+      error: e.body?.message || e.message || 'Failed to load Notion calendar',
+    })
+  }
+})
+
 app.get('/api/youtube/search', async (req, res) => {
   const q = req.query.q?.trim()
   if (!q) {

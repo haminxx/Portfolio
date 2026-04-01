@@ -21,6 +21,7 @@ import {
   Gamepad2,
   StickyNote,
   LayoutGrid,
+  Calendar,
 } from 'lucide-react'
 import { APPS } from '../config/apps'
 import './FinderWindow.css'
@@ -60,6 +61,7 @@ const APP_ICONS = {
   doom: Gamepad2,
   dadnme: Gamepad2,
   notes: StickyNote,
+  notionCalendar: Calendar,
   tetris: LayoutGrid,
   finder: Folder,
 }

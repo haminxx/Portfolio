@@ -17,6 +17,7 @@ export const LazyGalleryWindow = lazy(() => import('../components/GalleryWindow'
 export const LazyFaceTimeWindow = lazy(() => import('../components/FaceTimeWindow'))
 export const LazyFinderWindow = lazy(() => import('../components/FinderWindow'))
 export const LazyNotesWindow = lazy(() => import('../components/NotesWindow'))
+export const LazyNotionCalendarWindow = lazy(() => import('../components/NotionCalendarWindow'))
 export const LazyTetrisWindow = lazy(() => import('../components/TetrisWindow'))
 export const LazyGitHubProfileCard = lazy(() => import('../components/GitHubProfileCard'))
 export const LazyLinkedInProfileCard = lazy(() => import('../components/LinkedInProfileCard'))

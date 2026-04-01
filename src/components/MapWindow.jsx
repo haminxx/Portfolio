@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap, GeoJSON, CircleMarker } from 'react-leaflet'
 import L from 'leaflet'
 import {
@@ -27,6 +27,9 @@ import './MapWindow.css'
 
 const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 const MAPBOX_TOKEN = (import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || '').trim()
+const MAPTILER_KEY = (import.meta.env.VITE_MAPTILER_API_KEY || '').trim()
+
+const MAP_STYLE_ORDER = ['apple', 'minimal', 'standard', 'satellite', 'terrain']
 
 const MAP_STYLE_KEYS = {
   minimal: {
@@ -51,6 +54,30 @@ const MAP_STYLE_KEYS = {
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
   },
+}
+
+/**
+ * Apple-like basemap: MapTiler Streets (free tier key) when VITE_MAPTILER_API_KEY is set;
+ * otherwise CARTO light raster with CSS tweaks (see MapWindow.css).
+ */
+function getMapTileConfig(mapStyle) {
+  if (mapStyle === 'apple') {
+    if (MAPTILER_KEY) {
+      return {
+        url: `https://api.maptiler.com/maps/streets-v2/256/{z}/{x}/{y}.png?key=${encodeURIComponent(MAPTILER_KEY)}`,
+        attribution:
+          '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        appleFallback: false,
+      }
+    }
+    return {
+      url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+      attribution: MAP_STYLE_KEYS.minimal.attribution,
+      appleFallback: true,
+    }
+  }
+  const s = MAP_STYLE_KEYS[mapStyle] ?? MAP_STYLE_KEYS.minimal
+  return { url: s.url, attribution: s.attribution, appleFallback: false }
 }
 
 const PLACES = {
@@ -167,9 +194,9 @@ function MapControls({ mapStyle, onMapStyleChange, t }) {
           className="map-window__view-select"
           aria-label="Map style"
         >
-          {Object.entries(MAP_STYLE_KEYS).map(([key, s]) => (
+          {MAP_STYLE_ORDER.map((key) => (
             <option key={key} value={key}>
-              {t(`map.${s.key}`)}
+              {t(`map.${key}`)}
             </option>
           ))}
         </select>
@@ -200,7 +227,7 @@ export default function MapWindow() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
   const suggestionsDebounceRef = useRef(null)
-  const [mapStyle, setMapStyle] = useState('minimal')
+  const [mapStyle, setMapStyle] = useState('apple')
   const [userLocation, setUserLocation] = useState(null)
   const [geoMessage, setGeoMessage] = useState(null)
   const [directionsTarget, setDirectionsTarget] = useState(null)
@@ -397,7 +424,7 @@ export default function MapWindow() {
     })
   }
 
-  const currentStyle = MAP_STYLE_KEYS[mapStyle] ?? MAP_STYLE_KEYS.minimal
+  const tileConfig = useMemo(() => getMapTileConfig(mapStyle), [mapStyle])
 
   const handleSearch = useCallback(async () => {
     const q = searchQuery.trim()
@@ -488,13 +515,13 @@ export default function MapWindow() {
         <MapContainer
           center={[33.575, -117.726]}
           zoom={10}
-          className="map-window__leaflet"
+          className={`map-window__leaflet${tileConfig.appleFallback ? ' map-window__leaflet--apple-fallback' : ''}`}
           style={{ height: '100%', width: '100%' }}
           zoomControl={false}
         >
           <MapFlyTo coords={flyToCoords} zoom={flyToZoom} />
           {routeGeometry && <MapFitRouteBounds geometry={routeGeometry} />}
-          <TileLayer attribution={currentStyle.attribution} url={currentStyle.url} />
+          <TileLayer attribution={tileConfig.attribution} url={tileConfig.url} />
           <MapControls mapStyle={mapStyle} onMapStyleChange={setMapStyle} t={t} />
           {userLocation && (
             <CircleMarker

@@ -69,6 +69,7 @@ export const translations = {
       doom: 'Doom',
       dadnme: "Dad 'n Me",
       notes: 'Notes',
+      notionCalendar: 'Notion Calendar',
       tetris: 'Tetris',
     },
     desktopContextMenu: {
@@ -124,6 +125,7 @@ export const translations = {
       standard: 'Standard',
       satellite: 'Satellite',
       terrain: 'Terrain',
+      apple: 'Apple style',
       home: 'Home',
       school: 'School',
       college: 'College',
@@ -147,6 +149,18 @@ export const translations = {
       min: 'min',
       mi: 'mi',
       to: 'To',
+    },
+    notionCalendar: {
+      brand: 'Calendar',
+      today: 'Today',
+      prevWeek: 'Previous week',
+      nextWeek: 'Next week',
+      loading: 'Loading…',
+      empty: '—',
+      allDay: 'All day',
+      demoMode: 'Demo schedule — connect Notion on the server to show your database.',
+      serverHint:
+        'Live sync: set NOTION_TOKEN and NOTION_CALENDAR_DATABASE_ID on the API host (optional NOTION_DATE_PROPERTY if your date column is not named “Date”). Share your Notion database with the integration.',
     },
     ytmusic: {
       home: 'Home',

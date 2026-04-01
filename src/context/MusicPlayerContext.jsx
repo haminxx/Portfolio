@@ -194,6 +194,8 @@ export function MusicPlayerProvider({ children }) {
           modestbranding: 1,
           rel: 0,
           playsinline: 1,
+          /** Required so postMessage targetOrigin matches the embedding page (avoids console errors on custom domains). */
+          origin: typeof window !== 'undefined' ? window.location.origin : undefined,
         },
         events: {
           onReady: () => {

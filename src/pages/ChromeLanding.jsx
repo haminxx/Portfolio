@@ -22,6 +22,7 @@ import {
   LazyFaceTimeWindow,
   LazyFinderWindow,
   LazyNotesWindow,
+  LazyNotionCalendarWindow,
   LazyTetrisWindow,
   LazyGitHubProfileCard,
   LazyLinkedInProfileCard,
@@ -47,6 +48,7 @@ import {
   Folder,
   StickyNote,
   LayoutGrid,
+  Calendar,
 } from 'lucide-react'
 import './ChromeLanding.css'
 
@@ -62,6 +64,7 @@ const APP_ICONS = {
   map: MapIcon,
   youtubeMusic: Film,
   notes: StickyNote,
+  notionCalendar: Calendar,
   tetris: LayoutGrid,
 }
 
@@ -160,13 +163,13 @@ export default function ChromeLanding({ onReboot }) {
     const hasDadnme = next.some((i) => i.type === 'shortcut' && i.appKey === 'dadnme')
     const hasTetris = next.some((i) => i.type === 'shortcut' && i.appKey === 'tetris')
     if (!hasDoom) {
-      next = [...next, { id: 'doom-shortcut', type: 'shortcut', name: 'DOOM', appKey: 'doom', parentId: null, x: 24, y: 520 }]
+      next = [...next, { id: 'doom-shortcut', type: 'shortcut', name: 'DOOM', appKey: 'doom', parentId: null, x: 24, y: 572 }]
     }
     if (!hasDadnme) {
-      next = [...next, { id: 'dadnme-shortcut', type: 'shortcut', name: "Dad 'n Me", appKey: 'dadnme', parentId: null, x: 120, y: 520 }]
+      next = [...next, { id: 'dadnme-shortcut', type: 'shortcut', name: "Dad 'n Me", appKey: 'dadnme', parentId: null, x: 120, y: 572 }]
     }
     if (!hasTetris) {
-      next = [...next, { id: 'tetris-shortcut', type: 'shortcut', name: 'Tetris', appKey: 'tetris', parentId: null, x: 216, y: 520 }]
+      next = [...next, { id: 'tetris-shortcut', type: 'shortcut', name: 'Tetris', appKey: 'tetris', parentId: null, x: 216, y: 572 }]
     }
     if (!hasDoom || !hasDadnme || !hasTetris || removedFolder) {
       saveDesktopItems(next)
@@ -286,6 +289,10 @@ export default function ChromeLanding({ onReboot }) {
       if (appKey === 'notes') {
         winWidth = Math.min(760, Math.max(520, vw * 0.72))
         winHeight = Math.min(620, Math.max(400, vh * 0.78))
+      }
+      if (appKey === 'notionCalendar') {
+        winWidth = Math.min(960, Math.max(560, vw * 0.88))
+        winHeight = Math.min(640, Math.max(420, vh * 0.82))
       }
       const x = Math.max(0, (vw - winWidth) / 2 + prev.length * 24)
       const y = Math.max(32, (vh - winHeight) / 2 + prev.length * 24 - 36)
@@ -694,6 +701,8 @@ export default function ChromeLanding({ onReboot }) {
           content = <LazyDadNMeWindow />
         } else if (win.appKey === 'notes') {
           content = <LazyNotesWindow />
+        } else if (win.appKey === 'notionCalendar') {
+          content = <LazyNotionCalendarWindow />
         } else if (win.appKey === 'tetris') {
           content = <LazyTetrisWindow keyboardActive={focusedAppWindowId === win.id && !win.isMinimized} />
         } else if (profileUrl) {

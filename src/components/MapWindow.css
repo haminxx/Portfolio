@@ -18,6 +18,11 @@
   min-height: 300px;
 }
 
+/* Apple-like tuning when using CARTO light fallback (no MapTiler key). */
+.map-window__leaflet--apple-fallback .leaflet-tile-pane {
+  filter: saturate(0.88) contrast(1.03) brightness(1.04);
+}
+
 .map-window__controls-strip {
   position: absolute;
   right: 16px;

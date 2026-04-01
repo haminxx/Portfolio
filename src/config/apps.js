@@ -81,6 +81,12 @@ export const APPS = {
     icon: 'notes',
     iconPath: '/dock-icons/notes.png',
   },
+  notionCalendar: {
+    label: 'Notion Calendar',
+    domain: 'calendar.notion.so',
+    icon: 'notionCalendar',
+    iconPath: '/dock-icons/notion-calendar.svg',
+  },
   tetris: {
     label: 'Tetris',
     domain: 'tetris.local',
