@@ -19,7 +19,8 @@
 }
 
 .desktop-widgets__card-chrome--music {
-  overflow: hidden;
+  overflow: visible;
+  min-height: 0;
 }
 
 .desktop-widgets__widget-drag-grip {
@@ -319,7 +320,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: clamp(6px, 2.5cqh, 20px);
+  gap: clamp(2px, 1cqh, 8px);
   text-align: center;
   padding: clamp(6px, 2cqw, 14px);
   background: transparent;
@@ -335,6 +336,9 @@
   letter-spacing: 0.1em;
   color: var(--portfolio-chrome-fg, #f5f5f7);
   line-height: 1.15;
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
 }
 
 .desktop-widgets__retro-cal-compact-day {
@@ -343,6 +347,9 @@
   line-height: 0.88;
   font-variant-numeric: tabular-nums;
   color: var(--portfolio-chrome-fg, #f5f5f7);
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
 }
 
 .desktop-widgets__card--calendar .desktop-widgets__calendar-widget-body {
@@ -470,10 +477,11 @@
 }
 
 .desktop-widgets__card--music {
-  width: 312px;
-  min-height: 136px;
-  padding: 10px 12px 12px;
+  min-width: 0;
+  min-height: 148px;
+  padding: 10px 12px 14px;
   padding-top: 12px;
+  box-sizing: border-box;
 }
 
 .desktop-widgets__card--bg-controls {
@@ -934,7 +942,8 @@
   display: flex;
   align-items: stretch;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 10px 12px 12px;
+  margin-bottom: 2px;
   border-radius: 20px;
   background: linear-gradient(
     155deg,
@@ -1304,6 +1313,9 @@
     0 12px 42px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(22px) saturate(1.35);
   -webkit-backdrop-filter: blur(22px) saturate(1.35);
+  transition:
+    border-color 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.55s ease;
 }
 
 .desktop-widgets__weather-compact--liquid::before {
@@ -1369,16 +1381,19 @@
 .desktop-widgets__weather-compact__white {
   color: var(--widget-accent-invert, #ffffff);
   font-weight: 800;
+  transition: color 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .desktop-widgets__weather-compact__grey {
   color: var(--weather-muted, var(--portfolio-chrome-muted, rgba(245, 245, 247, 0.62)));
   font-weight: 600;
+  transition: color 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .desktop-widgets__weather-compact__icon {
   display: flex;
   color: var(--widget-accent-invert, #ffffff);
+  transition: color 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .desktop-widgets__weather-compact__status {
@@ -1480,6 +1495,9 @@
   color: var(--portfolio-on-accent, #0a0a0c);
   border: 1px solid color-mix(in srgb, var(--portfolio-on-accent, #0a0a0c) 22%, transparent);
   box-sizing: border-box;
+  transition:
+    color 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .desktop-widgets__year-widget--liquid {
@@ -1611,6 +1629,7 @@
   margin: 0 auto;
   border-radius: 50%;
   background: color-mix(in srgb, var(--portfolio-on-accent, #0a0a0c) 18%, transparent);
+  transition: background 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .desktop-widgets__year-dot--on {
@@ -1620,10 +1639,12 @@
 /* Elapsed: solid on-accent; remaining: faint */
 .desktop-widgets__year-dot--past {
   background: var(--portfolio-on-accent, #0a0a0c);
+  transition: background 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .desktop-widgets__year-dot--left {
   background: color-mix(in srgb, var(--portfolio-on-accent, #0a0a0c) 28%, transparent);
+  transition: background 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .desktop-widgets__photo-overlay .desktop-widgets__photo-drag-grip {

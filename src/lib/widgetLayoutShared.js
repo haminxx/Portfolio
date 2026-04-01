@@ -100,62 +100,51 @@ export function collectWidgetIdsFromLayout(layout) {
   return [...ids]
 }
 
-/** Reference design width; RX was ~62.5% of this for the right column. */
-const REFERENCE_VIEWPORT_W = 1440
-
-/** Bump when default geometry changes (keep DesktopWidgets + widgetOverlapGeometry in sync). */
-export const WIDGET_LAYOUT_STORAGE_KEY = 'desktop-widget-layout-v10'
-export const WIDGET_LAYOUT_STORAGE_KEY_PREV = 'desktop-widget-layout-v9'
+/** Reference viewport used when scaling owner default x/y (must match capture). */
+const REF_LAYOUT_W = 1440
+const REF_LAYOUT_H = 900
 
 /**
- * Default widget positions/sizes scaled to viewport so laptop vs large monitor keep similar layout ratios.
- * Left: tall photo; middle column: calendar, knot, notes, weather; year under photo. Right: photos + music + controls.
+ * Owner-tuned defaults at REF_LAYOUT_W × REF_LAYOUT_H; positions scale with viewport, grid sizes stay fixed.
+ */
+const OWNER_LAYOUT_TEMPLATE = {
+  bgControls: { x: 15, y: 701, gridW: 3, gridH: 3 },
+  calendar: { x: 290, y: 40, gridW: 3, gridH: 3 },
+  knotWidget: { x: 290, y: 166, gridW: 3, gridH: 3 },
+  music: { x: 1106, y: 690, gridW: 8, gridH: 3 },
+  notesChecklist: { x: 282, y: 288, gridW: 5, gridH: 4 },
+  photoA: { x: 2, y: 45, gridW: 7, gridH: 10 },
+  photoB: { x: 1120, y: 287, gridW: 8, gridH: 10 },
+  photoC: { x: 1120, y: 40, gridW: 8, gridH: 6 },
+  weather: { x: 288, y: 450, gridW: 4, gridH: 4 },
+  yearProgress: { x: 0, y: 450, gridW: 7, gridH: 3 },
+}
+
+/** Bump when default geometry changes (keep DesktopWidgets + widgetOverlapGeometry in sync). */
+export const WIDGET_LAYOUT_STORAGE_KEY = 'desktop-widget-layout-v11'
+export const WIDGET_LAYOUT_STORAGE_KEY_PREV = 'desktop-widget-layout-v10'
+
+function scaleOwnerLayout(viewportW, viewportH) {
+  const w = Math.max(640, Math.min(Number(viewportW) || REF_LAYOUT_W, 4096))
+  const h = Math.max(480, Math.min(Number(viewportH) || REF_LAYOUT_H, 4096))
+  const sx = w / REF_LAYOUT_W
+  const sy = h / REF_LAYOUT_H
+  /** @type {Record<string, { x: number, y: number, gridW: number, gridH: number }>} */
+  const out = {}
+  for (const [id, e] of Object.entries(OWNER_LAYOUT_TEMPLATE)) {
+    out[id] = {
+      x: Math.round(e.x * sx),
+      y: Math.round(e.y * sy),
+      gridW: e.gridW,
+      gridH: e.gridH,
+    }
+  }
+  return out
+}
+
+/**
+ * Default widget positions/sizes: owner layout scaled from 1440×900; grid cell sizes unchanged.
  */
 export function defaultLayoutSnapshot(viewportW, viewportH) {
-  const w = Math.max(640, Math.min(Number(viewportW) || REFERENCE_VIEWPORT_W, 4096))
-  const h = Math.max(480, Math.min(Number(viewportH) || 900, 4096))
-  const RX = Math.round(Math.max(280, (w * 900) / REFERENCE_VIEWPORT_W))
-  const topY = Math.min(56, Math.max(40, Math.round(h * 0.06)))
-  const gap = 8
-  const leftX = 20
-  const photoGridW = 4
-  /** Stack: calendar(3) + knot(3) + notes(4) + weather(3) rows */
-  const photoGridH = 13
-  const col2X = leftX + photoGridW * CELL + gap
-
-  let y = topY
-  const calendar = { x: col2X, y, ...defaultStaticGrid('calendar') }
-  y += 3 * CELL
-  const knotWidget = { x: col2X, y, ...defaultStaticGrid('knotWidget') }
-  y += 3 * CELL
-  const notesChecklist = { x: col2X, y, ...defaultStaticGrid('notesChecklist') }
-  y += 4 * CELL
-  const weather = { x: col2X, y, ...defaultStaticGrid('weather') }
-
-  const photoA = { x: leftX, y: topY, gridW: photoGridW, gridH: photoGridH }
-  const yearY = topY + photoGridH * CELL + gap
-  const yearProgress = { x: leftX, y: yearY, ...defaultStaticGrid('yearProgress') }
-
-  const TOP_PHOTO_ROWS = 3
-  const rowGap = 8
-  const blockGap = 8
-  const musicY = topY + TOP_PHOTO_ROWS * CELL + rowGap
-  const lowerY = musicY + 3 * CELL + blockGap
-
-  return {
-    calendar,
-    weather,
-    knotWidget,
-    notesChecklist,
-    photoA,
-    yearProgress,
-    photoB: { x: RX, y: topY, gridW: 3, gridH: 3 },
-    photoC: { x: RX + 3 * CELL, y: topY, gridW: 3, gridH: 3 },
-    music: { x: RX, y: musicY, ...defaultStaticGrid('music') },
-    bgControls: {
-      x: RX + 4 * CELL,
-      y: lowerY,
-      ...defaultStaticGrid('bgControls'),
-    },
-  }
+  return scaleOwnerLayout(viewportW, viewportH)
 }

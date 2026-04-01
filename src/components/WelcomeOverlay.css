@@ -60,10 +60,69 @@
 
 .welcome-overlay__name-entry {
   width: 100%;
+  max-width: min(22rem, 92vw);
   display: flex;
   flex-direction: column;
+  align-items: stretch;
+  margin-top: 0.35rem;
+}
+
+.welcome-overlay__name-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+
+.welcome-overlay__name-row {
+  display: flex;
+  flex-direction: row;
   align-items: center;
-  margin-top: 0.5rem;
+  gap: 10px;
+  width: 100%;
+}
+
+.welcome-overlay__input--name-row {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-bottom: none;
+  padding: 0.65rem 0.35rem 0.65rem 0.15rem;
+  text-align: left;
+  font-size: clamp(1.2rem, 3.8vw, 1.65rem);
+}
+
+.welcome-overlay__name-arrow {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid;
+  background: rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.welcome-overlay__name-arrow:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(1.04);
+}
+
+.welcome-overlay__name-underbar {
+  height: 2px;
+  width: 100%;
+  margin-top: 4px;
+  border-radius: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.35),
+    rgba(255, 255, 255, 0.78),
+    rgba(255, 255, 255, 0.45)
+  );
 }
 
 .welcome-overlay__input-wrap {

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { ArrowRight } from 'lucide-react'
 import { AppleHelloEnglishEffect } from '@/components/ui/apple-hello-effect'
 import { DynamicCursiveText } from '@/components/ui/dynamic-cursive-text'
 import { useDesktopBackground } from '../context/DesktopBackgroundContext'
@@ -67,15 +68,18 @@ export default function WelcomeOverlay({ onComplete }) {
     }
   }, [])
 
+  const goToGreeting = useCallback(() => {
+    const trimmed = inputValue.trim()
+    setVisitorName(trimmed || 'friend')
+    setPhase('greeting')
+  }, [inputValue])
+
   const handleNameSubmit = useCallback(
     (e) => {
       e.preventDefault()
-      const trimmed = inputValue.trim()
-      const name = trimmed || 'friend'
-      setVisitorName(name)
-      setPhase('greeting')
+      goToGreeting()
     },
-    [inputValue],
+    [goToGreeting],
   )
 
   const scheduleGreetingExit = useCallback(() => {
@@ -172,8 +176,8 @@ export default function WelcomeOverlay({ onComplete }) {
               {(introStep === 'underline' || introStep === 'name') && (
                 <motion.div
                   className="welcome-overlay__hello-block"
-                  animate={{ y: introStep === 'name' ? -48 : 0 }}
-                  transition={{ duration: 0.62, ease: [0.22, 1, 0.36, 1] }}
+                  animate={{ y: introStep === 'name' ? -28 : 0 }}
+                  transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <AppleHelloEnglishEffect
                     drawn
@@ -189,34 +193,22 @@ export default function WelcomeOverlay({ onComplete }) {
                       transition={{ duration: 0.58, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
                       onAnimationComplete={handleHelloUnderlineDone}
                     />
-                  ) : (
-                    <div
-                      className="welcome-overlay__hello-underline"
-                      style={{ transform: 'scaleX(1)' }}
-                      aria-hidden
-                    />
-                  )}
+                  ) : null}
                 </motion.div>
               )}
 
               {introStep === 'name' && (
                 <motion.div
                   className="welcome-overlay__name-entry"
-                  initial={{ opacity: 0, y: 16 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: 0.28 }}
+                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
                 >
-                  <p className="welcome-overlay__prompt mb-3 text-center text-base text-zinc-400 md:text-lg">
-                    What&apos;s your name?
-                  </p>
-                  <form
-                    onSubmit={handleNameSubmit}
-                    className="flex w-full max-w-md flex-col items-center gap-5"
-                  >
-                    <div className="welcome-overlay__input-wrap">
+                  <form onSubmit={handleNameSubmit} className="welcome-overlay__name-form">
+                    <div className="welcome-overlay__name-row">
                       <input
                         type="text"
-                        className="welcome-overlay__input welcome-overlay__input--with-underbar"
+                        className="welcome-overlay__input welcome-overlay__input--name-row"
                         placeholder="Your name"
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
@@ -225,32 +217,23 @@ export default function WelcomeOverlay({ onComplete }) {
                         maxLength={48}
                         aria-label="Your name"
                       />
-                      <motion.div
-                        className="welcome-overlay__input-underbar"
-                        initial={{ scaleX: 0 }}
-                        animate={{ scaleX: 1 }}
-                        transition={{
-                          duration: 0.55,
-                          ease: [0.22, 1, 0.36, 1],
-                          delay: 0.42,
-                        }}
-                        style={{ transformOrigin: 'left center' }}
-                        aria-hidden
-                      />
-                    </div>
-                    <motion.div
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.85, duration: 0.35 }}
-                    >
                       <button
                         type="submit"
-                        className="welcome-overlay__submit"
-                        style={{ borderColor: color2 }}
+                        className="welcome-overlay__name-arrow"
+                        aria-label="Continue"
+                        style={{ color: color2, borderColor: color2 }}
                       >
-                        Continue
+                        <ArrowRight size={22} strokeWidth={2.25} aria-hidden />
                       </button>
-                    </motion.div>
+                    </div>
+                    <motion.div
+                      className="welcome-overlay__name-underbar"
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: 1 }}
+                      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.35 }}
+                      style={{ transformOrigin: 'left center' }}
+                      aria-hidden
+                    />
                   </form>
                 </motion.div>
               )}
