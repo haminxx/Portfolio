@@ -1,151 +1,127 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import {
+  startOfWeek,
+  addDays,
+  startOfDay,
+  format,
+  parseISO,
+  isValid,
+  isSameDay,
+} from 'date-fns'
 import { useLanguage } from '../context/LanguageContext'
 import './NotionCalendarWindow.css'
 
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+const ICON = '/dock-icons/notion-calendar.png'
 
-function startOfWeekSunday(d) {
-  const x = new Date(d)
-  const day = x.getDay()
-  x.setDate(x.getDate() - day)
-  x.setHours(0, 0, 0, 0)
-  return x
-}
-
-function addDays(d, n) {
-  const x = new Date(d)
-  x.setDate(x.getDate() + n)
-  return x
-}
-
-function formatDayKey(d) {
-  return d.toISOString().slice(0, 10)
-}
-
-function parseEventTime(iso) {
-  if (!iso) return null
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? null : d
-}
-
-function eventIntersectsDay(ev, dayStart, dayEnd) {
-  const s = parseEventTime(ev.start)
-  const e = parseEventTime(ev.end) || s
-  if (!s) return false
-  return s < dayEnd && e > dayStart
-}
-
-function buildDemoEvents(weekStart) {
-  const ws = new Date(weekStart)
-  const pad = (n) => String(n).padStart(2, '0')
-  const at = (dayOffset, h, m) => {
-    const d = addDays(ws, dayOffset)
-    const iso = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(h)}:${pad(m)}:00`
-    return iso
-  }
+function demoEvents(weekStart) {
+  const slot = (d, h, m) =>
+    `${format(addDays(weekStart, d), 'yyyy-MM-dd')}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`
   return [
-    {
-      id: 'demo-1',
-      title: 'Deep work',
-      start: at(0, 9, 0),
-      end: at(0, 11, 30),
-      allDay: false,
-    },
-    {
-      id: 'demo-2',
-      title: 'Lunch',
-      start: at(2, 12, 0),
-      end: at(2, 13, 0),
-      allDay: false,
-    },
-    {
-      id: 'demo-3',
-      title: 'Portfolio sync',
-      start: at(4, 15, 0),
-      end: at(4, 15, 45),
-      allDay: false,
-    },
+    { id: 'd1', title: 'Deep work', start: slot(0, 9, 0), end: slot(0, 11, 30), allDay: false },
+    { id: 'd2', title: 'Lunch', start: slot(2, 12, 0), end: slot(2, 13, 0), allDay: false },
+    { id: 'd3', title: 'Portfolio sync', start: slot(4, 15, 0), end: slot(4, 15, 45), allDay: false },
   ]
+}
+
+function evRange(ev) {
+  const s = parseISO(ev.start)
+  if (!isValid(s)) return null
+  const e = parseISO(ev.end || ev.start)
+  return { start: s, end: isValid(e) ? e : s }
+}
+
+function overlapsDay(ev, day) {
+  const r = evRange(ev)
+  if (!r) return false
+  const a = startOfDay(day)
+  const b = addDays(a, 1)
+  return r.start < b && r.end > a
+}
+
+function formatEventRange(ev) {
+  const s = parseISO(ev.start)
+  if (!isValid(s)) return ''
+  const e = parseISO(ev.end || ev.start)
+  const t = (d) => format(d, 'p')
+  return !isValid(e) || s.getTime() === e.getTime() ? t(s) : `${t(s)} – ${t(e)}`
 }
 
 export default function NotionCalendarWindow() {
   const { t } = useLanguage()
-  const [weekAnchor, setWeekAnchor] = useState(() => startOfWeekSunday(new Date()))
+  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 0 }))
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [configured, setConfigured] = useState(false)
 
-  const weekStart = useMemo(() => startOfWeekSunday(weekAnchor), [weekAnchor])
-  const weekEnd = useMemo(() => addDays(weekStart, 7), [weekStart])
+  const days = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
+    [weekStart],
+  )
 
-  const days = useMemo(() => {
-    return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
-  }, [weekStart])
-
-  const fetchCalendar = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    const startIso = weekStart.toISOString()
-    const endIso = weekEnd.toISOString()
-    const path = `/api/notion/calendar?start=${encodeURIComponent(startIso)}&end=${encodeURIComponent(endIso)}`
-    const url = API_BASE ? `${API_BASE}${path}` : path
-    try {
-      const res = await fetch(url)
-      const data = await res.json()
-      if (!data.configured) {
-        setConfigured(false)
-        setEvents(buildDemoEvents(weekStart))
-        setLoading(false)
-        return
-      }
-      setConfigured(true)
-      if (data.error) {
-        setError(data.error)
-        setEvents([])
-      } else {
-        setEvents(Array.isArray(data.events) ? data.events : [])
-      }
-    } catch {
-      setConfigured(false)
-      setEvents(buildDemoEvents(weekStart))
-      setError(null)
-    } finally {
-      setLoading(false)
-    }
-  }, [weekStart, weekEnd])
+  const eventsByDay = useMemo(() => {
+    return days.map((day) =>
+      events.filter((ev) => overlapsDay(ev, day)).sort((a, b) => String(a.start).localeCompare(String(b.start))),
+    )
+  }, [days, events])
 
   useEffect(() => {
-    fetchCalendar()
-  }, [fetchCalendar])
+    let cancelled = false
+    const path = `/api/notion/calendar?start=${encodeURIComponent(weekStart.toISOString())}&end=${encodeURIComponent(
+      addDays(weekStart, 7).toISOString(),
+    )}`
+    const url = API_BASE ? `${API_BASE}${path}` : path
 
-  const monthLabel = useMemo(() => {
-    const fmt = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' })
-    return fmt.format(weekStart)
+    ;(async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await fetch(url)
+        const data = await res.json()
+        if (cancelled) return
+        if (!data.configured) {
+          setConfigured(false)
+          setEvents(demoEvents(weekStart))
+        } else {
+          setConfigured(true)
+          setError(data.error || null)
+          setEvents(data.error ? [] : data.events || [])
+        }
+      } catch {
+        if (cancelled) return
+        setConfigured(false)
+        setError(null)
+        setEvents(demoEvents(weekStart))
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
   }, [weekStart])
 
-  const goPrevWeek = () => setWeekAnchor((a) => addDays(a, -7))
-  const goNextWeek = () => setWeekAnchor((a) => addDays(a, 7))
-  const goToday = () => setWeekAnchor(startOfWeekSunday(new Date()))
-
-  const isToday = (d) => formatDayKey(d) === formatDayKey(new Date())
+  const monthLabel = format(weekStart, 'MMMM yyyy')
+  const today = new Date()
 
   return (
     <div className="notion-cal">
       <header className="notion-cal__toolbar">
         <div className="notion-cal__brand">
-          <CalendarDays size={18} strokeWidth={1.5} className="notion-cal__brand-icon" aria-hidden />
+          <img src={ICON} alt="" className="notion-cal__brand-img" width={20} height={20} />
           <span className="notion-cal__brand-text">{t('notionCalendar.brand')}</span>
         </div>
         <div className="notion-cal__nav">
-          <button type="button" className="notion-cal__nav-btn" onClick={goPrevWeek} aria-label={t('notionCalendar.prevWeek')}>
+          <button type="button" className="notion-cal__nav-btn" onClick={() => setWeekStart((w) => addDays(w, -7))} aria-label={t('notionCalendar.prevWeek')}>
             <ChevronLeft size={18} strokeWidth={1.75} />
           </button>
-          <button type="button" className="notion-cal__today" onClick={goToday}>
+          <button type="button" className="notion-cal__today" onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 }))}>
             {t('notionCalendar.today')}
           </button>
-          <button type="button" className="notion-cal__nav-btn" onClick={goNextWeek} aria-label={t('notionCalendar.nextWeek')}>
+          <button type="button" className="notion-cal__nav-btn" onClick={() => setWeekStart((w) => addDays(w, 7))} aria-label={t('notionCalendar.nextWeek')}>
             <ChevronRight size={18} strokeWidth={1.75} />
           </button>
         </div>
@@ -154,60 +130,42 @@ export default function NotionCalendarWindow() {
         </div>
       </header>
 
-      {!configured && (
-        <p className="notion-cal__banner">{t('notionCalendar.demoMode')}</p>
-      )}
+      {!configured && <p className="notion-cal__banner">{t('notionCalendar.demoMode')}</p>}
       {error && <p className="notion-cal__error">{error}</p>}
       {loading && <p className="notion-cal__loading">{t('notionCalendar.loading')}</p>}
 
       <div className="notion-cal__grid">
         <div className="notion-cal__weekdays">
-          {days.map((d) => {
-            const wd = new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(d)
-            const dm = d.getDate()
-            return (
-              <div
-                key={formatDayKey(d)}
-                className={`notion-cal__weekday ${isToday(d) ? 'notion-cal__weekday--today' : ''}`}
-              >
-                <span className="notion-cal__weekday-name">{wd}</span>
-                <span className="notion-cal__weekday-num">{dm}</span>
-              </div>
-            )
-          })}
+          {days.map((d) => (
+            <div
+              key={format(d, 'yyyy-MM-dd')}
+              className={`notion-cal__weekday ${isSameDay(d, today) ? 'notion-cal__weekday--today' : ''}`}
+            >
+              <span className="notion-cal__weekday-name">{format(d, 'EEE')}</span>
+              <span className="notion-cal__weekday-num">{format(d, 'd')}</span>
+            </div>
+          ))}
         </div>
         <div className="notion-cal__columns">
-          {days.map((d) => {
-            const key = formatDayKey(d)
-            const dayStart = new Date(d)
-            const dayEnd = addDays(dayStart, 1)
-            const dayEvents = events
-              .filter((ev) => eventIntersectsDay(ev, dayStart, dayEnd))
-              .sort((a, b) => String(a.start).localeCompare(String(b.start)))
-
-            return (
-              <div key={key} className="notion-cal__col">
-                <div className="notion-cal__col-inner">
-                  {dayEvents.length === 0 && !loading && (
-                    <span className="notion-cal__empty">{t('notionCalendar.empty')}</span>
-                  )}
-                  {dayEvents.map((ev) => (
-                    <div key={ev.id} className="notion-cal__event">
-                      <div className="notion-cal__event-title">{ev.title}</div>
-                      {!ev.allDay && (
-                        <div className="notion-cal__event-time">
-                          {formatEventRange(ev)}
-                        </div>
-                      )}
-                      {ev.allDay && (
-                        <div className="notion-cal__event-time notion-cal__event-time--allday">{t('notionCalendar.allDay')}</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+          {days.map((d, i) => (
+            <div key={format(d, 'yyyy-MM-dd')} className="notion-cal__col">
+              <div className="notion-cal__col-inner">
+                {eventsByDay[i].length === 0 && !loading && (
+                  <span className="notion-cal__empty">{t('notionCalendar.empty')}</span>
+                )}
+                {eventsByDay[i].map((ev) => (
+                  <div key={ev.id} className="notion-cal__event">
+                    <div className="notion-cal__event-title">{ev.title}</div>
+                    {ev.allDay ? (
+                      <div className="notion-cal__event-time notion-cal__event-time--allday">{t('notionCalendar.allDay')}</div>
+                    ) : (
+                      <div className="notion-cal__event-time">{formatEventRange(ev)}</div>
+                    )}
+                  </div>
+                ))}
               </div>
-            )
-          })}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -216,13 +174,4 @@ export default function NotionCalendarWindow() {
       </footer>
     </div>
   )
-}
-
-function formatEventRange(ev) {
-  const s = parseEventTime(ev.start)
-  const e = parseEventTime(ev.end)
-  if (!s) return ''
-  const tf = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' })
-  if (!e || e.getTime() === s.getTime()) return tf.format(s)
-  return `${tf.format(s)} – ${tf.format(e)}`
 }

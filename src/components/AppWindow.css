@@ -65,6 +65,14 @@
   color: #1d1d1f;
 }
 
+.app-window__icon-img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  border-radius: 3px;
+  display: block;
+}
+
 .app-window__title-text {
   flex: 1;
   font-size: 13px;

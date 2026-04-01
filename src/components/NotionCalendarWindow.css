@@ -28,9 +28,12 @@
   letter-spacing: -0.02em;
 }
 
-.notion-cal__brand-icon {
-  color: #37352f;
-  opacity: 0.85;
+.notion-cal__brand-img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .notion-cal__nav {

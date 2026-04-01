@@ -48,7 +48,6 @@ import {
   Folder,
   StickyNote,
   LayoutGrid,
-  Calendar,
 } from 'lucide-react'
 import './ChromeLanding.css'
 
@@ -64,7 +63,6 @@ const APP_ICONS = {
   map: MapIcon,
   youtubeMusic: Film,
   notes: StickyNote,
-  notionCalendar: Calendar,
   tetris: LayoutGrid,
 }
 
@@ -715,7 +713,13 @@ export default function ChromeLanding({ onReboot }) {
             key={win.id}
             id={win.id}
             title={t(`apps.${win.appKey}`)}
-            icon={Icon ? <Icon size={16} strokeWidth={1.5} /> : null}
+            icon={
+              win.appKey === 'notionCalendar' ? (
+                <img src="/dock-icons/notion-calendar.png" alt="" className="app-window__icon-img" />
+              ) : Icon ? (
+                <Icon size={16} strokeWidth={1.5} />
+              ) : null
+            }
             position={win.position}
             isOpening={win.isOpening}
             onOpeningComplete={() => setOpenAppWindows((prev) => prev.map((w) => (w.id === win.id ? { ...w, isOpening: false } : w)))}

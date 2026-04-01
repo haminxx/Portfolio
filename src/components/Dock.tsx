@@ -96,7 +96,7 @@ export default function Dock({
       visibleKeys.map((key) => {
         const app = APPS[key as keyof typeof APPS]
         let imgClass =
-          key === 'dadnme' || key === 'finder' || key === 'tetris'
+          key === 'dadnme' || key === 'finder' || key === 'tetris' || key === 'notionCalendar'
             ? 'h-full w-full object-contain rounded-md'
             : 'h-full w-full object-contain'
         if (key === 'appStore') {
