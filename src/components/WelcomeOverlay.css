@@ -95,6 +95,19 @@
   min-height: 30vh;
 }
 
+.welcome-overlay__greeting-hello-and-name {
+  gap: clamp(0.75rem, 3vh, 1.5rem);
+  width: 100%;
+  max-width: min(28rem, 92vw);
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  box-sizing: border-box;
+}
+
+.welcome-overlay__hello-block--greeting {
+  flex-shrink: 0;
+}
+
 .welcome-overlay__hello-block {
   display: flex;
   flex-direction: column;

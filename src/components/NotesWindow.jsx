@@ -1,6 +1,7 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { Pin, Plus, Trash2 } from 'lucide-react'
-import { loadNotesStore, saveNotesStore } from '../lib/notesStorage'
+import { loadNotesStore, saveNotesStore, NOTES_CHANGED_EVENT } from '../lib/notesStorage'
+import { subscribeNotesStore } from '../lib/notesFirestoreSync'
 import './NotesWindow.css'
 
 function newId(prefix) {
@@ -26,6 +27,24 @@ export default function NotesWindow() {
   const persist = useCallback((next) => {
     saveNotesStore(next)
     setStore(next)
+  }, [])
+
+  useEffect(() => {
+    const unsub = subscribeNotesStore()
+    return unsub
+  }, [])
+
+  useEffect(() => {
+    const sync = () => {
+      const s = loadNotesStore()
+      setStore(s)
+      setActiveId((id) => {
+        if (id && s.notes.some((n) => n.id === id)) return id
+        return s.notes[0]?.id ?? null
+      })
+    }
+    window.addEventListener(NOTES_CHANGED_EVENT, sync)
+    return () => window.removeEventListener(NOTES_CHANGED_EVENT, sync)
   }, [])
 
   const activeNote = useMemo(() => store.notes.find((n) => n.id === activeId), [store.notes, activeId])

@@ -80,10 +80,7 @@ function applyMyGoalSeedIfNeeded(store) {
   }
 }
 
-/**
- * @param {{ notes: NoteDoc[], pinnedNoteId: string | null }} store
- */
-export function saveNotesStore(store) {
+export function persistNotesLocal(store) {
   try {
     localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(store))
   } catch {
@@ -94,6 +91,16 @@ export function saveNotesStore(store) {
   } catch {
     // ignore
   }
+}
+
+/**
+ * @param {{ notes: NoteDoc[], pinnedNoteId: string | null }} store
+ */
+export function saveNotesStore(store) {
+  persistNotesLocal(store)
+  import('./notesFirestoreSync')
+    .then((m) => m.schedulePushNotesStore(store))
+    .catch(() => {})
 }
 
 /**

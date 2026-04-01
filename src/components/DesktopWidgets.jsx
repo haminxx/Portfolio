@@ -27,6 +27,7 @@ import {
   setPinnedChecklistItemDone,
   NOTES_CHANGED_EVENT,
 } from '../lib/notesStorage'
+import { subscribeNotesStore } from '../lib/notesFirestoreSync'
 import {
   STATIC_WIDGET_IDS,
   NON_RESIZABLE_WIDGET_IDS,
@@ -55,6 +56,7 @@ import {
 } from '../lib/openWeather'
 import RetroCalendarPanel from './desktop/RetroCalendarPanel'
 import { KnotAnimation } from './ui/knot-animation'
+import { hexRgbInvert, widgetSurfaceFromAccent, foregroundOnSolid, isNearBlackAccent } from '../lib/colorUtils'
 import './DesktopWidgets.css'
 
 const SD_LAT = 32.72
@@ -70,13 +72,6 @@ function formatLocationLabel(raw) {
     s = s.replace(/\b(county|parish|municipality)\b.*$/i, '').trim()
   }
   return s || 'Local'
-}
-
-function hexRgbInvert(hex) {
-  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(String(hex ?? '').trim())
-  if (!m) return '#ffffff'
-  const x = (i) => (255 - parseInt(m[i], 16)).toString(16).padStart(2, '0')
-  return `#${x(1)}${x(2)}${x(3)}`
 }
 
 function WidgetDragGrip({ id, label, onDown }) {
@@ -137,7 +132,7 @@ function getDefaultLayout() {
 const YEAR_WEEKS = 52
 
 /** 52 dots = weeks in the year; click footer left to toggle month mode (dots = days in month). */
-function YearProgressWidget({ now, accentBackground }) {
+function YearProgressWidget({ now, accentBackground, surfaceForeground }) {
   const [mode, setMode] = useState('year')
 
   const yearMode = useMemo(() => {
@@ -172,7 +167,15 @@ function YearProgressWidget({ now, accentBackground }) {
       className="desktop-widgets__year-widget"
       role="img"
       aria-label={ariaLabel}
-      style={accentBackground ? { background: accentBackground } : undefined}
+      style={
+        accentBackground
+          ? {
+              background: accentBackground,
+              color: surfaceForeground,
+              '--portfolio-on-accent': surfaceForeground,
+            }
+          : undefined
+      }
     >
       <div className="desktop-widgets__year-dots-wrap">
         <div
@@ -396,6 +399,20 @@ export default function DesktopWidgets({
     setSpeed: setBgSpeed,
   } = useDesktopBackground()
   const knotFg = useMemo(() => hexRgbInvert(bgColor2), [bgColor2])
+  const widgetSurfaceBg = useMemo(() => widgetSurfaceFromAccent(bgColor2), [bgColor2])
+  const widgetSurfaceFg = useMemo(() => foregroundOnSolid(widgetSurfaceBg), [widgetSurfaceBg])
+  const weatherOnBlackSurface = useMemo(
+    () => widgetSurfaceBg === '#000000' || isNearBlackAccent(widgetSurfaceBg),
+    [widgetSurfaceBg],
+  )
+  const weatherEmphasisFg = useMemo(
+    () => (weatherOnBlackSurface ? knotFg : widgetSurfaceFg),
+    [weatherOnBlackSurface, knotFg, widgetSurfaceFg],
+  )
+  const weatherMutedFg = useMemo(() => {
+    if (weatherOnBlackSurface) return undefined
+    return widgetSurfaceFg === '#0a0a0c' ? 'rgba(10,10,14,0.55)' : 'rgba(245,245,247,0.62)'
+  }, [weatherOnBlackSurface, widgetSurfaceFg])
   const defaultLayout = useMemo(() => getDefaultLayout(), [])
 
   const onMeshColorsFromWheel = useCallback(
@@ -423,9 +440,11 @@ export default function DesktopWidgets({
       if (e.key === 'portfolio-notes-v1') sync()
     }
     window.addEventListener('storage', onStorage)
+    const unsubNotesFs = subscribeNotesStore()
     return () => {
       window.removeEventListener(NOTES_CHANGED_EVENT, sync)
       window.removeEventListener('storage', onStorage)
+      unsubNotesFs()
     }
   }, [])
 
@@ -870,7 +889,16 @@ export default function DesktopWidgets({
       <div className={cardClass('weather', 'desktop-widgets__card--weather')} style={cardStyle('weather')}>
         <div className="desktop-widgets__card-chrome">
           <WidgetDragGrip id="weather" label="Move weather widget" onDown={handleGripPointerDown} />
-          <div className="desktop-widgets__weather-compact">
+          <div
+            className="desktop-widgets__weather-compact"
+            style={{
+              background: widgetSurfaceBg,
+              borderRadius: 22,
+              color: weatherEmphasisFg,
+              '--widget-accent-invert': weatherEmphasisFg,
+              ...(weatherMutedFg ? { '--weather-muted': weatherMutedFg } : {}),
+            }}
+          >
             {weather.status === 'loading' && (
               <p className="desktop-widgets__weather-compact__status">Loading…</p>
             )}
@@ -1153,7 +1181,11 @@ export default function DesktopWidgets({
       <div className={cardClass('yearProgress', 'desktop-widgets__card--year')} style={cardStyle('yearProgress')}>
         <div className="desktop-widgets__card-chrome">
           <WidgetDragGrip id="yearProgress" label="Move year progress widget" onDown={handleGripPointerDown} />
-          <YearProgressWidget now={now} accentBackground={bgColor2} />
+          <YearProgressWidget
+            now={now}
+            accentBackground={widgetSurfaceBg}
+            surfaceForeground={widgetSurfaceFg}
+          />
         </div>
         <button
           type="button"

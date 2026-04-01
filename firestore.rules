@@ -1,0 +1,12 @@
+rules_version = '2';
+/**
+ * Demo portfolio: open read/write so the widget and Notes app sync without auth.
+ * Replace with authenticated rules before storing anything sensitive.
+ */
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /notes/{docId} {
+      allow read, write: if true;
+    }
+  }
+}

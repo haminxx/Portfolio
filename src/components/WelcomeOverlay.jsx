@@ -260,12 +260,25 @@ export default function WelcomeOverlay({ onComplete }) {
           {(phase === 'greeting' || phase === 'exit') && (
             <motion.div
               key="greeting"
-              className="welcome-overlay__stack welcome-overlay__greeting-single"
+              className="welcome-overlay__stack welcome-overlay__greeting-single welcome-overlay__greeting-hello-and-name"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.4 }}
             >
+              <div className="welcome-overlay__hello-block welcome-overlay__hello-block--greeting">
+                <AppleHelloEnglishEffect
+                  drawn
+                  speed={1}
+                  className={`${helloSvgClass} welcome-overlay__hello-svg--compact`}
+                  style={{ color: 'rgba(255,255,255,0.95)' }}
+                />
+                <div
+                  className="welcome-overlay__hello-underline"
+                  style={{ transform: 'scaleX(1)' }}
+                  aria-hidden
+                />
+              </div>
               <DynamicCursiveText
                 key={visitorName}
                 text={visitorName.trim() || 'friend'}
