@@ -17,6 +17,8 @@ import {
   snapSquareLayoutEntry,
   referenceLayoutDefaults,
   REF_WIDGET_PADDING,
+  REF_INNER_H,
+  REF_INNER_W,
   getWidgetRectInWrapPixels,
   WIDGET_LAYOUT_STORAGE_KEY,
   layoutScaleFromInnerSize,

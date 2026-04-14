@@ -159,11 +159,15 @@ export function defaultLayoutSnapshot(_viewportW, _viewportH) {
 
 /**
  * Scale factors from measured inner content size → reference inner size.
+ * Uses scale ≥1 only: large displays grow widgets; smaller windows keep reference * pixel size (layout does not shrink when the viewport is narrow or short).
  */
 export function layoutScaleFromInnerSize(innerW, innerH) {
   const w = Math.max(320, Number(innerW) || REF_INNER_W)
   const h = Math.max(240, Number(innerH) || REF_INNER_H)
-  return { sx: w / REF_INNER_W, sy: h / REF_INNER_H }
+  return {
+    sx: Math.max(1, w / REF_INNER_W),
+    sy: Math.max(1, h / REF_INNER_H),
+  }
 }
 
 /**

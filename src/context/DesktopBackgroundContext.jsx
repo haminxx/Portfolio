@@ -32,7 +32,7 @@ function foregroundOnSolid(bgHex) {
 
 const DEFAULTS = {
   color1: '#1a1a1a',
-  color2: '#e8e4df',
+  color2: '#000000',
   speed: 0.72,
 }
 
