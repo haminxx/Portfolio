@@ -3,8 +3,6 @@ import {
   User,
   Folder,
   Mail,
-  Linkedin,
-  Github,
   Image,
   Phone,
   MessageCircle,
@@ -18,8 +16,6 @@ const MOBILE_ICONS = {
   user: User,
   folder: Folder,
   mail: Mail,
-  linkedin: Linkedin,
-  github: Github,
   instagram: Image,
   phone: Phone,
   messages: MessageCircle,
@@ -103,7 +99,7 @@ export default function iPhoneMobileLanding() {
     pages.push(pageApps)
   }
 
-  const dockApps = [SHORTCUTS.find((s) => s.type === 'contact') || allApps[0], ...SHORTCUTS.filter((s) => ['github', 'linkedin', 'instagram'].includes(s.type))].slice(0, 4)
+  const dockApps = [...SHORTCUTS, EXTRA_APPS[0]].slice(0, 4)
 
   return (
     <div className="iphone-mobile">

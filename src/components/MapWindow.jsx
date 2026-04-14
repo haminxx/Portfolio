@@ -23,6 +23,7 @@ import {
 import { useLanguage } from '../context/LanguageContext'
 import { fetchOsrmRoutePublic, fetchMapboxDirections } from '../lib/osrmRoute'
 import 'leaflet/dist/leaflet.css'
+import MapBottomSheet from './maps/MapBottomSheet'
 import './MapWindow.css'
 
 const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
@@ -777,6 +778,13 @@ export default function MapWindow() {
           )}
         </div>
       )}
+
+      <MapBottomSheet
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onSearch={handleSearch}
+        isSearching={isSearching}
+      />
     </div>
   )
 }

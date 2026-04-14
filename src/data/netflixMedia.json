@@ -1,0 +1,12 @@
+[
+  { "title": "Monolith", "year": 2024, "category": "Drama", "image": "" },
+  { "title": "Glass Lines", "year": 2023, "category": "Thriller", "image": "" },
+  { "title": "Northbound", "year": 2025, "category": "Documentary", "image": "" },
+  { "title": "Signal Void", "year": 2022, "category": "Sci-Fi", "image": "" },
+  { "title": "Quiet Room", "year": 2024, "category": "Horror", "image": "" },
+  { "title": "Paper City", "year": 2021, "category": "Noir", "image": "" },
+  { "title": "Second Sun", "year": 2023, "category": "Drama", "image": "" },
+  { "title": "Cold Frame", "year": 2025, "category": "Mystery", "image": "" },
+  { "title": "Low Tide", "year": 2020, "category": "Romance", "image": "" },
+  { "title": "Atlas Index", "year": 2024, "category": "Sci-Fi", "image": "" }
+]

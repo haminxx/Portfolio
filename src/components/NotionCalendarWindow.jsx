@@ -10,6 +10,7 @@ import {
   isSameDay,
 } from 'date-fns'
 import { useLanguage } from '../context/LanguageContext'
+import NotionMinimalPageEditor from './notion/NotionMinimalPageEditor'
 import './NotionCalendarWindow.css'
 
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
@@ -50,6 +51,7 @@ function formatEventRange(ev) {
 
 export default function NotionCalendarWindow() {
   const { t } = useLanguage()
+  const [appMode, setAppMode] = useState('calendar')
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 0 }))
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
@@ -114,22 +116,50 @@ export default function NotionCalendarWindow() {
           <img src={ICON} alt="" className="notion-cal__brand-img" width={20} height={20} />
           <span className="notion-cal__brand-text">{t('notionCalendar.brand')}</span>
         </div>
-        <div className="notion-cal__nav">
-          <button type="button" className="notion-cal__nav-btn" onClick={() => setWeekStart((w) => addDays(w, -7))} aria-label={t('notionCalendar.prevWeek')}>
-            <ChevronLeft size={18} strokeWidth={1.75} />
+        <div className="notion-cal__mode-toggle" role="tablist" aria-label="View">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={appMode === 'calendar'}
+            className={`notion-cal__mode-btn ${appMode === 'calendar' ? 'notion-cal__mode-btn--active' : ''}`}
+            onClick={() => setAppMode('calendar')}
+          >
+            Calendar
           </button>
-          <button type="button" className="notion-cal__today" onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 }))}>
-            {t('notionCalendar.today')}
-          </button>
-          <button type="button" className="notion-cal__nav-btn" onClick={() => setWeekStart((w) => addDays(w, 7))} aria-label={t('notionCalendar.nextWeek')}>
-            <ChevronRight size={18} strokeWidth={1.75} />
+          <button
+            type="button"
+            role="tab"
+            aria-selected={appMode === 'page'}
+            className={`notion-cal__mode-btn ${appMode === 'page' ? 'notion-cal__mode-btn--active' : ''}`}
+            onClick={() => setAppMode('page')}
+          >
+            Page
           </button>
         </div>
-        <div className="notion-cal__month" aria-live="polite">
-          {monthLabel}
-        </div>
+        {appMode === 'calendar' && (
+          <>
+            <div className="notion-cal__nav">
+              <button type="button" className="notion-cal__nav-btn" onClick={() => setWeekStart((w) => addDays(w, -7))} aria-label={t('notionCalendar.prevWeek')}>
+                <ChevronLeft size={18} strokeWidth={1.75} />
+              </button>
+              <button type="button" className="notion-cal__today" onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 }))}>
+                {t('notionCalendar.today')}
+              </button>
+              <button type="button" className="notion-cal__nav-btn" onClick={() => setWeekStart((w) => addDays(w, 7))} aria-label={t('notionCalendar.nextWeek')}>
+                <ChevronRight size={18} strokeWidth={1.75} />
+              </button>
+            </div>
+            <div className="notion-cal__month" aria-live="polite">
+              {monthLabel}
+            </div>
+          </>
+        )}
       </header>
 
+      {appMode === 'page' ? (
+        <NotionMinimalPageEditor />
+      ) : (
+        <>
       {!configured && <p className="notion-cal__banner">{t('notionCalendar.demoMode')}</p>}
       {error && <p className="notion-cal__error">{error}</p>}
       {loading && <p className="notion-cal__loading">{t('notionCalendar.loading')}</p>}
@@ -172,6 +202,8 @@ export default function NotionCalendarWindow() {
       <footer className="notion-cal__footer">
         <p className="notion-cal__hint">{t('notionCalendar.serverHint')}</p>
       </footer>
+        </>
+      )}
     </div>
   )
 }

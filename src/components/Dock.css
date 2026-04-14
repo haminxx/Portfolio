@@ -1,15 +1,24 @@
+/* Viewport-fixed dock: always centered like full-screen, independent of inner layout width. */
 .dock-wrapper {
   position: fixed;
-  bottom: 0;
   left: 0;
   right: 0;
+  bottom: 0;
   width: 100%;
+  width: 100vw;
+  max-width: 100%;
   height: 54px;
   z-index: 50;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding-bottom: 3px;
+  padding-bottom: max(3px, env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.dock-wrapper > .dock {
+  pointer-events: auto;
 }
 
 .dock-wrapper--fullscreen-hidden {
@@ -18,24 +27,19 @@
 
 .dock-wrapper--fullscreen-hidden .dock--macos {
   align-items: center;
-}
-
-.dock-wrapper--fullscreen-hidden .dock {
-  transform: translateX(-50%) translateY(28px);
+  transform: translateY(28px);
   opacity: 0.85;
   transition: transform 0.3s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.3s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
-.dock-wrapper--fullscreen-hidden:hover .dock {
-  transform: translateX(-50%) translateY(0);
+.dock-wrapper--fullscreen-hidden:hover .dock--macos {
+  transform: translateY(0);
   opacity: 1;
 }
 
 .dock {
-  position: absolute;
-  left: 50%;
-  bottom: 3px;
-  transform: translateX(-50%);
+  position: relative;
+  flex-shrink: 0;
   padding: 0;
   transition: transform 0.3s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.3s cubic-bezier(0.33, 1, 0.68, 1);
 }

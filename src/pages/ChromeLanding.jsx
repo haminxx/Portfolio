@@ -10,7 +10,6 @@ import {
   LazyAboutPage,
   LazyProjectPage,
   LazyContactPage,
-  LazySocialProfileWindow,
   LazyMapWindow,
   LazyDoomWindow,
   LazyDadNMeWindow,
@@ -24,8 +23,6 @@ import {
   LazyNotesWindow,
   LazyNotionCalendarWindow,
   LazyTetrisWindow,
-  LazyGitHubProfileCard,
-  LazyLinkedInProfileCard,
 } from './chromeLazyComponents'
 import MenuBar from '../components/MenuBar'
 import WelcomeOverlay from '../components/WelcomeOverlay'
@@ -117,8 +114,6 @@ function getDomainForTab(tab) {
   if (tab.type === 'home') return 'portfolio.local'
   const shortcut = SHORTCUTS.find((s) => s.type === tab.type)
   if (shortcut) {
-    if (tab.type === 'linkedin') return 'linkedin.com/in/christian-j-l'
-    if (tab.type === 'github') return 'github.com/haminxx'
     if (tab.type === 'about') return 'portfolio.local/about'
     if (tab.type === 'project') return 'portfolio.local/project'
     if (tab.type === 'contact') return 'portfolio.local/contact'
@@ -648,18 +643,6 @@ export default function ChromeLanding({ onReboot }) {
                   <Suspense fallback={null}>
                     <LazyContactPage />
                   </Suspense>
-                ) : activeTab.type === 'github' ? (
-                  <Suspense fallback={null}>
-                    <LazySocialProfileWindow profileUrl={getUrlForTab(activeTab)} cardOnly>
-                      <LazyGitHubProfileCard profileUrl={getUrlForTab(activeTab)} />
-                    </LazySocialProfileWindow>
-                  </Suspense>
-                ) : activeTab.type === 'linkedin' ? (
-                  <Suspense fallback={null}>
-                    <LazySocialProfileWindow profileUrl={getUrlForTab(activeTab)} cardOnly>
-                      <LazyLinkedInProfileCard profileUrl={getUrlForTab(activeTab)} />
-                    </LazySocialProfileWindow>
-                  </Suspense>
                 ) : (() => {
                   const url = getUrlForTab(activeTab)
                   if (url) {
@@ -690,18 +673,6 @@ export default function ChromeLanding({ onReboot }) {
           content = <LazyYouTubeMusicWindow />
         } else if (win.appKey === 'instagram') {
           content = <LazyInstagramWindow />
-        } else if (win.appKey === 'github') {
-          content = (
-            <LazySocialProfileWindow profileUrl={profileUrl}>
-              <LazyGitHubProfileCard profileUrl={profileUrl} />
-            </LazySocialProfileWindow>
-          )
-        } else if (win.appKey === 'linkedin') {
-          content = (
-            <LazySocialProfileWindow profileUrl={profileUrl}>
-              <LazyLinkedInProfileCard profileUrl={profileUrl} />
-            </LazySocialProfileWindow>
-          )
         } else if (win.appKey === 'settings') {
           content = <LazySettingsWindow />
         } else if (win.appKey === 'appStore') {

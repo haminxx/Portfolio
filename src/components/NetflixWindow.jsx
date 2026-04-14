@@ -3,6 +3,7 @@ import { Play, Info, Volume2, VolumeX } from 'lucide-react'
 import { collection, addDoc, getDocs, serverTimestamp } from 'firebase/firestore'
 import { useLanguage } from '../context/LanguageContext'
 import { getFirebaseDb } from '../lib/firebase'
+import NetflixMonochromeCarousel from './netflix/NetflixMonochromeCarousel'
 import './NetflixWindow.css'
 
 const CATEGORIES = [
@@ -194,9 +195,17 @@ export default function NetflixWindow() {
           >
             {t('netflix.recommendMe')}
           </button>
+          <button
+            type="button"
+            className={`netflix-window__nav-link ${activeNav === 'collection' ? 'netflix-window__nav-link--active' : ''}`}
+            onClick={() => setActiveNav('collection')}
+          >
+            Collection
+          </button>
         </div>
       </nav>
-      {activeNav !== 'recommend' && (
+      {activeNav === 'collection' && <NetflixMonochromeCarousel />}
+      {activeNav !== 'collection' && activeNav !== 'recommend' && (
       <div className="netflix-window__hero">
         <video
           ref={videoRef}
@@ -301,7 +310,7 @@ export default function NetflixWindow() {
             </div>
           </section>
         </div>
-      ) : (
+      ) : activeNav !== 'collection' ? (
       <main className="netflix-window__content">
         {ROW_KEYS.map((row) => (
           <section key={row.id} className="netflix-window__row">
@@ -347,7 +356,7 @@ export default function NetflixWindow() {
           </section>
         ))}
       </main>
-      )}
+      ) : null}
 
       {hoverCard && (
         <div

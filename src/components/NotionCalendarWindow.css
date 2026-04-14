@@ -36,6 +36,31 @@
   flex-shrink: 0;
 }
 
+.notion-cal__mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px;
+  border-radius: 8px;
+  background: rgba(55, 53, 47, 0.06);
+}
+
+.notion-cal__mode-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  color: #37352f;
+  cursor: pointer;
+}
+
+.notion-cal__mode-btn--active {
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
 .notion-cal__nav {
   display: flex;
   align-items: center;

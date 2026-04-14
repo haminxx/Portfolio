@@ -1,0 +1,23 @@
+[
+  {
+    "id": "clarte",
+    "title": "Clarte",
+    "subtitle": "Socratic Voice AI Agent",
+    "description": "A structured cognitive framework for guided dialogue—voice-first tutoring that asks the right next question, keeps context, and helps you think clearly without handing you the answer.",
+    "image": ""
+  },
+  {
+    "id": "fitout",
+    "title": "FITOUT",
+    "subtitle": "Visual Search Fashion Social",
+    "description": "Identifying clothing items via image search and building a social layer around outfits—snap, match, and discover pieces with a clean visual-first flow.",
+    "image": ""
+  },
+  {
+    "id": "coro",
+    "title": "Coro",
+    "subtitle": "Biometric Tempo Sync",
+    "description": "Heart rate variability music syncing that adapts playback and rhythm to your physiological state—minimal UI, maximum immersion.",
+    "image": ""
+  }
+]
