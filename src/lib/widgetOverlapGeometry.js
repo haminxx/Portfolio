@@ -12,39 +12,77 @@ import {
   clampGrid,
   defaultStaticGrid,
   defaultGridForWidget,
-  getWidgetRectFromEntry,
   collectWidgetIdsFromLayout,
   SQUARE_WIDGET_IDS,
   snapSquareLayoutEntry,
-  defaultLayoutSnapshot,
+  referenceLayoutDefaults,
+  REF_WIDGET_PADDING,
+  getWidgetRectInWrapPixels,
   WIDGET_LAYOUT_STORAGE_KEY,
+  layoutScaleFromInnerSize,
 } from './widgetLayoutShared'
 
 const LAYOUT_KEY = WIDGET_LAYOUT_STORAGE_KEY
 
-const DEFAULT_LAYOUT = defaultLayoutSnapshot(1440, 900)
+const DEFAULT_LAYOUT = referenceLayoutDefaults()
+
+/** Fallback scale when DOM is unavailable (e.g. SSR). */
+export function inferLayoutMetricsFromWindow() {
+  if (typeof window === 'undefined') {
+    return {
+      sx: 1,
+      sy: 1,
+      pl: REF_WIDGET_PADDING.left,
+      pt: REF_WIDGET_PADDING.top,
+      cw: REF_INNER_W,
+      ch: REF_INNER_H,
+    }
+  }
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  const pl = REF_WIDGET_PADDING.left
+  const pr = REF_WIDGET_PADDING.right
+  const pt = REF_WIDGET_PADDING.top
+  const pb = REF_WIDGET_PADDING.bottom
+  const cw = Math.max(320, vw - pl - pr)
+  const ch = Math.max(240, vh - pt - pb)
+  const { sx, sy } = layoutScaleFromInnerSize(cw, ch)
+  return { sx, sy, pl, pt, cw, ch }
+}
 
 function mergeLayoutFromStorage(parsed) {
   const out = { ...DEFAULT_LAYOUT }
   if (!parsed || typeof parsed !== 'object') return out
 
-  const ids = collectWidgetIdsFromLayout(parsed)
-  for (const id of ids) {
-    const p = parsed[id]
-    if (!p || p.x == null || p.y == null) continue
+  const version = parsed._v
+  const isRefSpace = version === 14
+  const entries = { ...parsed }
+  delete entries._v
+
+  const idSet = new Set(STATIC_WIDGET_IDS)
+  for (const k of Object.keys(entries)) {
+    if (k.startsWith('photo')) idSet.add(k)
+  }
+
+  for (const id of idSet) {
+    const p = entries[id]
+    if (!p || typeof p !== 'object') continue
+    const defG = defaultGridForWidget(id)
     const base = out[id] || {
       x: 80,
-      y: 280,
-      ...defaultGridForWidget(id),
+      y: 300,
+      ...defG,
     }
-    const defG = defaultGridForWidget(id)
-    out[id] = {
+    const next = {
       ...base,
-      x: p.x,
-      y: p.y,
       gridW: clampGrid(p.gridW != null ? p.gridW : base.gridW ?? defG.gridW),
       gridH: clampGrid(p.gridH != null ? p.gridH : base.gridH ?? defG.gridH),
     }
+    if (isRefSpace && p.x != null && p.y != null) {
+      next.x = p.x
+      next.y = p.y
+    }
+    out[id] = next
   }
 
   for (const id of STATIC_WIDGET_IDS) {
@@ -72,13 +110,19 @@ export function loadWidgetLayoutFromStorage() {
   }
 }
 
-/** Axis-aligned rects for all widgets from a layout map (same shape as DesktopWidgets state). */
-export function getWidgetRectsFromLayout(layout) {
+/**
+ * Widget rects in **wrap / desktop pixel space** (same as icon positions).
+ * Pass metrics from DesktopWidgets ResizeObserver, or omit to infer from window.
+ */
+export function getWidgetRectsFromLayout(layout, metrics) {
   if (!layout) return []
+  const m = metrics ?? inferLayoutMetricsFromWindow()
+  const { sx, sy, pl, pt } = m
   const ids = collectWidgetIdsFromLayout(layout)
   return ids.map((id) => {
     const entry = layout[id] || DEFAULT_LAYOUT[id]
-    return getWidgetRectFromEntry(id, entry)
+    const r = getWidgetRectInWrapPixels(id, entry, sx, sy, pl, pt)
+    return r
   })
 }
 
@@ -124,9 +168,9 @@ export function groupOverlapsWidgetRects(positions, groupIds, widgetRects) {
  * After dragging desktop icons over widgets/other icons, snap each moved icon to a free spot
  * (same grid search idea as widget nudge).
  */
-export function nudgeIconGroupAfterDrop(candidates, groupIds, desktopItems, layoutMap, wrapWidth, wrapHeight) {
+export function nudgeIconGroupAfterDrop(candidates, groupIds, desktopItems, layoutMap, wrapWidth, wrapHeight, layoutMetrics) {
   if (!candidates || !groupIds?.length) return candidates
-  const widgetRects = getWidgetRectsFromLayout(layoutMap)
+  const widgetRects = getWidgetRectsFromLayout(layoutMap, layoutMetrics)
   const maxX = Math.max(0, wrapWidth - DESKTOP_ICON_WIDTH)
   const maxY = Math.max(DESKTOP_SAFE_TOP, wrapHeight - DESKTOP_ICON_HEIGHT)
   const out = { ...candidates }

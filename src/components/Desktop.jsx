@@ -52,8 +52,8 @@ function DesktopContent({
   selectionBoxRef.current = selectionBox
 
   const widgetLayoutRef = useRef(null)
-  const handleWidgetLayout = useCallback((layout) => {
-    widgetLayoutRef.current = layout
+  const handleWidgetLayout = useCallback((payload) => {
+    widgetLayoutRef.current = payload
   }, [])
 
   useEffect(() => {

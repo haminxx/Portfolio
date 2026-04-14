@@ -7,7 +7,11 @@ import {
   DESKTOP_ICON_HEIGHT as ICON_HEIGHT,
   DESKTOP_SAFE_TOP,
 } from '../desktopConstants'
-import { loadWidgetLayoutFromStorage, nudgeIconGroupAfterDrop } from '../lib/widgetOverlapGeometry'
+import {
+  loadWidgetLayoutFromStorage,
+  nudgeIconGroupAfterDrop,
+  inferLayoutMetricsFromWindow,
+} from '../lib/widgetOverlapGeometry'
 const DRAG_THRESHOLD_PX = 6
 
 export default function DesktopCustomIcons({
@@ -233,10 +237,10 @@ export default function DesktopCustomIcons({
           if (folderIdEarly) {
             pendingPosRef.current = { ...dragState.latestPositions }
           } else {
+            const snap = widgetLayoutRef?.current
             const layoutSnapshot =
-              widgetLayoutRef?.current && typeof widgetLayoutRef.current === 'object'
-                ? widgetLayoutRef.current
-                : loadWidgetLayoutFromStorage()
+              snap?.layout && typeof snap.layout === 'object' ? snap.layout : loadWidgetLayoutFromStorage()
+            const layoutMetrics = snap?.metrics ?? inferLayoutMetricsFromWindow()
             const wrap = dragState.wrapEl.getBoundingClientRect()
             pendingPosRef.current = nudgeIconGroupAfterDrop(
               dragState.latestPositions,
@@ -245,6 +249,7 @@ export default function DesktopCustomIcons({
               layoutSnapshot,
               wrap.width,
               wrap.height,
+              layoutMetrics,
             )
           }
         }

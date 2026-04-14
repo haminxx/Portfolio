@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react'
 import {
   Play,
   Pause,
@@ -36,10 +36,12 @@ import {
   defaultStaticGrid,
   defaultGridForWidget,
   getBoxSizeForWidget,
-  getWidgetRectFromEntry,
   SQUARE_WIDGET_IDS,
   snapSquareLayoutEntry,
-  defaultLayoutSnapshot,
+  referenceLayoutDefaults,
+  REF_WIDGET_PADDING,
+  layoutScaleFromInnerSize,
+  getWidgetRectInWrapPixels,
   WIDGET_LAYOUT_STORAGE_KEY,
   WIDGET_LAYOUT_STORAGE_KEY_PREV,
 } from '../lib/widgetLayoutShared'
@@ -51,7 +53,7 @@ import {
 } from '../lib/photoWidgetRegistry'
 import PhotoWidgetImportModal from './PhotoWidgetImportModal'
 import { DESKTOP_SAFE_TOP } from '../desktopConstants'
-import { getDesktopIconRects } from '../lib/widgetOverlapGeometry'
+import { getDesktopIconRects, inferLayoutMetricsFromWindow } from '../lib/widgetOverlapGeometry'
 import {
   fetchWeatherImperial,
   buildWeatherNextHint,
@@ -129,12 +131,6 @@ function formatTrackTime(sec) {
   const m = Math.floor(sec / 60)
   const s = Math.floor(sec % 60)
   return `${m}:${String(s).padStart(2, '0')}`
-}
-
-function getDefaultLayout() {
-  const vw = typeof window !== 'undefined' ? window.innerWidth : 1440
-  const vh = typeof window !== 'undefined' ? window.innerHeight : 900
-  return defaultLayoutSnapshot(vw, vh)
 }
 
 const YEAR_WEEKS = 52
@@ -233,14 +229,15 @@ function rectsOverlap(a, b) {
   return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom)
 }
 
-function hasOverlapWithAny(movingId, pos, layoutMap, desktopItems, widgetIds) {
+function hasOverlapWithAny(movingId, pos, layoutMap, desktopItems, widgetIds, metrics) {
   const entry = { ...layoutMap[movingId], ...pos }
-  const r = getWidgetRectFromEntry(movingId, entry)
+  const { sx, sy, pl, pt } = metrics
+  const r = getWidgetRectInWrapPixels(movingId, entry, sx, sy, pl, pt)
   for (const id of widgetIds) {
     if (id === movingId) continue
     const other = layoutMap[id]
     if (!other) continue
-    const r2 = getWidgetRectFromEntry(id, other)
+    const r2 = getWidgetRectInWrapPixels(id, other, sx, sy, pl, pt)
     if (rectsOverlap(r, r2)) return true
   }
   for (const ir of getDesktopIconRects(desktopItems)) {
@@ -250,7 +247,7 @@ function hasOverlapWithAny(movingId, pos, layoutMap, desktopItems, widgetIds) {
 }
 
 function loadLayout(photoIdList) {
-  const DEFAULT_LAYOUT = getDefaultLayout()
+  const DEFAULT_LAYOUT = referenceLayoutDefaults()
   const ids = [...STATIC_WIDGET_IDS, ...photoIdList]
   const out = {}
   for (const id of STATIC_WIDGET_IDS) {
@@ -269,7 +266,7 @@ function loadLayout(photoIdList) {
   try {
     let raw = localStorage.getItem(LAYOUT_KEY)
     if (!raw) {
-      const fallbacks = [LAYOUT_KEY_PREV, 'desktop-widget-layout-v10', 'desktop-widget-layout-v9']
+      const fallbacks = [LAYOUT_KEY_PREV, 'desktop-widget-layout-v12', 'desktop-widget-layout-v11', 'desktop-widget-layout-v10', 'desktop-widget-layout-v9']
       for (const key of fallbacks) {
         const legacy = localStorage.getItem(key)
         if (!legacy) continue
@@ -284,18 +281,24 @@ function loadLayout(photoIdList) {
     }
     if (raw) {
       const parsed = JSON.parse(raw)
+      const isRefSpace = parsed._v === 14
+      const stored = { ...parsed }
+      delete stored._v
       for (const id of ids) {
-        if (parsed[id]?.x != null && parsed[id]?.y != null) {
-          const defG = defaultGridForWidget(id)
-          const prev = out[id] || { x: 100, y: 300, ...defG }
-          out[id] = {
-            ...prev,
-            x: parsed[id].x,
-            y: parsed[id].y,
-            gridW: parsed[id].gridW != null ? clampGrid(parsed[id].gridW) : clampGrid(prev.gridW ?? defG.gridW),
-            gridH: parsed[id].gridH != null ? clampGrid(parsed[id].gridH) : clampGrid(prev.gridH ?? defG.gridH),
-          }
+        const p = stored[id]
+        if (!p) continue
+        const defG = defaultGridForWidget(id)
+        const prev = out[id] || { x: 100, y: 300, ...defG }
+        const merged = {
+          ...prev,
+          gridW: p.gridW != null ? clampGrid(p.gridW) : clampGrid(prev.gridW ?? defG.gridW),
+          gridH: p.gridH != null ? clampGrid(p.gridH) : clampGrid(prev.gridH ?? defG.gridH),
         }
+        if (isRefSpace && p.x != null && p.y != null) {
+          merged.x = p.x
+          merged.y = p.y
+        }
+        out[id] = merged
       }
     }
   } catch {
@@ -329,7 +332,7 @@ function loadLayout(photoIdList) {
 
 function saveLayout(layout) {
   try {
-    localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout))
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify({ _v: 14, ...layout }))
   } catch {
     // ignore
   }
@@ -379,6 +382,7 @@ export default function DesktopWidgets({
   })
   const [photoIds, setPhotoIds] = useState(() => loadPhotoWidgetIdList())
   const [layout, setLayout] = useState(() => loadLayout(loadPhotoWidgetIdList()))
+  const [layoutMetrics, setLayoutMetrics] = useState(() => inferLayoutMetricsFromWindow())
   const [photoImportFor, setPhotoImportFor] = useState(null)
   const [photoData, setPhotoData] = useState(() => readInitialPhotoMap(loadPhotoWidgetIdList()))
   const [notesStore, setNotesStore] = useState(() => loadNotesStore())
@@ -387,6 +391,10 @@ export default function DesktopWidgets({
   const [resizingWidgetId, setResizingWidgetId] = useState(null)
   const containerRef = useRef(null)
   const widgetResizeRef = useRef(null)
+  const layoutMetricsRef = useRef(layoutMetrics)
+  useEffect(() => {
+    layoutMetricsRef.current = layoutMetrics
+  }, [layoutMetrics])
   const {
     currentTrack,
     isPlaying,
@@ -421,7 +429,27 @@ export default function DesktopWidgets({
     return widgetSurfaceFg === '#0a0a0c' ? 'rgba(10,10,14,0.55)' : 'rgba(245,245,247,0.62)'
   }, [weatherOnBlackSurface, widgetSurfaceFg])
   const liquidGlass = useMemo(() => liquidGlassVars(bgColor2, widgetSurfaceBg), [bgColor2, widgetSurfaceBg])
-  const defaultLayout = useMemo(() => getDefaultLayout(), [])
+  const defaultLayout = useMemo(() => referenceLayoutDefaults(), [])
+
+  useLayoutEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const measure = () => {
+      const cs = getComputedStyle(el)
+      const pl = parseFloat(cs.paddingLeft) || REF_WIDGET_PADDING.left
+      const pr = parseFloat(cs.paddingRight) || REF_WIDGET_PADDING.right
+      const pt = parseFloat(cs.paddingTop) || REF_WIDGET_PADDING.top
+      const pb = parseFloat(cs.paddingBottom) || REF_WIDGET_PADDING.bottom
+      const cw = Math.max(120, el.clientWidth - pl - pr)
+      const ch = Math.max(120, el.clientHeight - pt - pb)
+      const { sx, sy } = layoutScaleFromInnerSize(cw, ch)
+      setLayoutMetrics({ sx, sy, pl, pt, pr, pb, cw, ch })
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   const onMeshColorsFromWheel = useCallback(
     (colors) => {
@@ -457,8 +485,8 @@ export default function DesktopWidgets({
   }, [])
 
   useEffect(() => {
-    onLayoutChange?.(layout)
-  }, [layout, onLayoutChange])
+    onLayoutChange?.({ layout, metrics: layoutMetrics })
+  }, [layout, layoutMetrics, onLayoutChange])
 
   const widgetIds = useMemo(() => [...STATIC_WIDGET_IDS, ...photoIds], [photoIds])
 
@@ -601,20 +629,21 @@ export default function DesktopWidgets({
     loadWeather(userLoc.lat, userLoc.lon)
   }, [userLoc.lat, userLoc.lon, loadWeather])
 
-  const clampPos = useCallback((id, x, y, layoutMap) => {
-    const el = containerRef.current
-    if (!el) return { x, y }
-    const rect = el.getBoundingClientRect()
-    const entry = layoutMap[id] || defaultLayout[id]
-    const { w, h } = getBoxSizeForWidget(id, entry)
-    const maxX = Math.max(0, rect.width - w)
-    const minY = DESKTOP_SAFE_TOP
-    const maxY = Math.max(minY, rect.height - h)
-    return {
-      x: Math.max(0, Math.min(maxX, x)),
-      y: Math.max(minY, Math.min(maxY, y)),
-    }
-  }, [defaultLayout])
+  const clampPos = useCallback(
+    (id, xRef, yRef, layoutMap) => {
+      const entry = layoutMap[id] || defaultLayout[id]
+      const { w: wRef, h: hRef } = getBoxSizeForWidget(id, entry)
+      const { sx, sy, cw, ch, pt } = layoutMetrics
+      const maxRefX = Math.max(0, (cw - wRef * sx) / sx)
+      const maxRefY = Math.max(0, (ch - hRef * sy) / sy)
+      const minRefY = Math.max(0, (DESKTOP_SAFE_TOP - pt) / sy)
+      return {
+        x: Math.max(0, Math.min(maxRefX, xRef)),
+        y: Math.max(minRefY, Math.min(maxRefY, yRef)),
+      }
+    },
+    [defaultLayout, layoutMetrics],
+  )
 
   /** Pick the valid position closest to the drop point (not top-left scan order). */
   const nudgeToFreeSpot = useCallback(
@@ -622,20 +651,21 @@ export default function DesktopWidgets({
       const el = containerRef.current
       if (!el) return layoutMap
       const base = { ...layoutMap[movingId] }
-      const rect = el.getBoundingClientRect()
-      const { w, h } = getBoxSizeForWidget(movingId, base)
-      const maxX = Math.max(0, rect.width - w)
-      const maxY = Math.max(0, rect.height - h)
+      const { w: wRef, h: hRef } = getBoxSizeForWidget(movingId, base)
+      const { sx, sy, cw, ch, pt } = layoutMetrics
+      const maxRefX = Math.max(0, (cw - wRef * sx) / sx)
+      const maxRefY = Math.max(0, (ch - hRef * sy) / sy)
+      const minRefY = Math.max(0, (DESKTOP_SAFE_TOP - pt) / sy)
       const cx = base.x
       const cy = base.y
       const step = 6
       let bestCand = null
       let bestDist = Infinity
-      for (let gy = 0; gy <= maxY; gy += step) {
-        for (let gx = 0; gx <= maxX; gx += step) {
+      for (let gy = minRefY; gy <= maxRefY; gy += step) {
+        for (let gx = 0; gx <= maxRefX; gx += step) {
           const cand = clampPos(movingId, gx, gy, layoutMap)
           const merged = { ...layoutMap, [movingId]: { ...base, ...cand } }
-          if (!hasOverlapWithAny(movingId, cand, merged, desktopItems, widgetIds)) {
+          if (!hasOverlapWithAny(movingId, cand, merged, desktopItems, widgetIds, layoutMetrics)) {
             const d = (cand.x - cx) ** 2 + (cand.y - cy) ** 2
             if (d < bestDist) {
               bestDist = d
@@ -647,7 +677,7 @@ export default function DesktopWidgets({
       if (bestCand) return { ...layoutMap, [movingId]: { ...base, ...bestCand } }
       return layoutMap
     },
-    [clampPos, desktopItems, widgetIds],
+    [clampPos, desktopItems, widgetIds, layoutMetrics],
   )
 
   const handleGripPointerDown = useCallback(
@@ -681,8 +711,9 @@ export default function DesktopWidgets({
         if (!d) return
         const dx = ev.clientX - d.startX
         const dy = ev.clientY - d.startY
+        const { sx, sy } = layoutMetricsRef.current
         setLayout((prev) => {
-          const candidate = clampPos(d.id, d.origX + dx, d.origY + dy, prev)
+          const candidate = clampPos(d.id, d.origX + dx / sx, d.origY + dy / sy, prev)
           return { ...prev, [d.id]: { ...prev[d.id], ...candidate } }
         })
       }
@@ -704,7 +735,7 @@ export default function DesktopWidgets({
           for (const wid of widgetIds) {
             const p = next[wid]
             if (!p) continue
-            if (hasOverlapWithAny(wid, { x: p.x, y: p.y }, next, desktopItems, widgetIds)) {
+            if (hasOverlapWithAny(wid, { x: p.x, y: p.y }, next, desktopItems, widgetIds, layoutMetricsRef.current)) {
               next = nudgeToFreeSpot(wid, next)
             }
           }
@@ -717,7 +748,7 @@ export default function DesktopWidgets({
       window.addEventListener('pointerup', onUp)
       window.addEventListener('pointercancel', onUp)
     },
-    [layout, clampPos, nudgeToFreeSpot, desktopItems, widgetIds, defaultLayout],
+    [layout, clampPos, nudgeToFreeSpot, desktopItems, widgetIds],
   )
 
   const handleWidgetResizePointerDown = useCallback(
@@ -750,16 +781,18 @@ export default function DesktopWidgets({
       const onMove = (ev) => {
         const d = widgetResizeRef.current
         if (!d) return
+        const { sx, sy } = layoutMetricsRef.current
         let nextW
         let nextH
         if (d.origS != null) {
-          const delta = Math.round(((ev.clientX - d.startX) + (ev.clientY - d.startY)) / (2 * CELL))
+          const cellEff = (CELL * (sx + sy)) / 2
+          const delta = Math.round(((ev.clientX - d.startX) + (ev.clientY - d.startY)) / (2 * cellEff))
           const s = clampGrid(d.origS + delta)
           nextW = s
           nextH = s
         } else {
-          nextW = clampGrid(d.origW + Math.round((ev.clientX - d.startX) / CELL))
-          nextH = clampGrid(d.origH + Math.round((ev.clientY - d.startY) / CELL))
+          nextW = clampGrid(d.origW + Math.round((ev.clientX - d.startX) / (CELL * sx)))
+          nextH = clampGrid(d.origH + Math.round((ev.clientY - d.startY) / (CELL * sy)))
         }
         setLayout((prev) => {
           const base = { ...(prev[d.wid] || defaultLayout[d.wid]), gridW: nextW, gridH: nextH }
@@ -784,7 +817,7 @@ export default function DesktopWidgets({
           for (const id of widgetIds) {
             const p = next[id]
             if (!p) continue
-            if (hasOverlapWithAny(id, { x: p.x, y: p.y }, next, desktopItems, widgetIds)) {
+            if (hasOverlapWithAny(id, { x: p.x, y: p.y }, next, desktopItems, widgetIds, layoutMetricsRef.current)) {
               next = nudgeToFreeSpot(id, next)
             }
           }
@@ -844,11 +877,12 @@ export default function DesktopWidgets({
   const cardStyle = (id) => {
     const p = layout[id] || defaultLayout[id]
     const { w, h } = getBoxSizeForWidget(id, p)
+    const { sx, sy, pl, pt } = layoutMetrics
     return {
-      left: p.x,
-      top: p.y,
-      width: w,
-      height: h,
+      left: pl + p.x * sx,
+      top: pt + p.y * sy,
+      width: w * sx,
+      height: h * sy,
       zIndex: draggingId === id ? 10000 : undefined,
     }
   }
@@ -980,9 +1014,9 @@ export default function DesktopWidgets({
           <div className="desktop-widgets__no-blend desktop-widgets__bg-controls-body desktop-widgets__bg-controls-body--compact">
             <div className="desktop-widgets__bg-wheel-square">
               <ColorPicker
-                size={100}
-                padding={8}
-                bulletRadius={11}
+                size={Math.max(56, Math.round(100 * Math.min(layoutMetrics.sx, layoutMetrics.sy)))}
+                padding={Math.max(4, Math.round(8 * Math.min(layoutMetrics.sx, layoutMetrics.sy)))}
+                bulletRadius={Math.max(6, Math.round(11 * Math.min(layoutMetrics.sx, layoutMetrics.sy)))}
                 numPoints={2}
                 minLight={6}
                 maxLight={38}
