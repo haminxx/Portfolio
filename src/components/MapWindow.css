@@ -1,15 +1,27 @@
 /* ══════════════════════════════════════════
-   Apple Maps Web – maps.apple.com clone
-   Dark theme · Floating glass sidebar
+   Apple Maps Web — maps.apple.com clone
+   Dark mode · Docked sidebar · Glass effect
+   Colors sourced from shell.css v1.6.495
    ══════════════════════════════════════════ */
 
 .mw {
+  --am-blue: #0a84ff;
+  --am-bg: #2b2b2b;
+  --am-popover-bg: #1d1d1f;
+  --am-label: #fff;
+  --am-secondary-label: rgba(235, 235, 245, 0.6);
+  --am-tertiary-label: rgba(235, 235, 245, 0.3);
+  --am-separator: rgba(84, 84, 88, 0.55);
+  --am-tertiary-fill: rgba(118, 118, 128, 0.24);
+  --am-secondary-fill: rgba(120, 120, 128, 0.32);
+
   position: relative;
   height: 100%;
   width: 100%;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif;
+  font-family: "SF Pro", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
   background: #000;
+  color: var(--am-label);
 }
 
 /* ── Map canvas — fills entire container ── */
@@ -27,7 +39,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50% 50% 50% 0;
-  background: #007aff;
+  background: var(--am-blue);
   border: 3px solid #fff;
   transform: rotate(-45deg);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
@@ -39,34 +51,54 @@
 }
 
 /* ═══════════════════════════════════════
-   Floating Sidebar
+   Sidebar — docked to left edge
+   Matches #shell-nav + .mw-card glass
    ═══════════════════════════════════════ */
 
 .mw__sidebar {
   position: absolute;
-  left: 10px;
-  top: 10px;
-  bottom: 10px;
-  width: 360px;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 340px;
   z-index: 4;
   display: flex;
   flex-direction: column;
-  border-radius: 12px;
-  background: rgba(28, 28, 30, 0.82);
-  backdrop-filter: saturate(180%) blur(40px);
-  -webkit-backdrop-filter: saturate(180%) blur(40px);
-  border: 0.5px solid rgba(255, 255, 255, 0.15);
-  box-shadow:
-    0 4px 32px rgba(0, 0, 0, 0.45),
-    0 0 0 0.5px rgba(0, 0, 0, 0.3);
+  background: var(--am-bg);
+  border-right: 1px solid rgba(90, 92, 100, 0.5);
   overflow: hidden;
 }
 
-/* ── Tab bar ── */
+/* Glass effect when supported — matches Apple Maps .mw-card dark */
+@supports ((-webkit-backdrop-filter: blur(50px)) or (backdrop-filter: blur(50px))) {
+  .mw__sidebar {
+    background: rgba(0, 0, 0, 0.6);
+    -webkit-backdrop-filter: blur(50px);
+    backdrop-filter: blur(50px);
+  }
+}
+
+/* ── Nav header (brand area) ── */
+.mw__nav-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 8px;
+  flex-shrink: 0;
+}
+
+.mw__brand {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--am-label);
+}
+
+/* ── Tab bar — Search | Guides | Directions ── */
 .mw__tabs {
   display: flex;
   gap: 2px;
-  padding: 12px 12px 0;
+  padding: 4px 12px 0;
   flex-shrink: 0;
 }
 
@@ -75,31 +107,32 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 10px 4px 8px;
+  gap: 3px;
+  padding: 8px 4px 7px;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.45);
-  font-size: 11px;
+  color: var(--am-tertiary-label);
+  font-size: 10px;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
+  letter-spacing: 0.01em;
 }
 .mw__tab:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.7);
+  background: var(--am-tertiary-fill);
+  color: var(--am-secondary-label);
 }
 .mw__tab--active {
-  background: rgba(0, 122, 255, 0.12);
-  color: #007aff;
+  background: rgba(10, 132, 255, 0.15);
+  color: var(--am-blue);
 }
 
 /* ── Tabs separator ── */
 .mw__tabs-sep {
   height: 0.5px;
-  margin: 0 12px;
-  background: rgba(255, 255, 255, 0.08);
+  margin: 8px 0 0;
+  background: var(--am-separator);
   flex-shrink: 0;
 }
 
@@ -107,7 +140,7 @@
 .mw__content {
   flex: 1;
   overflow-y: auto;
-  padding: 12px;
+  padding: 12px 16px;
   scrollbar-width: none;
 }
 .mw__content::-webkit-scrollbar { display: none; }
@@ -119,29 +152,29 @@
   gap: 8px;
   height: 36px;
   padding: 0 10px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--am-tertiary-fill);
+  border: 1px solid transparent;
   border-radius: 10px;
   margin-bottom: 16px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .mw__search-bar:focus-within {
-  border-color: rgba(0, 122, 255, 0.45);
-  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+  border-color: rgba(10, 132, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.12);
 }
 
-.mw__search-ico { color: rgba(255, 255, 255, 0.35); flex-shrink: 0; }
+.mw__search-ico { color: var(--am-tertiary-label); flex-shrink: 0; }
 
 .mw__search-input {
   flex: 1;
   border: none;
   background: transparent;
-  color: #f5f5f7;
+  color: var(--am-label);
   font-size: 14px;
   outline: none;
   min-width: 0;
 }
-.mw__search-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+.mw__search-input::placeholder { color: var(--am-tertiary-label); }
 
 .mw__clear-btn {
   width: 20px;
@@ -151,21 +184,21 @@
   justify-content: center;
   border: none;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.5);
+  background: var(--am-secondary-fill);
+  color: var(--am-secondary-label);
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.12s;
 }
-.mw__clear-btn:hover { background: rgba(255, 255, 255, 0.2); }
+.mw__clear-btn:hover { background: rgba(120, 120, 128, 0.5); }
 
 /* ── Section title ── */
 .mw__section-title {
   margin: 0 0 10px;
-  padding: 0 2px;
+  padding: 0;
   font-size: 13px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--am-secondary-label);
   letter-spacing: -0.01em;
 }
 
@@ -189,8 +222,8 @@
   padding: 12px 4px 10px;
   border: none;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.7);
+  background: var(--am-tertiary-fill);
+  color: var(--am-secondary-label);
   font-size: 10px;
   font-weight: 500;
   cursor: pointer;
@@ -198,7 +231,7 @@
   line-height: 1.2;
   text-align: center;
 }
-.mw__category:hover { background: rgba(255, 255, 255, 0.08); }
+.mw__category:hover { background: var(--am-secondary-fill); }
 .mw__category:active { transform: scale(0.96); }
 
 .mw__category-icon {
@@ -226,23 +259,23 @@
   padding: 10px 8px;
   border: none;
   background: transparent;
-  color: #e5e5ea;
+  color: var(--am-label);
   text-align: left;
   cursor: pointer;
   border-radius: 8px;
   transition: background 0.12s;
 }
-.mw__place-row:hover { background: rgba(255, 255, 255, 0.05); }
+.mw__place-row:hover { background: var(--am-tertiary-fill); }
 
-.mw__row-ico { color: rgba(255, 255, 255, 0.35); flex-shrink: 0; }
-.mw__row-chevron { color: rgba(255, 255, 255, 0.2); flex-shrink: 0; margin-left: auto; }
+.mw__row-ico { color: var(--am-tertiary-label); flex-shrink: 0; }
+.mw__row-chevron { color: var(--am-tertiary-label); flex-shrink: 0; margin-left: auto; }
 
 .mw__row-info {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
 }
 
 .mw__row-name {
@@ -255,7 +288,7 @@
 
 .mw__row-addr {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--am-tertiary-label);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -271,13 +304,13 @@
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: #007aff;
+  color: var(--am-blue);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.12s;
 }
-.mw__back:hover { background: rgba(0, 122, 255, 0.08); }
+.mw__back:hover { background: rgba(10, 132, 255, 0.08); }
 
 /* ── Panel slide animation ── */
 .mw__panel-slide {
@@ -290,7 +323,7 @@
 
 /* ── Empty state ── */
 .mw__empty {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--am-tertiary-label);
   font-size: 13px;
   padding: 16px 4px;
   margin: 0;
@@ -306,23 +339,23 @@
   margin: 0 0 4px;
   font-size: 22px;
   font-weight: 700;
-  color: #f5f5f7;
+  color: var(--am-label);
   letter-spacing: -0.03em;
 }
 
 .mw__detail-addr {
   margin: 0 0 16px;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--am-secondary-label);
   line-height: 1.4;
 }
 
 .mw__detail-meta {
   margin: 0;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--am-separator);
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--am-tertiary-label);
 }
 
 /* ── Action buttons row (Directions / Call / Website / Share) ── */
@@ -340,7 +373,7 @@
   padding: 0;
   border: none;
   background: transparent;
-  color: #007aff;
+  color: var(--am-blue);
   font-size: 10px;
   font-weight: 500;
   cursor: pointer;
@@ -354,18 +387,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 122, 255, 0.12);
-  color: #007aff;
+  background: rgba(10, 132, 255, 0.15);
+  color: var(--am-blue);
   transition: background 0.15s, transform 0.1s;
 }
-.mw__action:hover .mw__action-icon { background: rgba(0, 122, 255, 0.2); }
+.mw__action:hover .mw__action-icon { background: rgba(10, 132, 255, 0.25); }
 .mw__action:active .mw__action-icon { transform: scale(0.94); }
 
 .mw__action--primary .mw__action-icon {
-  background: #007aff;
+  background: var(--am-blue);
   color: #fff;
 }
-.mw__action--primary:hover .mw__action-icon { background: #0064d2; }
+.mw__action--primary:hover .mw__action-icon { background: #0077e6; }
 
 /* ═══════════════════════════════════════
    Directions Tab
@@ -384,13 +417,13 @@
   gap: 10px;
   padding: 0 12px;
   height: 38px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--am-tertiary-fill);
+  border: 1px solid transparent;
   border-radius: 10px;
   transition: border-color 0.2s;
 }
 .mw__dir-field:focus-within {
-  border-color: rgba(0, 122, 255, 0.4);
+  border-color: rgba(10, 132, 255, 0.5);
 }
 
 .mw__dir-dot {
@@ -399,19 +432,19 @@
   border-radius: 50%;
   flex-shrink: 0;
 }
-.mw__dir-dot--from { background: #34c759; }
-.mw__dir-dot--to   { background: #ff3b30; }
+.mw__dir-dot--from { background: #30d158; }
+.mw__dir-dot--to   { background: #ff453a; }
 
 .mw__dir-input {
   flex: 1;
   border: none;
   background: transparent;
-  color: #f5f5f7;
+  color: var(--am-label);
   font-size: 14px;
   outline: none;
   min-width: 0;
 }
-.mw__dir-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+.mw__dir-input::placeholder { color: var(--am-tertiary-label); }
 
 /* ── Transport modes ── */
 .mw__modes {
@@ -429,15 +462,15 @@
   padding: 8px 4px;
   border: none;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.5);
+  background: var(--am-tertiary-fill);
+  color: var(--am-secondary-label);
   font-size: 10px;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
 }
-.mw__mode:hover { background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.7); }
-.mw__mode--active { background: rgba(0, 122, 255, 0.15); color: #007aff; }
+.mw__mode:hover { background: var(--am-secondary-fill); color: var(--am-label); }
+.mw__mode--active { background: rgba(10, 132, 255, 0.2); color: var(--am-blue); }
 
 /* ── Go button ── */
 .mw__go-btn {
@@ -445,21 +478,21 @@
   padding: 10px;
   border: none;
   border-radius: 10px;
-  background: #007aff;
+  background: var(--am-blue);
   color: #fff;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, opacity 0.15s;
 }
-.mw__go-btn:hover:not(:disabled) { background: #0064d2; }
+.mw__go-btn:hover:not(:disabled) { background: #0077e6; }
 .mw__go-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ── Route result ── */
 .mw__route {
   margin-top: 16px;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--am-separator);
 }
 
 .mw__route-summary {
@@ -472,20 +505,20 @@
 .mw__route-time {
   font-size: 22px;
   font-weight: 700;
-  color: #007aff;
+  color: var(--am-blue);
   letter-spacing: -0.02em;
 }
 
 .mw__route-dist {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--am-secondary-label);
 }
 
 .mw__route-steps {
   margin: 0;
   padding-left: 18px;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--am-secondary-label);
   line-height: 1.6;
 }
 
@@ -493,67 +526,81 @@
 
 /* ═══════════════════════════════════════
    Map Controls (right side, floating)
+   Matches MapKit JS control positioning
    ═══════════════════════════════════════ */
 
 .mw__controls {
   position: absolute;
-  right: 10px;
-  bottom: 100px;
+  right: 12px;
+  top: 12px;
   z-index: 3;
   display: flex;
   flex-direction: column;
-  border-radius: 10px;
-  background: rgba(28, 28, 30, 0.82);
-  backdrop-filter: saturate(180%) blur(40px);
-  -webkit-backdrop-filter: saturate(180%) blur(40px);
-  border: 0.5px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
+  border-radius: 8px;
+  background: var(--am-bg);
+  border: 0.5px solid var(--am-separator);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 }
 
+@supports ((-webkit-backdrop-filter: blur(50px)) or (backdrop-filter: blur(50px))) {
+  .mw__controls {
+    background: rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
+}
+
 .mw__ctrl-btn {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
 }
-.mw__ctrl-btn:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
-.mw__ctrl-btn:active { background: rgba(255, 255, 255, 0.12); }
+.mw__ctrl-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.mw__ctrl-btn:active { background: rgba(255, 255, 255, 0.15); }
 
 .mw__ctrl-sep {
   height: 0.5px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--am-separator);
 }
 
 /* ── Locate button ── */
 .mw__locate-btn {
   position: absolute;
-  right: 10px;
-  bottom: 52px;
+  right: 12px;
+  top: 130px;
   z-index: 3;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 10px;
-  background: rgba(28, 28, 30, 0.82);
-  backdrop-filter: saturate(180%) blur(40px);
-  -webkit-backdrop-filter: saturate(180%) blur(40px);
-  border: 0.5px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
-  color: rgba(255, 255, 255, 0.75);
+  border-radius: 8px;
+  background: var(--am-bg);
+  border: 0.5px solid var(--am-separator);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
 }
-.mw__locate-btn:hover { background: rgba(255, 255, 255, 0.08); color: #007aff; }
+
+@supports ((-webkit-backdrop-filter: blur(50px)) or (backdrop-filter: blur(50px))) {
+  .mw__locate-btn {
+    background: rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
+}
+
+.mw__locate-btn:hover { color: var(--am-blue); }
 
 /* ── Hide default MapLibre chrome ── */
 .mw .maplibregl-ctrl-bottom-right { display: none; }
@@ -565,5 +612,5 @@
 }
 .mw .maplibregl-ctrl-attrib a { color: rgba(255, 255, 255, 0.5) !important; }
 
-/* ── Hide Apple MapKit JS default controls ── */
-.mw [class*="mk-controls"] { display: none !important; }
+/* ── Hide Apple MapKit JS default controls (we render our own) ── */
+.mw .mk-controls-container { display: none !important; }

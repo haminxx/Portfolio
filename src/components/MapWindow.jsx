@@ -393,8 +393,13 @@ export default function MapWindow() {
       {/* Full map canvas */}
       <div ref={containerRef} className="mw__canvas" />
 
-      {/* ── Floating sidebar ── */}
+      {/* ── Sidebar (docked left, matches maps.apple.com) ── */}
       <aside className="mw__sidebar">
+        {/* Brand header */}
+        <div className="mw__nav-header">
+          <span className="mw__brand">Maps</span>
+        </div>
+
         {/* Tab bar */}
         <div className="mw__tabs">
           {[
@@ -637,23 +642,23 @@ export default function MapWindow() {
         </div>
       </aside>
 
-      {/* ── Map controls (right side) ── */}
+      {/* ── Map controls (top-right, matching maps.apple.com) ── */}
       <div className="mw__controls">
         <button type="button" className="mw__ctrl-btn" aria-label="Compass">
-          <Compass size={18} strokeWidth={1.75} />
+          <Compass size={16} strokeWidth={1.75} />
         </button>
         <div className="mw__ctrl-sep" />
         <button type="button" className="mw__ctrl-btn" onClick={zoomIn} aria-label="Zoom in">
-          <Plus size={18} strokeWidth={2} />
+          <Plus size={16} strokeWidth={2} />
         </button>
         <div className="mw__ctrl-sep" />
         <button type="button" className="mw__ctrl-btn" onClick={zoomOut} aria-label="Zoom out">
-          <Minus size={18} strokeWidth={2} />
+          <Minus size={16} strokeWidth={2} />
         </button>
       </div>
 
       <button type="button" className="mw__locate-btn" onClick={locateUser} aria-label="My location">
-        <Locate size={18} strokeWidth={2} />
+        <Locate size={16} strokeWidth={2} />
       </button>
     </div>
   )
