@@ -1,790 +1,660 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap, GeoJSON, CircleMarker } from 'react-leaflet'
-import L from 'leaflet'
+import { useRef, useEffect, useState, useCallback } from 'react'
+import maplibregl from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css'
 import {
-  Home,
-  GraduationCap,
-  MapPin,
-  Globe,
   Search,
-  ChevronDown,
-  ChevronRight,
-  Utensils,
-  Map,
-  ZoomIn,
-  ZoomOut,
+  MapPin,
   X,
+  Plus,
+  Minus,
+  Locate,
+  ChevronLeft,
+  ChevronRight,
   Navigation,
   Car,
   Footprints,
+  Bus,
+  Clock,
+  Compass,
+  UtensilsCrossed,
+  Fuel,
+  Coffee,
+  ShoppingCart,
+  ShoppingBag,
+  Hotel,
+  Phone,
+  Globe,
+  Share2,
   Bike,
-  Train,
 } from 'lucide-react'
+import { loadMapKit } from '../lib/mapkitLoader'
 import { useLanguage } from '../context/LanguageContext'
-import { fetchOsrmRoutePublic, fetchMapboxDirections } from '../lib/osrmRoute'
-import 'leaflet/dist/leaflet.css'
-import MapBottomSheet from './maps/MapBottomSheet'
 import './MapWindow.css'
 
-const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
-const MAPBOX_TOKEN = (import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || '').trim()
-const MAPTILER_KEY = (import.meta.env.VITE_MAPTILER_API_KEY || '').trim()
+/* ── Env ── */
+const MAPKIT_TOKEN = (import.meta.env.VITE_MAPKIT_TOKEN || '').trim()
+const DARK_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
 
-const MAP_STYLE_ORDER = ['apple', 'minimal', 'standard', 'satellite', 'terrain']
-
-const MAP_STYLE_KEYS = {
-  minimal: {
-    key: 'minimal',
-    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-  },
-  standard: {
-    key: 'standard',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-  },
-  satellite: {
-    key: 'satellite',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: '&copy; <a href="https://www.esri.com/">Esri</a>',
-  },
-  terrain: {
-    key: 'terrain',
-    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
-  },
+/* ── Recents ── */
+const RECENTS_KEY = 'map-recents'
+function loadRecents() {
+  try { return JSON.parse(localStorage.getItem(RECENTS_KEY)) || [] } catch { return [] }
+}
+function saveRecent(place) {
+  const list = loadRecents().filter((r) => r.name !== place.name)
+  const next = [place, ...list].slice(0, 8)
+  localStorage.setItem(RECENTS_KEY, JSON.stringify(next))
+  return next
 }
 
-/**
- * Apple-like basemap: MapTiler Streets (free tier key) when VITE_MAPTILER_API_KEY is set;
- * otherwise CARTO light raster with CSS tweaks (see MapWindow.css).
- */
-function getMapTileConfig(mapStyle) {
-  if (mapStyle === 'apple') {
-    if (MAPTILER_KEY) {
-      return {
-        url: `https://api.maptiler.com/maps/streets-v2/256/{z}/{x}/{y}.png?key=${encodeURIComponent(MAPTILER_KEY)}`,
-        attribution:
-          '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        appleFallback: false,
-      }
-    }
-    return {
-      url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-      attribution: MAP_STYLE_KEYS.minimal.attribution,
-      appleFallback: true,
-    }
-  }
-  const s = MAP_STYLE_KEYS[mapStyle] ?? MAP_STYLE_KEYS.minimal
-  return { url: s.url, attribution: s.attribution, appleFallback: false }
-}
-
-const PLACES = {
-  home: {
-    id: 'home',
-    nameKey: 'home',
-    address: 'Aliso Viejo, CA',
-    coords: [33.575, -117.726],
-    zoom: 12,
-    icon: Home,
-  },
-  college: {
-    id: 'college',
-    nameKey: 'college',
-    address: 'UC San Diego, 9500 Gilman Dr, La Jolla, CA',
-    coords: [32.8801, -117.234],
-    zoom: 15,
-    icon: GraduationCap,
-  },
-  chicago: {
-    id: 'chicago',
-    nameKey: 'homeTown',
-    address: 'Chicago, IL',
-    coords: [41.8781, -87.6298],
-    zoom: 11,
-    icon: MapPin,
-  },
-  seoul: {
-    id: 'seoul',
-    nameKey: 'secondHomeTown',
-    address: 'Seoul, South Korea',
-    coords: [37.5665, 126.978],
-    zoom: 11,
-    icon: Globe,
-  },
-}
-
-const SPEEDS_MS = { driving: 22, walking: 1.4, cycling: 5 }
-
-function haversineMeters(lat1, lon1, lat2, lon2) {
-  const R = 6371000
-  const toRad = (d) => (d * Math.PI) / 180
-  const dLat = toRad(lat2 - lat1)
-  const dLon = toRad(lon2 - lon1)
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
-  return 2 * R * Math.asin(Math.sqrt(a))
-}
-
-const homeIcon = L.divIcon({
-  className: 'map-window__custom-marker',
-  html: '<div class="map-window__pin-outer"><div class="map-window__pin-inner"><span class="map-window__pin-arrow">▲</span></div></div>',
-  iconSize: [48, 48],
-  iconAnchor: [24, 48],
-})
-
-async function geocode(query, limit = 1) {
+/* ── Geocode fallback (Nominatim) ── */
+async function geocodeNominatim(query) {
   const res = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=${limit}`,
-    {
-      headers: {
-        'Accept-Language': 'en',
-        'User-Agent': 'PortfolioMap/1.0',
-      },
-    }
+    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=6`,
+    { headers: { 'Accept-Language': 'en', 'User-Agent': 'PortfolioMap/1.0' } },
   )
   const data = await res.json()
-  if (!data || !Array.isArray(data)) return limit === 1 ? null : []
-  return limit === 1
-    ? data[0]
-      ? { coords: [parseFloat(data[0].lat), parseFloat(data[0].lon)], address: data[0].display_name }
-      : null
-    : data.map((d) => ({
-        coords: [parseFloat(d.lat), parseFloat(d.lon)],
-        address: d.display_name,
-      }))
+  if (!Array.isArray(data)) return []
+  return data.map((d) => ({
+    name: d.display_name.split(',')[0],
+    address: d.display_name,
+    lng: parseFloat(d.lon),
+    lat: parseFloat(d.lat),
+  }))
 }
 
-function MapFlyTo({ coords, zoom }) {
-  const map = useMap()
-  useEffect(() => {
-    if (coords && coords.length === 2) {
-      map.flyTo(coords, zoom ?? 12, { duration: 0.8 })
-    }
-  }, [coords, zoom, map])
-  return null
+/* ── Route fallback (OSRM) ── */
+async function routeOSRM(fromLat, fromLng, toLat, toLng, profile = 'driving') {
+  const osrmProfile = profile === 'walking' ? 'foot' : profile === 'cycling' ? 'bicycle' : 'car'
+  const url = `https://router.project-osrm.org/route/v1/${osrmProfile}/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson&steps=true`
+  const res = await fetch(url)
+  const data = await res.json()
+  if (data.code !== 'Ok' || !data.routes?.[0]) return null
+  const route = data.routes[0]
+  return {
+    coords: route.geometry.coordinates,
+    distance: route.distance,
+    duration: route.duration,
+    steps: route.legs?.[0]?.steps?.map((s) => s.maneuver?.instruction || s.name).filter(Boolean) || [],
+  }
 }
 
-function MapFitRouteBounds({ geometry }) {
-  const map = useMap()
-  useEffect(() => {
-    if (!geometry?.coordinates?.length) return
-    try {
-      const layer = L.geoJSON(geometry)
-      const b = layer.getBounds()
-      if (b.isValid()) map.fitBounds(b, { padding: [64, 64], maxZoom: 14 })
-    } catch {
-      // ignore
-    }
-  }, [geometry, map])
-  return null
-}
+/* ── Explore Nearby categories ── */
+const CATEGORIES = [
+  { id: 'restaurants', label: 'Restaurants', icon: UtensilsCrossed, color: '#FF6B35' },
+  { id: 'gas stations', label: 'Gas', icon: Fuel, color: '#007AFF' },
+  { id: 'coffee', label: 'Coffee', icon: Coffee, color: '#A0522D' },
+  { id: 'groceries', label: 'Groceries', icon: ShoppingCart, color: '#34C759' },
+  { id: 'shopping', label: 'Shopping', icon: ShoppingBag, color: '#FF2D55' },
+  { id: 'hotels', label: 'Hotels', icon: Hotel, color: '#AF52DE' },
+]
 
-function MapControls({ mapStyle, onMapStyleChange, t }) {
-  const map = useMap()
-  return (
-    <div className="map-window__controls-strip">
-      <div className="map-window__view-dropdown map-window__view-dropdown--animated">
-        <Map size={16} strokeWidth={1.5} />
-        <select
-          value={mapStyle}
-          onChange={(e) => onMapStyleChange(e.target.value)}
-          className="map-window__view-select"
-          aria-label="Map style"
-        >
-          {MAP_STYLE_ORDER.map((key) => (
-            <option key={key} value={key}>
-              {t(`map.${key}`)}
-            </option>
-          ))}
-        </select>
-        <ChevronDown size={16} strokeWidth={1.5} className="map-window__view-chevron" />
-      </div>
-      <div className="map-window__zoom-buttons">
-        <button type="button" className="map-window__zoom-btn" onClick={() => map.zoomIn()} aria-label="Zoom in">
-          <ZoomIn size={16} strokeWidth={1.5} />
-        </button>
-        <button type="button" className="map-window__zoom-btn" onClick={() => map.zoomOut()} aria-label="Zoom out">
-          <ZoomOut size={16} strokeWidth={1.5} />
-        </button>
-      </div>
-    </div>
-  )
-}
-
+/* ════════════════════════════════════════════ */
 export default function MapWindow() {
   const { t } = useLanguage()
-  const [activeLocation, setActiveLocation] = useState(null)
-  const [restaurantsOpen, setRestaurantsOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [searchResult, setSearchResult] = useState(null)
-  const [searchCoords, setSearchCoords] = useState(null)
-  const [isSearching, setIsSearching] = useState(false)
-  const [recentSearches, setRecentSearches] = useState([])
-  const [suggestions, setSuggestions] = useState([])
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [suggestionsLoading, setSuggestionsLoading] = useState(false)
-  const suggestionsDebounceRef = useRef(null)
-  const [mapStyle, setMapStyle] = useState('apple')
-  const [userLocation, setUserLocation] = useState(null)
-  const [geoMessage, setGeoMessage] = useState(null)
-  const [directionsTarget, setDirectionsTarget] = useState(null)
-  const [routeProfile, setRouteProfile] = useState('driving')
-  const [routeGeometry, setRouteGeometry] = useState(null)
-  const [routeMeta, setRouteMeta] = useState(null)
+  const containerRef = useRef(null)
+  const mapRef = useRef(null)
+  const engineRef = useRef('libre')
+  const markersRef = useRef([])
+  const routeLayerRef = useRef(null)
+
+  /* ── UI state ── */
+  const [tab, setTab] = useState('search')
+  const [panel, setPanel] = useState('main')
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState([])
+  const [searching, setSearching] = useState(false)
+  const [selected, setSelected] = useState(null)
+  const [recents, setRecents] = useState(loadRecents)
+
+  /* directions */
+  const [dirFrom, setDirFrom] = useState('')
+  const [dirTo, setDirTo] = useState('')
+  const [dirProfile, setDirProfile] = useState('driving')
+  const [route, setRoute] = useState(null)
   const [routeLoading, setRouteLoading] = useState(false)
-  const [routeHint, setRouteHint] = useState(null)
 
-  const requestLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      setGeoMessage(t('map.locationDenied'))
-      return
-    }
-    setGeoMessage(null)
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserLocation([pos.coords.latitude, pos.coords.longitude])
-        setGeoMessage(null)
-      },
-      (err) => {
-        if (err.code === 1) setGeoMessage(t('map.locationDenied'))
-        else setGeoMessage(t('map.routeError'))
-      },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
-    )
-  }, [t])
-
-  useEffect(() => {
-    requestLocation()
-  }, [requestLocation])
-
-  const openDirectionsForPlace = useCallback(
-    (placeId) => {
-      const place = PLACES[placeId]
-      if (!place) return
-      setActiveLocation(placeId)
-      setSearchCoords(null)
-      setSearchResult(null)
-      setShowSuggestions(false)
-      setDirectionsTarget(place)
-    },
-    []
-  )
-
-  const closeDirections = useCallback(() => {
-    setDirectionsTarget(null)
-    setRouteGeometry(null)
-    setRouteMeta(null)
-    setRouteHint(null)
+  /* ── Map helpers ── */
+  const clearMarkers = useCallback(() => {
+    markersRef.current.forEach((m) => m.remove?.() || m.map?.removeAnnotation?.(m))
+    markersRef.current = []
   }, [])
 
+  const clearRoute = useCallback(() => {
+    const map = mapRef.current
+    if (!map) return
+    if (engineRef.current === 'libre') {
+      if (map.getSource?.('route')) {
+        try { map.removeLayer('route-line'); map.removeSource('route') } catch { /* ok */ }
+      }
+    } else if (routeLayerRef.current) {
+      map.removeOverlay?.(routeLayerRef.current)
+      routeLayerRef.current = null
+    }
+  }, [])
+
+  const flyTo = useCallback((lng, lat, zoom = 14) => {
+    const map = mapRef.current
+    if (!map) return
+    if (engineRef.current === 'libre') {
+      map.flyTo({ center: [lng, lat], zoom, duration: 1200, essential: true })
+    } else {
+      map.setCenterAnimated(new window.mapkit.Coordinate(lat, lng))
+    }
+  }, [])
+
+  const addMarker = useCallback((lng, lat, title) => {
+    const map = mapRef.current
+    if (!map) return
+    if (engineRef.current === 'libre') {
+      const el = document.createElement('div')
+      el.className = 'mw-marker'
+      const m = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map)
+      markersRef.current.push(m)
+    } else {
+      const mk = window.mapkit
+      const ann = new mk.MarkerAnnotation(new mk.Coordinate(lat, lng), { title, color: '#007AFF' })
+      map.addAnnotation(ann)
+      markersRef.current.push(ann)
+    }
+  }, [])
+
+  const drawRoute = useCallback((coords) => {
+    const map = mapRef.current
+    if (!map || !coords?.length) return
+    clearRoute()
+    if (engineRef.current === 'libre') {
+      if (!map.isStyleLoaded?.()) return
+      map.addSource('route', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'LineString', coordinates: coords } } })
+      map.addLayer({ id: 'route-line', type: 'line', source: 'route', paint: { 'line-color': '#007AFF', 'line-width': 4, 'line-opacity': 0.85 }, layout: { 'line-cap': 'round', 'line-join': 'round' } })
+      const bounds = coords.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(coords[0], coords[0]))
+      map.fitBounds(bounds, { padding: 60, duration: 800 })
+    } else {
+      const mk = window.mapkit
+      const style = new mk.Style({ lineWidth: 5, strokeColor: '#007AFF', strokeOpacity: 0.85 })
+      const points = coords.map(([lng, lat]) => new mk.Coordinate(lat, lng))
+      const overlay = new mk.PolylineOverlay(points, { style })
+      map.addOverlay(overlay)
+      routeLayerRef.current = overlay
+      map.showItems([overlay])
+    }
+  }, [clearRoute])
+
+  /* ── Init map engine ── */
   useEffect(() => {
-    if (!directionsTarget) {
-      setRouteGeometry(null)
-      setRouteMeta(null)
-      setRouteHint(null)
-      return
-    }
-
-    const dest = directionsTarget.coords
-    const [dlat, dlng] = dest
-
-    if (!userLocation) {
-      setRouteGeometry(null)
-      setRouteMeta(null)
-      setRouteHint(null)
-      return
-    }
-
-    const [ulat, ulng] = userLocation
-
+    if (!containerRef.current) return
     let cancelled = false
-    setRouteLoading(true)
-    setRouteHint(null)
 
-    const run = async () => {
-      if (API_URL) {
-        try {
-          // Backend uses OpenRouteService when ORS_API_KEY is set, else OSRM. Apple MapKit JS would need a separate dev token and script embed.
-          const url = `${API_URL}/api/maps/route?from=${ulat},${ulng}&to=${dlat},${dlng}&profile=${routeProfile}`
-          const res = await fetch(url)
-          if (cancelled) return
-          if (res.ok) {
-            const data = await res.json()
-            setRouteGeometry(data.geometry || null)
-            setRouteMeta({
-              duration: data.duration,
-              distance: data.distance,
-              steps: data.steps || [],
-            })
-            setRouteHint(null)
-            setRouteLoading(false)
-            return
-          }
-        } catch {
-          // fall through to Mapbox / OSRM
-        }
-      }
+    ;(async () => {
+      const mapkitReady = MAPKIT_TOKEN ? await loadMapKit(MAPKIT_TOKEN) : false
 
       if (cancelled) return
-      if (MAPBOX_TOKEN) {
-        try {
-          const data = await fetchMapboxDirections(
-            MAPBOX_TOKEN,
-            ulat,
-            ulng,
-            dlat,
-            dlng,
-            routeProfile,
-          )
-          if (cancelled) return
-          if (data.geometry) {
-            setRouteGeometry(data.geometry)
-            setRouteMeta({
-              duration: data.duration,
-              distance: data.distance,
-              steps: data.steps || [],
-            })
-            setRouteHint(null)
-            setRouteLoading(false)
-            return
-          }
-        } catch {
-          // fall through to public OSRM
-        }
-      }
 
-      if (cancelled) return
-      try {
-        const data = await fetchOsrmRoutePublic(
-          ulat,
-          ulng,
-          dlat,
-          dlng,
-          routeProfile,
-        )
-        if (cancelled) return
-        if (data.geometry) {
-          setRouteGeometry(data.geometry)
-          setRouteMeta({
-            duration: data.duration,
-            distance: data.distance,
-            steps: data.steps || [],
-          })
-          setRouteHint(null)
-          setRouteLoading(false)
-          return
-        }
-      } catch {
-        // fall through to straight line
+      if (mapkitReady && window.mapkit) {
+        engineRef.current = 'mapkit'
+        const mk = window.mapkit
+        const map = new mk.Map(containerRef.current, {
+          center: new mk.Coordinate(33.575, -117.726),
+          colorScheme: mk.Map.ColorSchemes.Dark,
+          mapType: mk.Map.MapTypes.Standard,
+          showsCompass: mk.FeatureVisibility.Hidden,
+          showsMapTypeControl: false,
+          showsZoomControl: false,
+          padding: new mk.Padding(0, 0, 0, 0),
+        })
+        mapRef.current = map
+      } else {
+        engineRef.current = 'libre'
+        const map = new maplibregl.Map({
+          container: containerRef.current,
+          style: DARK_STYLE,
+          center: [-117.726, 33.575],
+          zoom: 10,
+          attributionControl: false,
+          fadeDuration: 0,
+        })
+        map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left')
+        mapRef.current = map
       }
+    })()
 
-      if (cancelled) return
-      const meters = haversineMeters(ulat, ulng, dlat, dlng)
-      const speed = SPEEDS_MS[routeProfile] || SPEEDS_MS.driving
-      const duration = meters / speed
-      const geometry = {
-        type: 'LineString',
-        coordinates: [
-          [ulng, ulat],
-          [dlng, dlat],
-        ],
-      }
-      setRouteGeometry(geometry)
-      setRouteMeta({
-        duration,
-        distance: meters,
-        steps: [],
-      })
-      setRouteHint(t('map.straightLineHint'))
-      setRouteLoading(false)
-    }
-
-    run()
     return () => {
       cancelled = true
-    }
-  }, [directionsTarget, userLocation, routeProfile, t])
-
-  const flyToCoords = searchCoords ?? (activeLocation && PLACES[activeLocation] ? PLACES[activeLocation].coords : null)
-  const flyToZoom = searchCoords ? 14 : activeLocation ? PLACES[activeLocation]?.zoom : null
-
-  const markersToShow = []
-  if (activeLocation && !searchCoords && PLACES[activeLocation]) {
-    const p = PLACES[activeLocation]
-    markersToShow.push({ key: activeLocation, coords: p.coords, address: p.address })
-  }
-  if (searchCoords) {
-    markersToShow.push({
-      key: 'search',
-      coords: searchCoords,
-      address: searchResult?.address ?? 'Searched location',
-    })
-  }
-
-  const tileConfig = useMemo(() => getMapTileConfig(mapStyle), [mapStyle])
-
-  const handleSearch = useCallback(async () => {
-    const q = searchQuery.trim()
-    if (!q) return
-    setIsSearching(true)
-    setSearchResult(null)
-    setShowSuggestions(false)
-    try {
-      const result = await geocode(q, 1)
-      if (result) {
-        setSearchCoords(result.coords)
-        setSearchResult(result)
-        setActiveLocation(null)
-        setDirectionsTarget(null)
-        setRecentSearches((prev) => {
-          const next = [{ query: q, ...result }, ...prev.filter((r) => r.query !== q)].slice(0, 5)
-          return next
-        })
+      if (mapRef.current) {
+        if (engineRef.current === 'libre') mapRef.current.remove()
+        else mapRef.current.destroy?.()
+        mapRef.current = null
       }
-    } catch {
-      setSearchResult(null)
-    } finally {
-      setIsSearching(false)
     }
-  }, [searchQuery])
-
-  const handleSearchKeyDown = useCallback(
-    (e) => {
-      if (e.key === 'Enter') handleSearch()
-    },
-    [handleSearch]
-  )
-
-  useEffect(() => {
-    const q = searchQuery.trim()
-    if (!q) {
-      setSuggestions([])
-      setShowSuggestions(false)
-      return
-    }
-    if (suggestionsDebounceRef.current) clearTimeout(suggestionsDebounceRef.current)
-    suggestionsDebounceRef.current = setTimeout(async () => {
-      setSuggestionsLoading(true)
-      try {
-        const results = await geocode(q, 5)
-        setSuggestions(results || [])
-        setShowSuggestions(true)
-      } catch {
-        setSuggestions([])
-      } finally {
-        setSuggestionsLoading(false)
-      }
-    }, 300)
-    return () => {
-      if (suggestionsDebounceRef.current) clearTimeout(suggestionsDebounceRef.current)
-    }
-  }, [searchQuery])
-
-  const selectSuggestion = useCallback((item) => {
-    setSearchCoords(item.coords)
-    setSearchResult({ address: item.address })
-    setSearchQuery(item.address)
-    setShowSuggestions(false)
-    setSuggestions([])
-    setActiveLocation(null)
-    setDirectionsTarget(null)
-    setRecentSearches((prev) => {
-      const next = [{ query: item.address, ...item }, ...prev.filter((r) => r.address !== item.address)].slice(0, 5)
-      return next
-    })
   }, [])
 
-  const formatDuration = (sec) => {
-    if (sec == null || Number.isNaN(sec)) return '—'
-    const m = Math.round(sec / 60)
-    return `${m} ${t('map.min')}`
-  }
+  /* ── Search ── */
+  const handleSearch = useCallback(async (overrideQuery) => {
+    const q = (typeof overrideQuery === 'string' ? overrideQuery : query).trim()
+    if (!q) return
+    setSearching(true)
+    setTab('search')
+    setPanel('results')
 
-  const formatDistance = (meters) => {
-    if (meters == null || Number.isNaN(meters)) return '—'
-    const mi = meters / 1609.34
-    return `${mi < 10 ? mi.toFixed(1) : Math.round(mi)} ${t('map.mi')}`
-  }
+    try {
+      if (engineRef.current === 'mapkit' && window.mapkit) {
+        const search = new window.mapkit.Search()
+        const data = await new Promise((resolve) => {
+          search.search(q, (err, resp) => {
+            if (err || !resp?.places) { resolve([]); return }
+            resolve(resp.places.map((p) => ({
+              name: p.name,
+              address: p.formattedAddress || '',
+              lat: p.coordinate.latitude,
+              lng: p.coordinate.longitude,
+              phone: p.telephone || '',
+              url: p.urls?.[0] || '',
+            })))
+          })
+        })
+        setResults(data)
+      } else {
+        const data = await geocodeNominatim(q)
+        setResults(data)
+      }
+    } catch {
+      setResults([])
+    }
+    setSearching(false)
+  }, [query])
 
+  /* ── Category search ── */
+  const handleCategorySearch = useCallback((categoryId) => {
+    setQuery(categoryId)
+    handleSearch(categoryId)
+  }, [handleSearch])
+
+  /* ── Select place ── */
+  const selectPlace = useCallback((place) => {
+    setSelected(place)
+    setPanel('detail')
+    clearMarkers()
+    flyTo(place.lng, place.lat, 15)
+    addMarker(place.lng, place.lat, place.name)
+    setRecents(saveRecent(place))
+  }, [flyTo, addMarker, clearMarkers])
+
+  /* ── Directions ── */
+  const handleDirections = useCallback(async () => {
+    if (!dirFrom.trim() || !dirTo.trim()) return
+    setRouteLoading(true)
+    setRoute(null)
+    clearMarkers()
+    clearRoute()
+
+    try {
+      let fromCoord, toCoord
+      if (dirFrom.toLowerCase() === 'my location') {
+        const pos = await new Promise((res, rej) =>
+          navigator.geolocation.getCurrentPosition(
+            (p) => res({ lat: p.coords.latitude, lng: p.coords.longitude }),
+            rej, { enableHighAccuracy: true, timeout: 8000 },
+          ),
+        )
+        fromCoord = pos
+      } else {
+        const r = await geocodeNominatim(dirFrom)
+        if (r[0]) fromCoord = r[0]
+      }
+      const toResults = await geocodeNominatim(dirTo)
+      if (toResults[0]) toCoord = toResults[0]
+
+      if (!fromCoord || !toCoord) { setRouteLoading(false); return }
+
+      addMarker(fromCoord.lng, fromCoord.lat, 'Start')
+      addMarker(toCoord.lng, toCoord.lat, 'End')
+
+      if (engineRef.current === 'mapkit' && window.mapkit) {
+        const mk = window.mapkit
+        const dirs = new mk.Directions()
+        const transportType = dirProfile === 'walking' ? mk.Directions.Transport.Walking
+          : dirProfile === 'transit' ? mk.Directions.Transport.Automobile
+          : mk.Directions.Transport.Automobile
+        const request = {
+          origin: new mk.Coordinate(fromCoord.lat, fromCoord.lng),
+          destination: new mk.Coordinate(toCoord.lat, toCoord.lng),
+          transportType,
+        }
+        const data = await new Promise((resolve) => {
+          dirs.route(request, (err, resp) => {
+            if (err || !resp?.routes?.[0]) { resolve(null); return }
+            const r = resp.routes[0]
+            resolve({
+              distance: r.distance,
+              duration: r.expectedTravelTime,
+              steps: r.steps?.map((s) => s.instructions).filter(Boolean) || [],
+              coords: r.polyline?.points?.map((p) => [p.longitude, p.latitude]) || [],
+            })
+          })
+        })
+        if (data) { setRoute(data); drawRoute(data.coords) }
+      } else {
+        const data = await routeOSRM(fromCoord.lat, fromCoord.lng, toCoord.lat, toCoord.lng, dirProfile)
+        if (data) { setRoute(data); drawRoute(data.coords) }
+      }
+    } catch { /* ignore */ }
+    setRouteLoading(false)
+  }, [dirFrom, dirTo, dirProfile, clearMarkers, clearRoute, addMarker, drawRoute])
+
+  /* ── Start directions from detail ── */
+  const startDirectionsFromPlace = useCallback(() => {
+    if (!selected) return
+    setDirFrom('My location')
+    setDirTo(selected.address || selected.name)
+    setTab('directions')
+    setPanel('main')
+  }, [selected])
+
+  /* ── Back to main ── */
+  const backToMain = useCallback(() => {
+    setPanel('main')
+    setResults([])
+    setSelected(null)
+    clearMarkers()
+    clearRoute()
+    setRoute(null)
+  }, [clearMarkers, clearRoute])
+
+  /* ── Locate ── */
+  const locateUser = useCallback(() => {
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(
+      (pos) => flyTo(pos.coords.longitude, pos.coords.latitude, 14),
+      () => {},
+      { enableHighAccuracy: true, timeout: 8000 },
+    )
+  }, [flyTo])
+
+  /* ── Zoom ── */
+  const zoomIn = useCallback(() => {
+    const map = mapRef.current
+    if (!map) return
+    if (engineRef.current === 'libre') map.zoomIn()
+  }, [])
+
+  const zoomOut = useCallback(() => {
+    const map = mapRef.current
+    if (!map) return
+    if (engineRef.current === 'libre') map.zoomOut()
+  }, [])
+
+  /* ── Format helpers ── */
+  const fmtDist = (m) => { if (!m) return ''; const mi = m / 1609.34; return mi < 10 ? `${mi.toFixed(1)} mi` : `${Math.round(mi)} mi` }
+  const fmtTime = (s) => { if (!s) return ''; const m = Math.round(s / 60); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} hr ${m % 60} min` }
+
+  /* ════════════════════════════ Render ════════════════════════════ */
   return (
-    <div className="map-window">
-      <div className="map-window__map map-window__map--full-bleed">
-        <MapContainer
-          center={[33.575, -117.726]}
-          zoom={10}
-          className={`map-window__leaflet${tileConfig.appleFallback ? ' map-window__leaflet--apple-fallback' : ''}`}
-          style={{ height: '100%', width: '100%' }}
-          zoomControl={false}
-        >
-          <MapFlyTo coords={flyToCoords} zoom={flyToZoom} />
-          {routeGeometry && <MapFitRouteBounds geometry={routeGeometry} />}
-          <TileLayer attribution={tileConfig.attribution} url={tileConfig.url} />
-          <MapControls mapStyle={mapStyle} onMapStyleChange={setMapStyle} t={t} />
-          {userLocation && (
-            <CircleMarker
-              center={userLocation}
-              radius={7}
-              pathOptions={{ color: '#fff', weight: 2, fillColor: '#34c759', fillOpacity: 1 }}
-            />
-          )}
-          {routeGeometry && (
-            <GeoJSON
-              key={`${routeProfile}-${routeGeometry.coordinates?.length}-${routeGeometry.coordinates?.[0]?.join(',')}`}
-              data={routeGeometry}
-              style={{
-                color: '#007aff',
-                weight: 5,
-                opacity: 0.92,
-                lineCap: 'round',
-                lineJoin: 'round',
-              }}
-            />
-          )}
-          {markersToShow.map((m) => (
-            <Marker key={m.key} position={m.coords} icon={homeIcon}>
-              <Popup>{m.address}</Popup>
-            </Marker>
-          ))}
-        </MapContainer>
-      </div>
+    <div className="mw">
+      {/* Full map canvas */}
+      <div ref={containerRef} className="mw__canvas" />
 
-      <div className="map-window__search-overlay">
-        <div className="map-window__search-wrap map-window__search-wrap--relative">
-          <Search size={18} strokeWidth={1.5} className="map-window__search-icon" />
-          <input
-            type="text"
-            placeholder={t('map.searchPlaceholder')}
-            className="map-window__search-input"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-            onFocus={() => searchQuery.trim() && setShowSuggestions(true)}
-            onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-          />
-          {showSuggestions && (suggestions.length > 0 || suggestionsLoading) && (
-            <div className="map-window__suggestions">
-              {suggestionsLoading ? (
-                <div className="map-window__suggestion-item map-window__suggestion-item--loading">{t('map.searching')}</div>
-              ) : (
-                suggestions.map((s, i) => (
-                  <button
-                    key={`${s.address}-${i}`}
-                    type="button"
-                    className="map-window__suggestion-item"
-                    onMouseDown={(e) => {
-                      e.preventDefault()
-                      selectSuggestion(s)
-                    }}
-                  >
-                    {s.address}
+      {/* ── Floating sidebar ── */}
+      <aside className="mw__sidebar">
+        {/* Tab bar */}
+        <div className="mw__tabs">
+          {[
+            { id: 'search', icon: Search, label: 'Search' },
+            { id: 'guides', icon: Compass, label: 'Guides' },
+            { id: 'directions', icon: Navigation, label: 'Directions' },
+          ].map(({ id, icon: Icon, label }) => (
+            <button
+              key={id}
+              type="button"
+              className={`mw__tab${tab === id ? ' mw__tab--active' : ''}`}
+              onClick={() => { setTab(id); setPanel('main') }}
+            >
+              <Icon size={16} strokeWidth={1.75} />
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="mw__tabs-sep" />
+
+        {/* Scrollable content */}
+        <div className="mw__content">
+
+          {/* ═══ Search tab: main ═══ */}
+          {tab === 'search' && panel === 'main' && (
+            <>
+              <div className="mw__search-bar">
+                <Search size={15} strokeWidth={2} className="mw__search-ico" />
+                <input
+                  type="text"
+                  className="mw__search-input"
+                  placeholder={t('map.searchPlaceholder')}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                />
+                {query && (
+                  <button type="button" className="mw__clear-btn" onClick={() => setQuery('')}>
+                    <X size={11} strokeWidth={2.5} />
                   </button>
-                ))
+                )}
+              </div>
+
+              {/* Explore Nearby */}
+              <div className="mw__explore">
+                <p className="mw__section-title">Explore Nearby</p>
+                <div className="mw__categories">
+                  {CATEGORIES.map(({ id, label, icon: CatIcon, color }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className="mw__category"
+                      onClick={() => handleCategorySearch(id)}
+                    >
+                      <div className="mw__category-icon" style={{ background: color }}>
+                        <CatIcon size={18} strokeWidth={1.75} />
+                      </div>
+                      <span>{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recents */}
+              {recents.length > 0 && (
+                <div className="mw__section">
+                  <p className="mw__section-title">Recents</p>
+                  {recents.map((r, i) => (
+                    <button key={i} type="button" className="mw__place-row" onClick={() => selectPlace(r)}>
+                      <Clock size={14} strokeWidth={1.75} className="mw__row-ico" />
+                      <div className="mw__row-info">
+                        <span className="mw__row-name">{r.name}</span>
+                        <span className="mw__row-addr">{r.address}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ═══ Search tab: results ═══ */}
+          {tab === 'search' && panel === 'results' && (
+            <div className="mw__panel-slide">
+              <button type="button" className="mw__back" onClick={backToMain}>
+                <ChevronLeft size={18} strokeWidth={2} />
+                <span>Search</span>
+              </button>
+              <p className="mw__section-title">{searching ? 'Searching\u2026' : `${results.length} Results`}</p>
+              {results.map((r, i) => (
+                <button key={i} type="button" className="mw__place-row" onClick={() => selectPlace(r)}>
+                  <MapPin size={14} strokeWidth={1.75} className="mw__row-ico" />
+                  <div className="mw__row-info">
+                    <span className="mw__row-name">{r.name}</span>
+                    <span className="mw__row-addr">{r.address}</span>
+                  </div>
+                  <ChevronRight size={14} className="mw__row-chevron" />
+                </button>
+              ))}
+              {!searching && results.length === 0 && (
+                <p className="mw__empty">No results found.</p>
               )}
             </div>
           )}
-          <button
-            type="button"
-            className="map-window__search-btn"
-            onClick={handleSearch}
-            disabled={isSearching || !searchQuery.trim()}
-          >
-            {isSearching ? t('map.searching') : t('map.search')}
-          </button>
-        </div>
-      </div>
 
-      <aside className="map-window__sidebar map-window__sidebar--overlay map-window__sidebar--apple">
-        <p className="map-window__sidebar-section-label">{t('map.favorites')}</p>
-        {['home', 'college'].map((id) => {
-          const loc = PLACES[id]
-          const Icon = loc.icon
-          return (
-            <button
-              key={id}
-              type="button"
-              className={`map-window__saved-item ${activeLocation === id && !searchCoords ? 'map-window__saved-item--active' : ''}`}
-              onClick={() => openDirectionsForPlace(id)}
-            >
-              <Icon size={20} strokeWidth={1.5} />
-              <div className="map-window__saved-item-text">
-                <span className="map-window__saved-item-name">{t(`map.${loc.nameKey}`)}</span>
-                <span className="map-window__saved-item-address">{loc.address}</span>
-              </div>
-            </button>
-          )
-        })}
-        <p className="map-window__sidebar-sub-label">{t('map.hometowns')}</p>
-        {['chicago', 'seoul'].map((id) => {
-          const loc = PLACES[id]
-          const Icon = loc.icon
-          return (
-            <button
-              key={id}
-              type="button"
-              className={`map-window__saved-item ${activeLocation === id && !searchCoords ? 'map-window__saved-item--active' : ''}`}
-              onClick={() => openDirectionsForPlace(id)}
-            >
-              <Icon size={20} strokeWidth={1.5} />
-              <div className="map-window__saved-item-text">
-                <span className="map-window__saved-item-name">{t(`map.${loc.nameKey}`)}</span>
-                <span className="map-window__saved-item-address">{loc.address}</span>
-              </div>
-            </button>
-          )
-        })}
+          {/* ═══ Search tab: place detail ═══ */}
+          {tab === 'search' && panel === 'detail' && selected && (
+            <div className="mw__panel-slide">
+              <button type="button" className="mw__back" onClick={backToMain}>
+                <ChevronLeft size={18} strokeWidth={2} />
+                <span>Search</span>
+              </button>
+              <div className="mw__detail">
+                <h2 className="mw__detail-name">{selected.name}</h2>
+                <p className="mw__detail-addr">{selected.address}</p>
 
-        <div className="map-window__folder map-window__folder--restaurants">
-          <button
-            type="button"
-            className="map-window__folder-header"
-            onClick={() => setRestaurantsOpen((o) => !o)}
-          >
-            {restaurantsOpen ? (
-              <ChevronDown size={18} strokeWidth={1.5} />
-            ) : (
-              <ChevronRight size={18} strokeWidth={1.5} />
-            )}
-            <Utensils size={18} strokeWidth={1.5} />
-            <span className="map-window__folder-label">{t('map.restaurantsAndCafe')}</span>
-          </button>
-          {restaurantsOpen && (
-            <div className="map-window__folder-items">
-              <div className="map-window__folder-empty">{t('map.restaurantsPlaceholder')}</div>
+                {/* Action buttons */}
+                <div className="mw__actions">
+                  <button type="button" className="mw__action mw__action--primary" onClick={startDirectionsFromPlace}>
+                    <div className="mw__action-icon">
+                      <Navigation size={18} strokeWidth={2} />
+                    </div>
+                    <span>Directions</span>
+                  </button>
+                  {selected.phone && (
+                    <button type="button" className="mw__action" onClick={() => window.open(`tel:${selected.phone}`)}>
+                      <div className="mw__action-icon">
+                        <Phone size={18} strokeWidth={2} />
+                      </div>
+                      <span>Call</span>
+                    </button>
+                  )}
+                  {selected.url && (
+                    <button type="button" className="mw__action" onClick={() => window.open(selected.url, '_blank')}>
+                      <div className="mw__action-icon">
+                        <Globe size={18} strokeWidth={2} />
+                      </div>
+                      <span>Website</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="mw__action"
+                    onClick={() => {
+                      try { navigator.share?.({ title: selected.name, text: selected.address }) } catch { /* ok */ }
+                    }}
+                  >
+                    <div className="mw__action-icon">
+                      <Share2 size={18} strokeWidth={2} />
+                    </div>
+                    <span>Share</span>
+                  </button>
+                </div>
+
+                {selected.phone && <p className="mw__detail-meta">{selected.phone}</p>}
+              </div>
             </div>
           )}
-        </div>
 
-        {recentSearches.length > 0 && (
-          <>
-            <h3 className="map-window__sidebar-title map-window__sidebar-title--mt">{t('map.recentSearches')}</h3>
-            {recentSearches.map((r, i) => (
-              <button
-                key={`${r.query}-${i}`}
-                type="button"
-                className="map-window__saved-item"
-                onClick={() => {
-                  setSearchCoords(r.coords)
-                  setSearchResult(r)
-                  setActiveLocation(null)
-                  setDirectionsTarget(null)
-                }}
-              >
-                <MapPin size={20} strokeWidth={1.5} />
-                <div className="map-window__saved-item-text">
-                  <span className="map-window__saved-item-name">{r.query}</span>
-                  <span className="map-window__saved-item-address">{r.address}</span>
+          {/* ═══ Guides tab ═══ */}
+          {tab === 'guides' && (
+            <>
+              <p className="mw__section-title" style={{ marginTop: 4 }}>Guides</p>
+              <p className="mw__empty">Curated guides coming soon.</p>
+            </>
+          )}
+
+          {/* ═══ Directions tab ═══ */}
+          {tab === 'directions' && (
+            <>
+              <div className="mw__dir-inputs">
+                <div className="mw__dir-field">
+                  <span className="mw__dir-dot mw__dir-dot--from" />
+                  <input
+                    type="text"
+                    className="mw__dir-input"
+                    placeholder="From (or 'My location')"
+                    value={dirFrom}
+                    onChange={(e) => setDirFrom(e.target.value)}
+                  />
                 </div>
-              </button>
-            ))}
-          </>
-        )}
-      </aside>
-
-      {directionsTarget && (
-        <div className="map-window__directions-card">
-          <div className="map-window__directions-header">
-            <Navigation size={20} strokeWidth={1.5} className="map-window__directions-header-icon" />
-            <h2 className="map-window__directions-title">{t('map.directions')}</h2>
-            <button type="button" className="map-window__directions-close" onClick={closeDirections} aria-label={t('map.closePanel')}>
-              <X size={20} strokeWidth={1.5} />
-            </button>
-          </div>
-
-          <div className="map-window__directions-modes">
-            <button
-              type="button"
-              className={`map-window__mode-btn ${routeProfile === 'driving' ? 'map-window__mode-btn--active' : ''}`}
-              onClick={() => setRouteProfile('driving')}
-              aria-pressed={routeProfile === 'driving'}
-            >
-              <Car size={18} strokeWidth={1.5} />
-              <span>{t('map.driving')}</span>
-            </button>
-            <button
-              type="button"
-              className={`map-window__mode-btn ${routeProfile === 'walking' ? 'map-window__mode-btn--active' : ''}`}
-              onClick={() => setRouteProfile('walking')}
-              aria-pressed={routeProfile === 'walking'}
-            >
-              <Footprints size={18} strokeWidth={1.5} />
-              <span>{t('map.walking')}</span>
-            </button>
-            <button
-              type="button"
-              className={`map-window__mode-btn ${routeProfile === 'cycling' ? 'map-window__mode-btn--active' : ''}`}
-              onClick={() => setRouteProfile('cycling')}
-              aria-pressed={routeProfile === 'cycling'}
-            >
-              <Bike size={18} strokeWidth={1.5} />
-              <span>{t('map.cycling')}</span>
-            </button>
-            <button type="button" className="map-window__mode-btn map-window__mode-btn--disabled" disabled title={t('map.transitSoon')}>
-              <Train size={18} strokeWidth={1.5} />
-              <span>{t('map.transitSoon')}</span>
-            </button>
-          </div>
-
-          <div className="map-window__directions-places">
-            <div className="map-window__directions-row">
-              <span className="map-window__directions-label">{t('map.yourLocation')}</span>
-              <span className="map-window__directions-value">
-                {userLocation ? `${userLocation[0].toFixed(4)}, ${userLocation[1].toFixed(4)}` : '—'}
-              </span>
-            </div>
-            {!userLocation && (
-              <div className="map-window__directions-alert">
-                <p>{t('map.locationNeeded')}</p>
-                <button type="button" className="map-window__directions-loc-btn" onClick={requestLocation}>
-                  {t('map.search')}
-                </button>
+                <div className="mw__dir-field">
+                  <span className="mw__dir-dot mw__dir-dot--to" />
+                  <input
+                    type="text"
+                    className="mw__dir-input"
+                    placeholder="To"
+                    value={dirTo}
+                    onChange={(e) => setDirTo(e.target.value)}
+                  />
+                </div>
               </div>
-            )}
-            {geoMessage && <p className="map-window__directions-warn">{geoMessage}</p>}
-            <div className="map-window__directions-row map-window__directions-row--dest">
-              <span className="map-window__directions-label">{t('map.to')}</span>
-              <span className="map-window__directions-value map-window__directions-value--strong">{t(`map.${directionsTarget.nameKey}`)}</span>
-              <span className="map-window__directions-address">{directionsTarget.address}</span>
-            </div>
-          </div>
 
-          {userLocation && (
-            <div className="map-window__directions-summary">
-              {routeLoading ? (
-                <p className="map-window__directions-loading">{t('map.searching')}</p>
-              ) : routeMeta ? (
-                <>
-                  <div className="map-window__directions-summary-main">
-                    <span className="map-window__directions-eta">{formatDuration(routeMeta.duration)}</span>
-                    <span className="map-window__directions-dot">·</span>
-                    <span className="map-window__directions-dist">{formatDistance(routeMeta.distance)}</span>
+              <div className="mw__modes">
+                {[
+                  { id: 'driving', icon: Car, label: 'Drive' },
+                  { id: 'walking', icon: Footprints, label: 'Walk' },
+                  { id: 'transit', icon: Bus, label: 'Transit' },
+                  { id: 'cycling', icon: Bike, label: 'Cycle' },
+                ].map(({ id, icon: Icon, label }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={`mw__mode${dirProfile === id ? ' mw__mode--active' : ''}`}
+                    onClick={() => setDirProfile(id)}
+                  >
+                    <Icon size={16} strokeWidth={1.75} />
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                className="mw__go-btn"
+                onClick={handleDirections}
+                disabled={routeLoading || !dirFrom.trim() || !dirTo.trim()}
+              >
+                {routeLoading ? 'Routing\u2026' : 'Get Directions'}
+              </button>
+
+              {route && (
+                <div className="mw__route">
+                  <div className="mw__route-summary">
+                    <span className="mw__route-time">{fmtTime(route.duration)}</span>
+                    <span className="mw__route-dist">{fmtDist(route.distance)}</span>
                   </div>
-                  {routeHint && <p className="map-window__directions-hint">{routeHint}</p>}
-                  {routeMeta.steps?.length > 0 && (
-                    <ol className="map-window__directions-steps">
-                      {routeMeta.steps.slice(0, 12).map((step, i) => (
-                        <li key={i} className="map-window__directions-step">
-                          {step.instruction || step.name || step.maneuver || '—'}
-                        </li>
+                  {route.steps.length > 0 && (
+                    <ol className="mw__route-steps">
+                      {route.steps.slice(0, 15).map((s, i) => (
+                        <li key={i} className="mw__route-step">{s}</li>
                       ))}
                     </ol>
                   )}
-                </>
-              ) : null}
-            </div>
+                </div>
+              )}
+            </>
           )}
         </div>
-      )}
+      </aside>
 
-      <MapBottomSheet
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        onSearch={handleSearch}
-        isSearching={isSearching}
-      />
+      {/* ── Map controls (right side) ── */}
+      <div className="mw__controls">
+        <button type="button" className="mw__ctrl-btn" aria-label="Compass">
+          <Compass size={18} strokeWidth={1.75} />
+        </button>
+        <div className="mw__ctrl-sep" />
+        <button type="button" className="mw__ctrl-btn" onClick={zoomIn} aria-label="Zoom in">
+          <Plus size={18} strokeWidth={2} />
+        </button>
+        <div className="mw__ctrl-sep" />
+        <button type="button" className="mw__ctrl-btn" onClick={zoomOut} aria-label="Zoom out">
+          <Minus size={18} strokeWidth={2} />
+        </button>
+      </div>
+
+      <button type="button" className="mw__locate-btn" onClick={locateUser} aria-label="My location">
+        <Locate size={18} strokeWidth={2} />
+      </button>
     </div>
   )
 }

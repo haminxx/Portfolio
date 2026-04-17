@@ -16,6 +16,7 @@ export default function ChromeFrame({
   onBack,
   onForward,
   onRefresh,
+  onNavigate,
   onMinimize,
   onMaximize,
   onWindowClose,
@@ -72,6 +73,7 @@ export default function ChromeFrame({
           onBack={onBack}
           onForward={onForward}
           onRefresh={onRefresh}
+          onNavigate={onNavigate}
           canGoBack={canGoBack}
           canGoForward={canGoForward}
         />

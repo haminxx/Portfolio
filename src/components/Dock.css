@@ -1,12 +1,12 @@
-/* Viewport-fixed dock: always centered like full-screen, independent of inner layout width. */
+/* Viewport-fixed dock: always centered like full-screen, independent of inner layout width.
+   Use left/right:0 instead of width:100vw to avoid the scrollbar-width offset on Windows. */
 .dock-wrapper {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
+  /* Do NOT use width:100vw — it includes the scrollbar on Windows and shifts centering */
   width: 100%;
-  width: 100vw;
-  max-width: 100%;
   height: 54px;
   z-index: 50;
   display: flex;
@@ -15,10 +15,14 @@
   padding-bottom: max(3px, env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
   pointer-events: none;
+  /* Prevent horizontal scroll caused by magnified icons overflowing the wrapper */
+  overflow: visible;
 }
 
 .dock-wrapper > .dock {
   pointer-events: auto;
+  /* Ensure the glass panel never overflows the viewport on very small screens */
+  max-width: calc(100vw - 16px);
 }
 
 .dock-wrapper--fullscreen-hidden {

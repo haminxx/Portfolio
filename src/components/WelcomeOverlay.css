@@ -1,4 +1,8 @@
-.welcome-overlay {
+/* ══════════════════════════════════════
+   Welcome Overlay — Liquid Glass + Hershey
+   ══════════════════════════════════════ */
+
+.wo {
   position: fixed;
   inset: 0;
   z-index: 250;
@@ -8,240 +12,136 @@
   pointer-events: auto;
 }
 
-.welcome-overlay__bg {
+.wo__bg {
   position: absolute;
   inset: 0;
   z-index: 0;
   overflow: hidden;
 }
 
-.welcome-overlay__bg-fallback {
+.wo__bg-fall {
   position: absolute;
   inset: 0;
   background: #121018;
 }
 
-.welcome-overlay__content {
+.wo__center {
   position: relative;
   z-index: 1;
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
   min-height: 40vh;
   width: 100%;
-  max-width: 42rem;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: clamp(3rem, 12vh, 6rem) 1.25rem 2rem;
-  box-sizing: border-box;
+  padding: 2rem;
 }
 
-.welcome-overlay__stack {
+/* ═══ Liquid Glass Input ═══ */
+
+.wo__glass {
   display: flex;
-  width: 100%;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-}
-
-.welcome-overlay__greeting {
-  text-align: center;
-}
-
-.welcome-overlay__stack--intro {
   gap: 0;
-  margin-top: clamp(0.5rem, 4vh, 2.5rem);
-  width: 100%;
-  align-items: center;
+  width: min(380px, 88vw);
+  height: 56px;
+  padding: 0 6px 0 24px;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 
-.welcome-overlay__stack--hello {
-  margin-top: clamp(0.5rem, 4vh, 2.5rem);
+.wo__glass:focus-within {
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.3),
+    0 0 0 3px rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
 }
 
-.welcome-overlay__stack--hello-only {
-  margin-top: clamp(1rem, 8vh, 4rem);
-  min-height: 32vh;
-  justify-content: center;
-}
-
-.welcome-overlay__name-entry {
-  width: 100%;
-  max-width: min(22rem, 92vw);
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  margin-top: 0.35rem;
-}
-
-.welcome-overlay__name-form {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0;
-}
-
-.welcome-overlay__name-row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-}
-
-.welcome-overlay__input--name-row {
+.wo__glass-input {
   flex: 1;
   min-width: 0;
   border: none;
-  border-bottom: none;
-  padding: 0.65rem 0.35rem 0.65rem 0.15rem;
-  text-align: left;
-  font-size: clamp(1.2rem, 3.8vw, 1.65rem);
+  background: transparent;
+  outline: none;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 18px;
+  font-weight: 400;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  letter-spacing: 0.01em;
 }
 
-.welcome-overlay__name-arrow {
+.wo__glass-input::placeholder {
+  color: rgba(255, 255, 255, 0.28);
+  font-weight: 300;
+}
+
+.wo__glass-arrow {
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 44px;
   height: 44px;
-  border-radius: 50%;
-  border: 2px solid;
-  background: rgba(0, 0, 0, 0.22);
-  cursor: pointer;
-  transition: transform 0.15s ease, background 0.15s ease;
-}
-
-.welcome-overlay__name-arrow:hover {
-  background: rgba(255, 255, 255, 0.08);
-  transform: scale(1.04);
-}
-
-.welcome-overlay__name-underbar {
-  height: 2px;
-  width: 100%;
-  margin-top: 4px;
-  border-radius: 1px;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.35),
-    rgba(255, 255, 255, 0.78),
-    rgba(255, 255, 255, 0.45)
-  );
-}
-
-.welcome-overlay__input-wrap {
-  position: relative;
-  width: 100%;
-}
-
-.welcome-overlay__input--with-underbar {
-  border-bottom: none;
-  padding-bottom: 0.5rem;
-}
-
-.welcome-overlay__input-underbar {
-  height: 2px;
-  width: 100%;
-  border-radius: 1px;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.35),
-    rgba(255, 255, 255, 0.75),
-    rgba(255, 255, 255, 0.35)
-  );
-  margin-top: 2px;
-}
-
-.welcome-overlay__greeting-single {
-  margin-top: clamp(1rem, 6vh, 3rem);
-  justify-content: center;
-  min-height: 30vh;
-}
-
-.welcome-overlay__greeting-hello-and-name {
-  gap: clamp(0.75rem, 3vh, 1.5rem);
-  width: 100%;
-  max-width: min(28rem, 92vw);
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-  box-sizing: border-box;
-}
-
-.welcome-overlay__hello-block--greeting {
-  flex-shrink: 0;
-}
-
-.welcome-overlay__hello-block {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  width: 100%;
-}
-
-.welcome-overlay__hello-svg--compact {
-  max-height: clamp(3rem, 12vw, 4.25rem);
-  width: auto;
-}
-
-.welcome-overlay__hello-underline {
-  height: 3px;
-  width: min(18rem, 85vw);
-  margin-top: 0.35rem;
-  margin-bottom: 0.25rem;
-  border-radius: 2px;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.15),
-    rgba(255, 255, 255, 0.55),
-    rgba(255, 255, 255, 0.15)
-  );
-  transform-origin: center;
-}
-
-
-.welcome-overlay__input {
-  width: 100%;
+  justify-content: center;
   border: none;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.25);
-  background: transparent;
-  padding: 0.75rem 0.25rem;
-  font-size: clamp(1.25rem, 4vw, 1.75rem);
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.95);
-  text-align: center;
-  outline: none;
-  transition: border-color 0.2s ease;
-}
-
-.welcome-overlay__input::placeholder {
-  color: rgba(255, 255, 255, 0.35);
-}
-
-.welcome-overlay__input:focus {
-  border-bottom-color: rgba(255, 255, 255, 0.55);
-}
-
-.welcome-overlay__submit {
-  margin-top: 0.5rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
   cursor: pointer;
-  border-radius: 9999px;
-  border: 2px solid;
-  background: rgba(0, 0, 0, 0.25);
-  padding: 0.5rem 1.75rem;
-  font-size: 0.9rem;
-  font-weight: 600;
+  transition: background 0.2s, transform 0.15s, opacity 0.2s;
+}
+
+.wo__glass-arrow:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.06);
+}
+
+.wo__glass-arrow:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.wo__glass-arrow:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+/* ═══ Hershey Animation ═══ */
+
+.wo__anim-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.wo__anim-row--name {
+  margin-top: -0.5rem;
+}
+
+.wo__hsvg {
+  max-width: min(600px, 85vw);
+  height: auto;
   color: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(8px);
-  transition: transform 0.15s ease, background 0.15s ease;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.08));
 }
 
-.welcome-overlay__submit:hover {
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-1px);
+.wo__hpath {
+  fill: none;
 }
 
-.welcome-overlay__submit:active {
-  transform: translateY(0);
+/* Stroke draw keyframe — driven per-segment via inline style */
+@keyframes wo-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
 }

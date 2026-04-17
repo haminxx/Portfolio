@@ -81,38 +81,7 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
   )
 
   const getResponsiveConfig = useCallback(() => {
-    if (typeof window === 'undefined') {
-      return { baseIconSize: 64, maxScale: 1.48, effectWidth: 200 }
-    }
-
-    const smallerDimension = Math.min(window.innerWidth, window.innerHeight)
-
-    if (smallerDimension < 480) {
-      return {
-        baseIconSize: Math.max(40, smallerDimension * 0.08),
-        maxScale: 1.34,
-        effectWidth: smallerDimension * 0.32,
-      }
-    }
-    if (smallerDimension < 768) {
-      return {
-        baseIconSize: Math.max(48, smallerDimension * 0.07),
-        maxScale: 1.4,
-        effectWidth: smallerDimension * 0.28,
-      }
-    }
-    if (smallerDimension < 1024) {
-      return {
-        baseIconSize: Math.max(56, smallerDimension * 0.06),
-        maxScale: 1.44,
-        effectWidth: smallerDimension * 0.24,
-      }
-    }
-    return {
-      baseIconSize: Math.max(64, Math.min(80, smallerDimension * 0.05)),
-      maxScale: 1.5,
-      effectWidth: 220,
-    }
+    return { baseIconSize: 64, maxScale: 1.5, effectWidth: 220 }
   }, [])
 
   const [config, setConfig] = useState(getResponsiveConfig)
@@ -120,11 +89,7 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
   const minScale = 1.0
   const baseSpacing = Math.max(4, baseIconSize * 0.08)
 
-  useEffect(() => {
-    const handleResize = () => setConfig(getResponsiveConfig())
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [getResponsiveConfig])
+  // Fixed fullscreen layout — no resize listener needed
 
   const activeMouseX = pauseMagnification ? null : mouseX
 
@@ -278,24 +243,31 @@ const MacOSDock = forwardRef<HTMLDivElement, MacOSDockProps>(function MacOSDock(
     onAppClick(appId)
   }
 
+  const padding = Math.max(8, baseIconSize * 0.12)
+
   const contentWidth = useMemo(() => {
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1440
+    // Clamp so the dock glass panel never exceeds the viewport on small screens.
+    // Reserve 8px margin on each side beyond the padding already applied.
+    const maxContent = Math.max(0, vw - 16 - padding * 2)
     if (currentPositions.length === 0) {
-      return apps.length * (baseIconSize + baseSpacing) - baseSpacing
+      const natural = apps.length * (baseIconSize + baseSpacing) - baseSpacing
+      return Math.min(natural, maxContent)
     }
-    return Math.max(
+    const natural = Math.max(
       ...currentPositions.map(
         (pos, index) => pos + (baseIconSize * currentScales[index]) / 2,
       ),
     )
+    return Math.min(natural, maxContent)
   }, [
     apps.length,
     baseIconSize,
     baseSpacing,
     currentPositions,
     currentScales,
+    padding,
   ])
-
-  const padding = Math.max(8, baseIconSize * 0.12)
 
   return (
     <div

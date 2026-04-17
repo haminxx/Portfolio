@@ -10,9 +10,10 @@ const SHORTCUT_ICONS = {
   mail: Mail,
 }
 
-export default function ChromeHome({ onNavigateShortcut, onShortcutInNewTab }) {
+export default function ChromeHome({ onNavigateShortcut, onShortcutInNewTab, onSearch }) {
   const { t } = useLanguage()
   const [shortcutContextMenu, setShortcutContextMenu] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const menuRef = useRef(null)
 
   useEffect(() => {
@@ -24,17 +25,26 @@ export default function ChromeHome({ onNavigateShortcut, onShortcutInNewTab }) {
     return () => document.removeEventListener('click', handleClickOutside)
   }, [shortcutContextMenu])
 
+  const handleSearch = (e) => {
+    e.preventDefault()
+    const q = searchQuery.trim()
+    if (!q) return
+    onSearch?.(q)
+  }
+
   return (
     <div className="chrome-home">
-      <div className="chrome-home__search-wrap">
+      <form className="chrome-home__search-wrap" onSubmit={handleSearch}>
         <Search size={20} className="chrome-home__search-icon" strokeWidth={2} />
         <input
           type="text"
           className="chrome-home__search"
           placeholder={t('chrome.searchPlaceholder')}
           aria-label="Search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
-      </div>
+      </form>
       <div className="chrome-home__shortcuts">
         {SHORTCUTS.map((s) => {
           const Icon = SHORTCUT_ICONS[s.icon] || Folder

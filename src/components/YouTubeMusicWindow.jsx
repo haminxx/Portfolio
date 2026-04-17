@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { Trash2 } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext'
 import { useMusicPlayer, searchYouTubeVideos, fetchRecommendedFromListening } from '../context/MusicPlayerContext'
 import NowPlayingBar from './NowPlayingBar'
@@ -6,6 +7,28 @@ import './YouTubeMusicWindow.css'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 const HAS_YT_KEY = Boolean(import.meta.env.VITE_YOUTUBE_API_KEY)
+
+const EXPLORE_GENRES = [
+  { label: 'Pop', query: 'top pop music 2025' },
+  { label: 'Rock', query: 'best rock songs 2025' },
+  { label: 'K-Pop', query: 'kpop hits 2025' },
+  { label: 'Hip-Hop', query: 'hip hop rap 2025' },
+  { label: 'Lo-Fi', query: 'lofi hip hop chill beats' },
+  { label: 'Indie', query: 'indie music 2025' },
+  { label: 'J-Pop', query: 'jpop hits 2025' },
+  { label: 'Electronic', query: 'electronic dance music 2025' },
+]
+
+const HISTORY_KEY = 'ytm-listen-history'
+
+function loadListenHistory() {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
 
 const REBEL_FALLBACK = {
   title: 'Rebel',
@@ -29,6 +52,12 @@ export default function YouTubeMusicWindow() {
   const [searchLoading, setSearchLoading] = useState(false)
   const [view, setView] = useState('home')
   const [selectedAlbum, setSelectedAlbum] = useState(null)
+  // Explore tab state
+  const [exploreGenre, setExploreGenre] = useState(null)
+  const [exploreResults, setExploreResults] = useState([])
+  const [exploreLoading, setExploreLoading] = useState(false)
+  // Library tab state
+  const [listenHistory, setListenHistory] = useState(loadListenHistory)
 
   const baseUrl = API_URL.replace(/\/$/, '')
 
@@ -135,6 +164,53 @@ export default function YouTubeMusicWindow() {
     },
     [playTrack, loadPersonalized]
   )
+
+  const fetchExploreGenre = useCallback(async (genre) => {
+    setExploreGenre(genre.label)
+    setExploreLoading(true)
+    setExploreResults([])
+    try {
+      if (HAS_YT_KEY) {
+        const items = await searchYouTubeVideos(genre.query)
+        setExploreResults(items)
+      } else if (baseUrl) {
+        const res = await fetch(`${baseUrl}/api/youtube/search?q=${encodeURIComponent(genre.query)}`)
+        if (res.ok) {
+          const data = await res.json()
+          setExploreResults((data.items || []).map((item) => ({
+            ...item,
+            videoId: item.videoId ?? item.id,
+            artist: item.artist ?? item.channelTitle,
+          })))
+        }
+      }
+    } catch {
+      setExploreResults([])
+    } finally {
+      setExploreLoading(false)
+    }
+  }, [baseUrl])
+
+  // Reload history when view switches to library
+  useEffect(() => {
+    if (view === 'library') setListenHistory(loadListenHistory())
+  }, [view])
+
+  const handleClearHistory = useCallback(() => {
+    try { localStorage.removeItem(HISTORY_KEY) } catch {}
+    setListenHistory([])
+  }, [])
+
+  // Stats for library view
+  const libraryStats = useMemo(() => {
+    if (!listenHistory.length) return null
+    const artistCounts = {}
+    for (const h of listenHistory) {
+      if (h.artist) artistCounts[h.artist] = (artistCounts[h.artist] || 0) + 1
+    }
+    const topArtist = Object.entries(artistCounts).sort((a, b) => b[1] - a[1])[0]
+    return { total: listenHistory.length, topArtist: topArtist?.[0] ?? null }
+  }, [listenHistory])
 
   const mainContent = (
     <>
@@ -276,13 +352,106 @@ export default function YouTubeMusicWindow() {
           {view === 'explore' && (
             <section className="ytmusic-window__section">
               <h2 className="ytmusic-window__section-title">{t('ytmusic.explore')}</h2>
-              <p className="ytmusic-window__empty">Use search to explore tracks and artists.</p>
+              <div className="ytmusic-window__genre-pills">
+                {EXPLORE_GENRES.map((g) => (
+                  <button
+                    key={g.label}
+                    type="button"
+                    className={`ytmusic-window__genre-pill ${exploreGenre === g.label ? 'ytmusic-window__genre-pill--active' : ''}`}
+                    onClick={() => fetchExploreGenre(g)}
+                  >
+                    {g.label}
+                  </button>
+                ))}
+              </div>
+              {exploreGenre && (
+                <div className="ytmusic-window__grid" style={{ marginTop: 16 }}>
+                  {exploreLoading ? (
+                    [1,2,3,4,5,6].map((i) => (
+                      <div key={i} className="ytmusic-window__card ytmusic-window__card--loading">
+                        <div className="ytmusic-window__card-art" />
+                        <span className="ytmusic-window__card-title">…</span>
+                      </div>
+                    ))
+                  ) : exploreResults.length > 0 ? (
+                    exploreResults.map((item, i) => (
+                      <button
+                        key={item.videoId || i}
+                        type="button"
+                        className="ytmusic-window__card"
+                        onClick={() => item.videoId && handlePlayTrack(item.videoId, { title: item.title, artist: item.artist, thumbnail: item.thumbnail })}
+                        disabled={!item.videoId}
+                      >
+                        <div className="ytmusic-window__card-art">
+                          {item.thumbnail && <img src={item.thumbnail} alt="" className="ytmusic-window__card-img" />}
+                        </div>
+                        <span className="ytmusic-window__card-title">{item.title}</span>
+                        <span className="ytmusic-window__card-artist">{item.artist}</span>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="ytmusic-window__empty">
+                      {HAS_YT_KEY || baseUrl ? 'No results found.' : 'Add VITE_YOUTUBE_API_KEY to enable genre search.'}
+                    </p>
+                  )}
+                </div>
+              )}
+              {!exploreGenre && (
+                <p className="ytmusic-window__empty" style={{ marginTop: 16 }}>Select a genre above to discover music.</p>
+              )}
             </section>
           )}
           {view === 'library' && (
             <section className="ytmusic-window__section">
-              <h2 className="ytmusic-window__section-title">{t('ytmusic.library')}</h2>
-              <p className="ytmusic-window__empty">Your library syncs with listening history when signed in with an API key.</p>
+              <div className="ytmusic-window__library-header">
+                <h2 className="ytmusic-window__section-title">{t('ytmusic.library')}</h2>
+                {listenHistory.length > 0 && (
+                  <button
+                    type="button"
+                    className="ytmusic-window__clear-history-btn"
+                    onClick={handleClearHistory}
+                    title="Clear listening history"
+                  >
+                    <Trash2 size={14} /> Clear
+                  </button>
+                )}
+              </div>
+              {libraryStats && (
+                <div className="ytmusic-window__library-stats">
+                  <span>{libraryStats.total} tracks played</span>
+                  {libraryStats.topArtist && <span>· Top artist: <strong>{libraryStats.topArtist}</strong></span>}
+                </div>
+              )}
+              {listenHistory.length === 0 ? (
+                <p className="ytmusic-window__empty">No listening history yet. Play some music!</p>
+              ) : (
+                <ul className="ytmusic-window__song-list">
+                  {listenHistory.slice().reverse().map((h, i) => (
+                    <li key={`${h.videoId}-${i}`} className="ytmusic-window__song-item">
+                      <button
+                        type="button"
+                        className="ytmusic-window__song-row"
+                        onClick={() => h.videoId && handlePlayTrack(h.videoId, { title: h.title, artist: h.artist, thumbnail: `https://img.youtube.com/vi/${h.videoId}/mqdefault.jpg` })}
+                      >
+                        <div className="ytmusic-window__song-thumb">
+                          <img
+                            src={`https://img.youtube.com/vi/${h.videoId}/default.jpg`}
+                            alt=""
+                            className="ytmusic-window__song-thumb-img"
+                          />
+                        </div>
+                        <span className="ytmusic-window__song-title">{h.title || 'Unknown'}</span>
+                        <span className="ytmusic-window__song-artist">{h.artist || ''}</span>
+                        {h.at && (
+                          <span className="ytmusic-window__song-time">
+                            {new Date(h.at).toLocaleDateString()}
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </section>
           )}
         </>

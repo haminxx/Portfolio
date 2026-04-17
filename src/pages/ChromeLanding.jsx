@@ -1,4 +1,6 @@
 import { useState, useCallback, useEffect, useRef, Suspense } from 'react'
+import { useDockOrder } from '../hooks/useDockOrder'
+import { useDesktopItems } from '../hooks/useDesktopItems'
 import ChromeFrame from '../components/ChromeFrame'
 import ChromeWindow from '../components/ChromeWindow'
 import ChromeHome from '../components/ChromeHome'
@@ -25,6 +27,7 @@ import {
   LazyTetrisWindow,
 } from './chromeLazyComponents'
 import MenuBar from '../components/MenuBar'
+import AppErrorBoundary from '../components/AppErrorBoundary'
 import WelcomeOverlay from '../components/WelcomeOverlay'
 import Dock from '../components/Dock'
 import AppWindow from '../components/AppWindow'
@@ -64,54 +67,15 @@ const APP_ICONS = {
 }
 
 const HOME_TAB = { id: 'home', title: 'Home', type: 'home' }
-const DESKTOP_ITEMS_KEY = 'desktop-items'
-const DOCK_ORDER_KEY = 'dock-order'
-/** Legacy seeded desktop folder — removed from layout on load. */
-const REMOVED_SEED_FOLDER_ID = 'seed-desktop-glass-folder'
-
-function loadDesktopItems() {
-  try {
-    const raw = localStorage.getItem(DESKTOP_ITEMS_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
-}
-
-function saveDesktopItems(items) {
-  try {
-    localStorage.setItem(DESKTOP_ITEMS_KEY, JSON.stringify(items))
-  } catch {
-    // ignore
-  }
-}
-
-function loadDockOrder() {
-  try {
-    const raw = localStorage.getItem(DOCK_ORDER_KEY)
-    if (!raw) return Object.keys(APPS)
-    const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return Object.keys(APPS)
-    const valid = parsed.filter((k) => k in APPS)
-    const missing = Object.keys(APPS).filter((k) => !valid.includes(k))
-    return [...valid, ...missing]
-  } catch {
-    return Object.keys(APPS)
-  }
-}
-
-function saveDockOrder(order) {
-  try {
-    localStorage.setItem(DOCK_ORDER_KEY, JSON.stringify(order))
-  } catch {
-    // ignore
-  }
-}
-
 function getDomainForTab(tab) {
   if (tab.type === 'home') return 'portfolio.local'
+  if (tab.type === 'iframe' && tab.url) {
+    try {
+      return new URL(tab.url).hostname
+    } catch {
+      return tab.url
+    }
+  }
   const shortcut = SHORTCUTS.find((s) => s.type === tab.type)
   if (shortcut) {
     if (tab.type === 'about') return 'portfolio.local/about'
@@ -147,47 +111,8 @@ export default function ChromeLanding({ onReboot }) {
   const [chromeOpening, setChromeOpening] = useState(false)
   const [sortBy, setSortBy] = useState('name')
   const [chromeContextMenu, setChromeContextMenu] = useState(null)
-  const [desktopItems, setDesktopItemsState] = useState(() => {
-    const GAME_KEYS = new Set(['doom', 'dadnme', 'tetris'])
-    const GAME_ROW_Y = 636
-    const GAME_ROW_LEGACY_Y = 572
-
-    const loaded = loadDesktopItems()
-    const withoutFolder = loaded.filter((i) => i.id !== REMOVED_SEED_FOLDER_ID)
-    const removedFolder = withoutFolder.length !== loaded.length
-    let next = [...withoutFolder]
-
-    let migratedGameY = false
-    next = next.map((i) => {
-      if (
-        i.type === 'shortcut' &&
-        i.appKey &&
-        GAME_KEYS.has(i.appKey) &&
-        i.y === GAME_ROW_LEGACY_Y
-      ) {
-        migratedGameY = true
-        return { ...i, y: GAME_ROW_Y }
-      }
-      return i
-    })
-
-    const hasDoom = next.some((i) => i.type === 'shortcut' && i.appKey === 'doom')
-    const hasDadnme = next.some((i) => i.type === 'shortcut' && i.appKey === 'dadnme')
-    const hasTetris = next.some((i) => i.type === 'shortcut' && i.appKey === 'tetris')
-    if (!hasDoom) {
-      next = [...next, { id: 'doom-shortcut', type: 'shortcut', name: 'DOOM', appKey: 'doom', parentId: null, x: 24, y: GAME_ROW_Y }]
-    }
-    if (!hasDadnme) {
-      next = [...next, { id: 'dadnme-shortcut', type: 'shortcut', name: "Dad 'n Me", appKey: 'dadnme', parentId: null, x: 120, y: GAME_ROW_Y }]
-    }
-    if (!hasTetris) {
-      next = [...next, { id: 'tetris-shortcut', type: 'shortcut', name: 'Tetris', appKey: 'tetris', parentId: null, x: 216, y: GAME_ROW_Y }]
-    }
-    if (!hasDoom || !hasDadnme || !hasTetris || removedFolder || migratedGameY) {
-      saveDesktopItems(next)
-    }
-    return next
-  })
+  const { desktopItems, setDesktopItems, handleNewFolder: _handleNewFolder, handleNewFile: _handleNewFile } = useDesktopItems()
+  const { dockOrder, updateDockOrder } = useDockOrder()
   const [openFolderId, setOpenFolderId] = useState(null)
   const [startRenameId, setStartRenameId] = useState(null)
   const [openAppWindows, setOpenAppWindows] = useState([])
@@ -197,28 +122,17 @@ export default function ChromeLanding({ onReboot }) {
   const [showShutdown, setShowShutdown] = useState(false)
   const [shutdownAction, setShutdownAction] = useState(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [dockOrder, setDockOrder] = useState(loadDockOrder)
   const { t } = useLanguage()
 
-  const setDesktopItems = useCallback((fnOrValue) => {
-    setDesktopItemsState((prev) => {
-      const next = typeof fnOrValue === 'function' ? fnOrValue(prev) : fnOrValue
-      saveDesktopItems(next)
-      return next
-    })
-  }, [])
-
   const handleNewFolder = useCallback((x, y) => {
-    const id = `folder-${Date.now()}`
-    setDesktopItems((prev) => [...prev, { id, type: 'folder', name: 'New Folder', parentId: null, x, y }])
+    const id = _handleNewFolder(x, y)
     setStartRenameId(id)
-  }, [setDesktopItems])
+  }, [_handleNewFolder])
 
   const handleNewFile = useCallback((x, y) => {
-    const id = `file-${Date.now()}`
-    setDesktopItems((prev) => [...prev, { id, type: 'file', name: 'New File', parentId: null, x, y }])
+    const id = _handleNewFile(x, y)
     setStartRenameId(id)
-  }, [setDesktopItems])
+  }, [_handleNewFile])
 
   const handleOpenFolder = useCallback((id) => setOpenFolderId(id), [])
   const handleStartRename = useCallback((id) => setStartRenameId(id), [])
@@ -429,6 +343,31 @@ export default function ChromeLanding({ onReboot }) {
     setActiveTabId(homeTab.id)
     setChromeMinimized(false)
   }, [])
+
+  /** Open a DuckDuckGo search in the current tab (or a new one if needed). */
+  const handleChromeSearch = useCallback((query) => {
+    const url = `https://duckduckgo.com/?q=${encodeURIComponent(query)}&ia=web`
+    const id = activeTabId
+    pushChromeNav(id, 'iframe', query)
+    setTabs((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, type: 'iframe', title: query, url } : t)),
+    )
+    setChromeMinimized(false)
+  }, [activeTabId, pushChromeNav])
+
+  /** Navigate the address bar to a URL or search query. */
+  const handleAddressBarNavigate = useCallback((url, query) => {
+    const id = activeTabId
+    if (url) {
+      const title = url.replace(/^https?:\/\//, '').split('/')[0]
+      pushChromeNav(id, 'iframe', title)
+      setTabs((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, type: 'iframe', title, url } : t)),
+      )
+    } else if (query) {
+      handleChromeSearch(query)
+    }
+  }, [activeTabId, pushChromeNav, handleChromeSearch])
   const toggleMaximize = useCallback(() => setChromeMaximized((m) => !m), [])
   const setMinimized = useCallback(() => setChromeMinimizing(true), [])
 
@@ -557,10 +496,7 @@ export default function ChromeLanding({ onReboot }) {
       <Dock
         onOpenApp={openAppTab}
         dockOrder={dockOrder}
-        onDockReorder={(order) => {
-          setDockOrder(order)
-          saveDockOrder(order)
-        }}
+        onDockReorder={updateDockOrder}
         isChromeMaximized={chromeMaximized}
         anyMaximized={(chromeMaximized && !chromeMinimized) || openAppWindows.some((w) => w.isMaximized && !w.isMinimized)}
         openAppWindows={openAppWindows}
@@ -609,6 +545,7 @@ export default function ChromeLanding({ onReboot }) {
                 onBack={handleBack}
                 onForward={handleForward}
                 onRefresh={handleRefresh}
+                onNavigate={handleAddressBarNavigate}
                 isMaximized={chromeMaximized}
                 onMaximize={toggleMaximize}
                 onMinimize={setMinimized}
@@ -630,7 +567,7 @@ export default function ChromeLanding({ onReboot }) {
                   </div>
                 )}
                 {activeTab.type === 'home' ? (
-                  <ChromeHome onNavigateShortcut={navigateToShortcut} onShortcutInNewTab={openShortcutTab} />
+                  <ChromeHome onNavigateShortcut={navigateToShortcut} onShortcutInNewTab={openShortcutTab} onSearch={handleChromeSearch} />
                 ) : activeTab.type === 'about' ? (
                   <Suspense fallback={null}>
                     <LazyAboutPage />
@@ -643,6 +580,14 @@ export default function ChromeLanding({ onReboot }) {
                   <Suspense fallback={null}>
                     <LazyContactPage />
                   </Suspense>
+                ) : activeTab.type === 'iframe' && activeTab.url ? (
+                  <iframe
+                    key={`${iframeRefreshKeyRef.current}-${activeTab.url}`}
+                    src={activeTab.url}
+                    className="chrome-landing__iframe"
+                    title={activeTab.title}
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+                  />
                 ) : (() => {
                   const url = getUrlForTab(activeTab)
                   if (url) {
@@ -736,7 +681,9 @@ export default function ChromeLanding({ onReboot }) {
             isFocused={focusedAppWindowId === win.id}
             onFocus={() => { setFocusedAppWindowId(win.id); setChromeFocused(false) }}
           >
-            <Suspense fallback={null}>{content}</Suspense>
+            <AppErrorBoundary>
+              <Suspense fallback={null}>{content}</Suspense>
+            </AppErrorBoundary>
           </AppWindow>
         )
       })}

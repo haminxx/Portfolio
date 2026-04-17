@@ -29,15 +29,38 @@ function focusEnd(el) {
   sel.addRange(range)
 }
 
+const PAGE_BLOCKS_KEY = 'notion-page-blocks'
+
+function loadBlocks() {
+  try {
+    const raw = localStorage.getItem(PAGE_BLOCKS_KEY)
+    const parsed = raw ? JSON.parse(raw) : null
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed
+  } catch {}
+  return [{ id: nextId(), type: 'text', text: '' }]
+}
+
+function saveBlocksDebounced(blocks) {
+  try { localStorage.setItem(PAGE_BLOCKS_KEY, JSON.stringify(blocks)) } catch {}
+}
+
 export default function NotionMinimalPageEditor() {
   const menuId = useId()
-  const [blocks, setBlocks] = useState(() => [{ id: nextId(), type: 'text', text: '' }])
+  const [blocks, setBlocks] = useState(loadBlocks)
   const [slashOpen, setSlashOpen] = useState(false)
   const [slashIndex, setSlashIndex] = useState(0)
   const [slashPos, setSlashPos] = useState({ top: 0, left: 0 })
   const slashBlockRef = useRef(null)
   const editorRefs = useRef(new Map())
   const pendingDomTextRef = useRef(null)
+
+  // Persist blocks to localStorage whenever they change (debounced 400ms)
+  const saveTimerRef = useRef(null)
+  useEffect(() => {
+    clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(() => saveBlocksDebounced(blocks), 400)
+    return () => clearTimeout(saveTimerRef.current)
+  }, [blocks])
 
   const setRef = useCallback((id, el) => {
     if (el) editorRefs.current.set(id, el)

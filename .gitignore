@@ -14,6 +14,7 @@ dist-ssr
 .env
 .env.*
 !.env.example
+*.p8
 .firebase/
 
 # Editor directories and files
