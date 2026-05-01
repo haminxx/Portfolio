@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { Globe, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { TegakiRenderer } from 'tegaki/react'
-import italianno from 'tegaki/fonts/italianno'
+import tangerine from 'tegaki/fonts/tangerine'
 import { useLanguage } from '../context/LanguageContext'
 import './PreLanding.css'
 
-const PHASES = ['language', 'nameInput', 'handwriting', 'exiting']
+const PHASES = ['nameInput', 'handwriting', 'exiting']
 
 const MAX_NAME_LEN = 48
 
@@ -30,7 +30,8 @@ export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
   const [visitorNameFinal, setVisitorNameFinal] = useState(null)
   const [showMobileButton, setShowMobileButton] = useState(false)
   const exitingTimerRef = useRef(null)
-  const { language, setLanguage, languages, t } = useLanguage()
+  const inputRef = useRef(null)
+  const { t } = useLanguage()
 
   const phase = PHASES[phaseIndex]
 
@@ -39,26 +40,27 @@ export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
     return `Hello, ${visitorNameFinal}`
   }, [visitorNameFinal])
 
-  const handleLanguageContinue = useCallback(() => {
-    if (phase !== 'language') return
-    setPhaseIndex(1)
-  }, [phase])
-
   const handleNameSubmit = useCallback(
     (e) => {
       e?.preventDefault()
       if (phase !== 'nameInput') return
+      const trimmed = nameDraft.trim()
+      if (!trimmed) return
       setVisitorNameFinal(formatVisitorName(nameDraft))
-      setPhaseIndex(2)
+      setPhaseIndex(1)
     },
     [phase, nameDraft],
   )
+
+  useEffect(() => {
+    if (phase === 'nameInput') inputRef.current?.focus()
+  }, [phase])
 
   const handleHandwritingComplete = useCallback(() => {
     if (exitingTimerRef.current != null) window.clearTimeout(exitingTimerRef.current)
     const pauseMs = 700
     exitingTimerRef.current = window.setTimeout(() => {
-      setPhaseIndex(3)
+      setPhaseIndex(2)
       exitingTimerRef.current = null
     }, pauseMs)
   }, [])
@@ -72,8 +74,8 @@ export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
   useEffect(() => {
     if (phase !== 'exiting') return
     const fadeMs = 1350
-    const t = window.setTimeout(() => onEnterDesktop?.(), fadeMs)
-    return () => window.clearTimeout(t)
+    const tm = window.setTimeout(() => onEnterDesktop?.(), fadeMs)
+    return () => window.clearTimeout(tm)
   }, [phase, onEnterDesktop])
 
   useEffect(() => {
@@ -87,15 +89,11 @@ export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
     const handleKeyDown = (e) => {
       if (e.key !== 'F11') return
       e.preventDefault()
-      if (phase === 'language') {
-        setPhaseIndex(1)
-        return
-      }
       onEnterDesktop?.()
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [phase, onEnterDesktop])
+  }, [onEnterDesktop])
 
   const handleMobileEnter = () => onEnterMobile?.()
 
@@ -114,55 +112,31 @@ export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
 
   return (
     <div className={`pre-landing pre-landing--${phase} ${isExiting ? 'pre-landing--exiting-fade' : ''}`}>
-      <div className="pre-landing__bg" />
-      {phase === 'language' && (
-        <div className="pre-landing__language-wrap">
-          <div className="pre-landing__language-modal">
-            <div className="pre-landing__language-icon">
-              <Globe size={48} strokeWidth={1.5} />
-            </div>
-            <h2 className="pre-landing__language-title">{t('preLanding.language')}</h2>
-            <div className="pre-landing__language-list">
-              {languages.map((lang) => (
-                <button
-                  key={lang.id}
-                  type="button"
-                  className={`pre-landing__language-item ${language === lang.id ? 'pre-landing__language-item--selected' : ''}`}
-                  onClick={() => setLanguage(lang.id)}
-                >
-                  {lang.label}
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              className="pre-landing__language-continue"
-              onClick={handleLanguageContinue}
-              aria-label="Continue"
-            >
-              <ChevronRight size={24} strokeWidth={2} />
-            </button>
-          </div>
-        </div>
-      )}
+      <div className="pre-landing__bg" aria-hidden />
       <div className="pre-landing__content">
         {phase === 'nameInput' && (
-          <div className="pre-landing__name-card">
-            <h2 className="pre-landing__name-title">{t('preLanding.visitorNamePrompt')}</h2>
-            <form className="pre-landing__name-form" onSubmit={handleNameSubmit}>
+          <div className="pre-landing__name-stack">
+            <p className="pre-landing__glass-prompt">{t('preLanding.visitorNamePrompt')}</p>
+            <form className="pre-landing__glass" onSubmit={handleNameSubmit}>
               <input
+                ref={inputRef}
                 id="visitor-name"
                 name="visitorName"
                 type="text"
-                className="pre-landing__name-input"
+                className="pre-landing__glass-input"
                 placeholder={t('preLanding.visitorNamePlaceholder')}
                 value={nameDraft}
                 onChange={(e) => setNameDraft(e.target.value.slice(0, MAX_NAME_LEN))}
                 autoComplete="given-name"
-                autoFocus
+                spellCheck={false}
               />
-              <button type="submit" className="pre-landing__name-submit">
-                {t('preLanding.visitorNameContinue')}
+              <button
+                type="submit"
+                className="pre-landing__glass-arrow"
+                disabled={!nameDraft.trim()}
+                aria-label={t('preLanding.visitorNameContinue')}
+              >
+                <ChevronRight size={22} strokeWidth={2.5} />
               </button>
             </form>
             <div className={`pre-landing__mobile-wrap ${showMobileButton ? 'pre-landing__mobile-wrap--visible' : ''}`}>
@@ -176,7 +150,7 @@ export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
           <div className="pre-landing__tegaki-wrap" aria-live="polite">
             <TegakiRenderer
               key={greetingLine}
-              font={italianno}
+              font={tangerine}
               time={tegakiTime}
               text={greetingLine}
               onComplete={handleHandwritingComplete}
@@ -184,10 +158,10 @@ export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
               effects={{
                 globalGradient: {
                   enabled: true,
-                  colors: ['rgba(255, 255, 255, 0.97)', 'rgba(210, 230, 255, 0.92)', 'rgba(255, 255, 255, 0.95)'],
-                  angle: 12,
+                  colors: ['rgba(255, 255, 255, 0.97)', 'rgba(250, 240, 220, 0.93)', 'rgba(255, 255, 255, 0.95)'],
+                  angle: 10,
                 },
-                glow: { enabled: true, radius: 3, color: 'rgba(255, 255, 255, 0.22)' },
+                glow: { enabled: true, radius: 3, color: 'rgba(255, 255, 255, 0.2)' },
               }}
               className="pre-landing__tegaki"
               style={{

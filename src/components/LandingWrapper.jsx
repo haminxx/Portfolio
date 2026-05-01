@@ -1,9 +1,18 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import PreLanding from '../pages/PreLanding'
 import ChromeLanding from '../pages/ChromeLanding'
 import iPhoneMobileLanding from '../pages/iPhoneMobileLanding'
 
 const VIEW_KEY = 'portfolio-view' // sessionStorage key
+
+/** Aligns MusicPlayer autoplay unlock with finished boot flow (replacing WelcomeOverlay). */
+function markPortfolioWelcomeComplete() {
+  try {
+    localStorage.setItem('portfolio_welcome_done_v1', '1')
+  } catch {
+    /* ignore */
+  }
+}
 
 export default function LandingWrapper() {
   const [view, setViewState] = useState(() => {
@@ -19,10 +28,12 @@ export default function LandingWrapper() {
   }, [])
 
   const handleEnterDesktop = useCallback(() => {
+    markPortfolioWelcomeComplete()
     setView('desktop')
   }, [setView])
 
   const handleEnterMobile = useCallback(() => {
+    markPortfolioWelcomeComplete()
     setView('mobile')
   }, [setView])
 

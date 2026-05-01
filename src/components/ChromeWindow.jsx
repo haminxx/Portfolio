@@ -5,6 +5,8 @@ const MIN_WIDTH = 400
 const MIN_HEIGHT = 300
 const MENU_BAR_HEIGHT = 32
 
+const DOCK_HEIGHT = 54
+
 export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, isOpening, onOpeningComplete, onMinimizeComplete, onFocus, isFocused, children }) {
   const winRef = useRef(null)
   const openingCompleteRef = useRef(false)
@@ -28,6 +30,26 @@ export default function ChromeWindow({ isMaximized, onMaximize, isMinimizing, is
   const dragRafRef = useRef(null)
   const dragPendingRef = useRef(null)
   const resizeRef = useRef({ edge: '', startX: 0, startY: 0, startW: 0, startH: 0, startLeft: 0, startTop: 0 })
+
+  useEffect(() => {
+    if (isMaximized) return
+    const fit = () => {
+      const vw = window.innerWidth
+      const vh = window.innerHeight
+      const maxH = Math.max(MIN_HEIGHT, vh - MENU_BAR_HEIGHT - DOCK_HEIGHT - 8)
+      const maxW = Math.max(MIN_WIDTH, vw - 8)
+      setSize((s) => ({
+        width: Math.min(s.width, maxW),
+        height: Math.min(s.height, maxH),
+      }))
+      setPosition((p) => ({
+        x: Math.max(0, Math.min(p.x, vw - MIN_WIDTH)),
+        y: Math.max(MENU_BAR_HEIGHT, Math.min(p.y, vh - MIN_HEIGHT)),
+      }))
+    }
+    window.addEventListener('resize', fit)
+    return () => window.removeEventListener('resize', fit)
+  }, [isMaximized])
 
   useEffect(() => {
     if (!isOpening) return

@@ -28,7 +28,6 @@ import {
 } from './chromeLazyComponents'
 import MenuBar from '../components/MenuBar'
 import AppErrorBoundary from '../components/AppErrorBoundary'
-import WelcomeOverlay from '../components/WelcomeOverlay'
 import Dock from '../components/Dock'
 import AppWindow from '../components/AppWindow'
 import { APPS, getDomainForApp } from '../config/apps'
@@ -93,16 +92,7 @@ function getUrlForTab(tab) {
   return app?.url ?? null
 }
 
-function readWelcomeCompleted() {
-  try {
-    return localStorage.getItem('portfolio_welcome_done_v1') === '1'
-  } catch {
-    return true
-  }
-}
-
 export default function ChromeLanding({ onReboot }) {
-  const [welcomeDone, setWelcomeDone] = useState(readWelcomeCompleted)
   const [tabs, setTabs] = useState([HOME_TAB])
   const [activeTabId, setActiveTabId] = useState('home')
   const [chromeMaximized, setChromeMaximized] = useState(false)
@@ -464,7 +454,6 @@ export default function ChromeLanding({ onReboot }) {
     <MusicPlayerProvider>
     <DesktopBackgroundProvider>
     <div className="chrome-landing">
-      {!welcomeDone && <WelcomeOverlay onComplete={() => setWelcomeDone(true)} />}
       <Desktop
         onOpenApp={openAppTab}
         sortBy={sortBy}
