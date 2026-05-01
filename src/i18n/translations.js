@@ -5,6 +5,9 @@ export const translations = {
       welcome: 'Welcome to CNL',
       swipeHint: 'Swipe up or click to enter',
       mobileUser: 'Mobile User',
+      visitorNamePrompt: "What's your name?",
+      visitorNamePlaceholder: 'First name',
+      visitorNameContinue: 'Continue',
     },
     menuBar: {
       file: 'File',
@@ -194,6 +197,9 @@ export const translations = {
       welcome: 'CNL에 오신 것을 환영합니다',
       swipeHint: '위로 스와이프하거나 클릭하여 들어가기',
       mobileUser: '모바일 사용자',
+      visitorNamePrompt: '이름을 알려 주세요.',
+      visitorNamePlaceholder: '이름',
+      visitorNameContinue: '계속',
     },
     menuBar: {
       file: '파일',
@@ -286,6 +292,9 @@ export const translations = {
       welcome: 'Bienvenido a CNL',
       swipeHint: 'Desliza hacia arriba o haz clic para entrar',
       mobileUser: 'Usuario móvil',
+      visitorNamePrompt: '¿Cómo te llamas?',
+      visitorNamePlaceholder: 'Tu nombre',
+      visitorNameContinue: 'Continuar',
     },
     menuBar: {
       file: 'Archivo',
@@ -374,6 +383,9 @@ export const translations = {
       welcome: '欢迎来到 CNL',
       swipeHint: '向上滑动或点击进入',
       mobileUser: '移动用户',
+      visitorNamePrompt: '怎么称呼您？',
+      visitorNamePlaceholder: '您的名字',
+      visitorNameContinue: '继续',
     },
     menuBar: {
       file: '文件',
@@ -462,6 +474,9 @@ export const translations = {
       welcome: 'Bienvenue sur CNL',
       swipeHint: 'Balayez vers le haut ou cliquez pour entrer',
       mobileUser: 'Utilisateur mobile',
+      visitorNamePrompt: 'Comment vous appelez-vous ?',
+      visitorNamePlaceholder: 'Votre prénom',
+      visitorNameContinue: 'Continuer',
     },
     menuBar: {
       file: 'Fichier',
@@ -550,6 +565,9 @@ export const translations = {
       welcome: 'CNLへようこそ',
       swipeHint: '上にスワイプするかクリックして入る',
       mobileUser: 'モバイルユーザー',
+      visitorNamePrompt: 'お名前をどうぞ',
+      visitorNamePlaceholder: 'お名前',
+      visitorNameContinue: '続ける',
     },
     menuBar: {
       file: 'ファイル',
@@ -638,6 +656,9 @@ export const translations = {
       welcome: 'CNL में आपका स्वागत है',
       swipeHint: 'प्रवेश करने के लिए ऊपर स्वाइप करें या क्लिक करें',
       mobileUser: 'मोबाइल उपयोगकर्ता',
+      visitorNamePrompt: 'आपका नाम क्या है?',
+      visitorNamePlaceholder: 'आपका नाम',
+      visitorNameContinue: 'आगे बढ़ें',
     },
     menuBar: {
       file: 'फ़ाइल',
@@ -726,6 +747,9 @@ export const translations = {
       welcome: 'مرحباً بك في CNL',
       swipeHint: 'اسحب لأعلى أو انقر للدخول',
       mobileUser: 'مستخدم الجوال',
+      visitorNamePrompt: 'ما اسمك؟',
+      visitorNamePlaceholder: 'اسمك',
+      visitorNameContinue: 'متابعة',
     },
     menuBar: {
       file: 'ملف',
