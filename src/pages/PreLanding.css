@@ -187,26 +187,8 @@
   max-width: 100%;
 }
 
-.pre-landing__mobile-wrap {
-  margin-top: 0.75rem;
-  opacity: 0;
-  transition: opacity 0.6s ease-out;
-}
-
-.pre-landing__mobile-wrap--visible {
-  opacity: 1;
-}
-
-.pre-landing__mobile-btn {
-  font-size: 0.95rem;
-  padding: 0.5rem 1rem;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.pre-landing__mobile-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+/* Reinforce Tangerine labeling for overlays; strokes come from tegaki/fonts/tangerine bundle. */
+.pre-landing__tegaki--tangerine {
+  font-family: 'Tangerine', 'Tangerine Tegaki 3dc76002', cursive;
+  font-display: swap;
 }

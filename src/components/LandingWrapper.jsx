@@ -32,16 +32,10 @@ export default function LandingWrapper() {
     setView('desktop')
   }, [setView])
 
-  const handleEnterMobile = useCallback(() => {
-    markPortfolioWelcomeComplete()
-    setView('mobile')
-  }, [setView])
-
   if (view === 'boot') {
     return (
       <PreLanding
         onEnterDesktop={handleEnterDesktop}
-        onEnterMobile={handleEnterMobile}
       />
     )
   }

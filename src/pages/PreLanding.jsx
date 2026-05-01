@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { TegakiRenderer } from 'tegaki/react'
-import tangerine from 'tegaki/fonts/tangerine'
+import tangerineBundle from 'tegaki/fonts/tangerine'
 import { useLanguage } from '../context/LanguageContext'
 import './PreLanding.css'
 
@@ -24,11 +24,10 @@ function greetingDurationSeconds(text) {
   return Math.min(Math.max(base + len * perChar, 4), 14)
 }
 
-export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
+export default function PreLanding({ onEnterDesktop }) {
   const [phaseIndex, setPhaseIndex] = useState(0)
   const [nameDraft, setNameDraft] = useState('')
   const [visitorNameFinal, setVisitorNameFinal] = useState(null)
-  const [showMobileButton, setShowMobileButton] = useState(false)
   const exitingTimerRef = useRef(null)
   const inputRef = useRef(null)
   const { t } = useLanguage()
@@ -79,13 +78,6 @@ export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
   }, [phase, onEnterDesktop])
 
   useEffect(() => {
-    if (phase !== 'nameInput') return
-    setShowMobileButton(false)
-    const t = window.setTimeout(() => setShowMobileButton(true), 700)
-    return () => window.clearTimeout(t)
-  }, [phase])
-
-  useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key !== 'F11') return
       e.preventDefault()
@@ -94,8 +86,6 @@ export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onEnterDesktop])
-
-  const handleMobileEnter = () => onEnterMobile?.()
 
   const isExiting = phase === 'exiting'
 
@@ -139,34 +129,21 @@ export default function PreLanding({ onEnterDesktop, onEnterMobile }) {
                 <ChevronRight size={22} strokeWidth={2.5} />
               </button>
             </form>
-            <div className={`pre-landing__mobile-wrap ${showMobileButton ? 'pre-landing__mobile-wrap--visible' : ''}`}>
-              <button type="button" className="pre-landing__mobile-btn" onClick={handleMobileEnter}>
-                {t('preLanding.mobileUser')}
-              </button>
-            </div>
           </div>
         )}
         {phase === 'handwriting' && visitorNameFinal && (
           <div className="pre-landing__tegaki-wrap" aria-live="polite">
             <TegakiRenderer
               key={greetingLine}
-              font={tangerine}
+              font={tangerineBundle}
               time={tegakiTime}
               text={greetingLine}
               onComplete={handleHandwritingComplete}
-              quality={{ smoothing: true, clipText: 1.15 }}
-              effects={{
-                globalGradient: {
-                  enabled: true,
-                  colors: ['rgba(255, 255, 255, 0.97)', 'rgba(250, 240, 220, 0.93)', 'rgba(255, 255, 255, 0.95)'],
-                  angle: 10,
-                },
-                glow: { enabled: true, radius: 3, color: 'rgba(255, 255, 255, 0.2)' },
-              }}
-              className="pre-landing__tegaki"
+              quality={{ smoothing: true }}
+              className="pre-landing__tegaki pre-landing__tegaki--tangerine"
               style={{
-                fontSize: 'clamp(2.25rem, 9vw, 3.75rem)',
-                color: 'rgba(255, 255, 255, 0.96)',
+                fontSize: 'clamp(2.75rem, 10vw, 4rem)',
+                color: '#fff9f0',
               }}
             />
           </div>
